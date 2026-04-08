@@ -5,13 +5,25 @@ using System.Text.Json.Nodes;
 
 namespace Chronicler;
 
+/// <summary>
+/// Provides methods for editing serialized payloads without fully deserializing them.
+/// </summary>
 public static class SerializationPayloadEditor
 {
+    #region JSON Editing
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         IncludeFields = true
     };
 
+    /// <summary>
+    /// Removes a property from a JSON payload at the specified path.
+    /// </summary>
+    /// <param name="json">The JSON payload.</param>
+    /// <param name="path">The path to the property to remove.</param>
+    /// <returns>The modified JSON payload.</returns>
+    /// <exception cref="ArgumentException"></exception>
     public static string RemoveJsonProperty(string json, params string[] path)
     {
         if (path == null || path.Length == 0)
@@ -23,6 +35,15 @@ public static class SerializationPayloadEditor
         return root.ToJsonString(JsonOptions);
     }
 
+    /// <summary>
+    /// Sets a property value in a JSON payload at the specified path.
+    /// </summary>
+    /// <typeparam name="T">The type of the value to set.</typeparam>
+    /// <param name="json">The JSON payload.</param>
+    /// <param name="value">The value to set.</param>
+    /// <param name="path">The path to the property to set.</param>
+    /// <returns>The modified JSON payload.</returns>
+    /// <exception cref="ArgumentException"></exception>
     public static string SetJsonValue<T>(string json, T value, params string[] path)
     {
         if (path == null || path.Length == 0)
@@ -32,26 +53,6 @@ public static class SerializationPayloadEditor
         JsonObject parent = GetJsonParent(root, path);
         parent[path[^1]] = JsonSerializer.SerializeToNode(value, JsonOptions);
         return root.ToJsonString(JsonOptions);
-    }
-
-    public static byte[] RemoveMemoryPackEntry(byte[] data, params string[] path)
-    {
-        if (path == null || path.Length == 0)
-            throw new ArgumentException("A MemoryPack entry path is required.", nameof(path));
-
-        MemoryPackRecordEnvelope envelope = ReadEnvelope(data);
-        RemoveMemoryPackEntry(envelope, path, 0);
-        return MemoryPackSerializer.Serialize(envelope);
-    }
-
-    public static byte[] SetMemoryPackValue<T>(byte[] data, T value, params string[] path)
-    {
-        if (path == null || path.Length == 0)
-            throw new ArgumentException("A MemoryPack entry path is required.", nameof(path));
-
-        MemoryPackRecordEnvelope envelope = ReadEnvelope(data);
-        SetMemoryPackValue(envelope, path, 0, MemoryPackSerializer.Serialize(value));
-        return MemoryPackSerializer.Serialize(envelope);
     }
 
     private static JsonObject ParseJsonRoot(string json)
@@ -73,6 +74,46 @@ public static class SerializationPayloadEditor
         }
 
         return current;
+    }
+
+    #endregion
+
+    #region MemoryPack Editing
+
+    /// <summary>
+    /// Removes a MemoryPack entry from a serialized payload at the specified path.
+    /// </summary>
+    /// <param name="data">The serialized MemoryPack payload.</param>
+    /// <param name="path">The path to the entry to remove.</param>
+    /// <returns>The modified serialized MemoryPack payload.</returns>
+    /// <exception cref="ArgumentException"></exception>
+    public static byte[] RemoveMemoryPackEntry(byte[] data, params string[] path)
+    {
+        if (path == null || path.Length == 0)
+            throw new ArgumentException("A MemoryPack entry path is required.", nameof(path));
+
+        MemoryPackRecordEnvelope envelope = ReadEnvelope(data);
+        RemoveMemoryPackEntry(envelope, path, 0);
+        return MemoryPackSerializer.Serialize(envelope);
+    }
+
+    /// <summary>
+    /// Sets a MemoryPack entry value in a serialized payload at the specified path.
+    /// </summary>
+    /// <typeparam name="T">The type of the value to set.</typeparam>
+    /// <param name="data">The serialized MemoryPack payload.</param>
+    /// <param name="value">The value to set.</param>
+    /// <param name="path">The path to the entry to set.</param>
+    /// <returns>The modified serialized MemoryPack payload.</returns>
+    /// <exception cref="ArgumentException"></exception>
+    public static byte[] SetMemoryPackValue<T>(byte[] data, T value, params string[] path)
+    {
+        if (path == null || path.Length == 0)
+            throw new ArgumentException("A MemoryPack entry path is required.", nameof(path));
+
+        MemoryPackRecordEnvelope envelope = ReadEnvelope(data);
+        SetMemoryPackValue(envelope, path, 0, MemoryPackSerializer.Serialize(value));
+        return MemoryPackSerializer.Serialize(envelope);
     }
 
     private static MemoryPackRecordEnvelope ReadEnvelope(byte[] data)
@@ -124,4 +165,6 @@ public static class SerializationPayloadEditor
         SetMemoryPackValue(nestedEnvelope, path, depth + 1, serializedValue);
         envelope.Entries[path[depth]] = MemoryPackSerializer.Serialize(nestedEnvelope);
     }
+
+    #endregion
 }
