@@ -47,7 +47,7 @@
 	</PropertyGroup>
 	<!-- NuGet Packaging Metadata -->
 	<PropertyGroup>
-		<PackageId>Chronicler</PackageId>
+		<PackageId>Chronicler.Core</PackageId>
 		<Authors>mrdav30</Authors>
 		<Description>Deterministic, transport-neutral serialization for lockstep simulation, snapshot/restore workflows, and state transfer into existing runtime object graphs.</Description>
 		<PackageTags>deterministic;serialization;lockstep;snapshot;save-system;memorypack;json;gamedev</PackageTags>

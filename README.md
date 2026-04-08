@@ -4,8 +4,8 @@
 
 [![.NET CI](https://github.com/mrdav30/Chronicler/actions/workflows/dotnet.yml/badge.svg)](https://github.com/mrdav30/Chronicler/actions/workflows/dotnet.yml)
 [![Coverage](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fmrdav30.github.io%2FChronicler%2FSummary.json&query=%24.summary.linecoverage&suffix=%25&label=coverage&color=brightgreen)](https://mrdav30.github.io/Chronicler/)
-[![NuGet](https://img.shields.io/nuget/v/Chronicler.svg)](https://www.nuget.org/packages/Chronicler)
-[![NuGet Downloads](https://img.shields.io/nuget/dt/Chronicler.svg)](https://www.nuget.org/packages/Chronicler)
+[![NuGet](https://img.shields.io/nuget/v/Chronicler.Core.svg)](https://www.nuget.org/packages/Chronicler.Core)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/Chronicler.Core.svg)](https://www.nuget.org/packages/Chronicler.Core)
 [![License](https://img.shields.io/github/license/mrdav30/Chronicler.svg)](https://github.com/mrdav30/Chronicler/blob/main/LICENSE)
 [![Frameworks](https://img.shields.io/badge/frameworks-netstandard2.1%20%7C%20net8.0-512BD4.svg)](https://github.com/mrdav30/Chronicler)
 
@@ -32,7 +32,7 @@ Unlike attribute-only serializers, Chronicler makes each type explicitly own its
 ### NuGet
 
 ```bash
-dotnet add package Chronicler
+dotnet add package Chronicler.Core
 ```
 
 ### Source
