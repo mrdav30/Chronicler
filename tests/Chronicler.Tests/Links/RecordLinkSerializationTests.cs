@@ -8,175 +8,142 @@ namespace Chronicler.Tests;
 
 public class RecordLinkSerializationTests
 {
-    [Fact]
-    public void JsonRoundTrip_ShouldResolveImmediateLinks_UsingResolversAndSlots()
+    [Theory]
+    [MemberData(nameof(SerializationTransportData.All), MemberType = typeof(SerializationTransportData))]
+    public void RoundTrip_ShouldResolveImmediateLinks_UsingResolversAndSlots(SerializationTransport transport)
     {
         var sourcePrimary = new ExternalResource("source-primary");
         var sourceSecondary = new ExternalResource("source-secondary");
 
-        var saveContext = new ChronicleContext();
-        var savePrimaryResolver = new DictionaryLinkResolver<IExternalResource>();
-        var saveSecondaryResolver = new DictionaryLinkResolver<IExternalResource>();
-        savePrimaryResolver.Register("primary", sourcePrimary);
-        saveSecondaryResolver.Register("secondary", sourceSecondary);
-        saveContext.Links.RegisterResolver(savePrimaryResolver);
-        saveContext.Links.RegisterResolver(saveSecondaryResolver, slot: "secondary");
+        ChronicleContext saveContext = CreateResolverContext(sourcePrimary, sourceSecondary);
 
-        var source = new ResolverLinkRecord()
+        var source = new ResolverLinkRecord
         {
             Name = "alpha",
             Primary = sourcePrimary,
             Secondary = sourceSecondary
         };
 
-        string json = JsonRecordSerializer.Serialize(source, saveContext, writeIndented: true);
+        object payload = SerializationTestHarness.Serialize(source, transport, saveContext);
 
         var loadPrimary = new ExternalResource("load-primary");
         var loadSecondary = new ExternalResource("load-secondary");
 
-        var loadContext = new ChronicleContext();
-        var loadPrimaryResolver = new DictionaryLinkResolver<IExternalResource>();
-        var loadSecondaryResolver = new DictionaryLinkResolver<IExternalResource>();
-        loadPrimaryResolver.Register("primary", loadPrimary);
-        loadSecondaryResolver.Register("secondary", loadSecondary);
-        loadContext.Links.RegisterResolver(loadPrimaryResolver);
-        loadContext.Links.RegisterResolver(loadSecondaryResolver, slot: "secondary");
+        ChronicleContext loadContext = CreateResolverContext(loadPrimary, loadSecondary);
 
         var target = new ResolverLinkRecord();
-        JsonRecordSerializer.Populate(target, json, loadContext);
+        SerializationTestHarness.Populate(target, payload, transport, loadContext);
 
         target.Name.Should().Be("alpha");
         target.Primary.Should().BeSameAs(loadPrimary);
         target.Secondary.Should().BeSameAs(loadSecondary);
     }
 
-    [Fact]
-    public void MemoryPackRoundTrip_ShouldResolveImmediateLinks_UsingResolversAndSlots()
+    [Theory]
+    [MemberData(nameof(SerializationTransportData.All), MemberType = typeof(SerializationTransportData))]
+    public void RoundTrip_ShouldResolveDeferredLinks_AfterGraphLoad(SerializationTransport transport)
+    {
+        var source = CreateDeferredGraph("shared-link");
+
+        var saveContext = new ChronicleContext();
+        saveContext.Links.RegisterInstance("shared-link", source.Provider.Resource, slot: "provider");
+
+        object payload = SerializationTestHarness.Serialize(source, transport, saveContext);
+
+        var target = new DeferredLinkGraph();
+        SerializationTestHarness.Populate(target, payload, transport, new ChronicleContext());
+
+        target.Consumer.Label.Should().Be("consumer");
+        target.Provider.Id.Should().Be("shared-link");
+        target.Consumer.Resource.Should().BeSameAs(target.Provider.Resource);
+        target.Consumer.Resource!.Name.Should().Be("loaded-shared-link");
+    }
+
+    [Theory]
+    [MemberData(nameof(SerializationTransportData.All), MemberType = typeof(SerializationTransportData))]
+    public void RoundTrip_ShouldThrow_WhenDeferredLinksRemainUnresolved(SerializationTransport transport)
+    {
+        var source = CreateDeferredGraph("shared-link");
+
+        var saveContext = new ChronicleContext();
+        saveContext.Links.RegisterInstance("shared-link", source.Provider.Resource, slot: "provider");
+
+        object payload = SerializationTestHarness.Serialize(source, transport, saveContext);
+        payload = SerializationTestHarness.RemoveEntry(payload, transport, "provider");
+
+        var target = new DeferredLinkGraph();
+        Action act = () => SerializationTestHarness.Populate(target, payload, transport, new ChronicleContext());
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*resource:ExternalResource:shared-link@provider*");
+    }
+
+    [Theory]
+    [MemberData(nameof(SerializationTransportData.All), MemberType = typeof(SerializationTransportData))]
+    public void Populate_ShouldThrow_WhenImmediateLinkCannotResolve(SerializationTransport transport)
     {
         var sourcePrimary = new ExternalResource("source-primary");
         var sourceSecondary = new ExternalResource("source-secondary");
 
-        var saveContext = new ChronicleContext();
-        var savePrimaryResolver = new DictionaryLinkResolver<IExternalResource>();
-        var saveSecondaryResolver = new DictionaryLinkResolver<IExternalResource>();
-        savePrimaryResolver.Register("primary", sourcePrimary);
-        saveSecondaryResolver.Register("secondary", sourceSecondary);
-        saveContext.Links.RegisterResolver(savePrimaryResolver);
-        saveContext.Links.RegisterResolver(saveSecondaryResolver, slot: "secondary");
+        ChronicleContext saveContext = CreateResolverContext(sourcePrimary, sourceSecondary);
 
-        var source = new ResolverLinkRecord()
+        var source = new ResolverLinkRecord
         {
             Name = "alpha",
             Primary = sourcePrimary,
             Secondary = sourceSecondary
         };
 
-        byte[] data = MemoryPackRecordSerializer.Serialize(source, saveContext);
-
-        var loadPrimary = new ExternalResource("load-primary");
-        var loadSecondary = new ExternalResource("load-secondary");
-
-        var loadContext = new ChronicleContext();
-        var loadPrimaryResolver = new DictionaryLinkResolver<IExternalResource>();
-        var loadSecondaryResolver = new DictionaryLinkResolver<IExternalResource>();
-        loadPrimaryResolver.Register("primary", loadPrimary);
-        loadSecondaryResolver.Register("secondary", loadSecondary);
-        loadContext.Links.RegisterResolver(loadPrimaryResolver);
-        loadContext.Links.RegisterResolver(loadSecondaryResolver, slot: "secondary");
+        object payload = SerializationTestHarness.Serialize(source, transport, saveContext);
 
         var target = new ResolverLinkRecord();
-        MemoryPackRecordSerializer.Populate(target, data, loadContext);
-
-        target.Name.Should().Be("alpha");
-        target.Primary.Should().BeSameAs(loadPrimary);
-        target.Secondary.Should().BeSameAs(loadSecondary);
-    }
-
-    [Fact]
-    public void JsonRoundTrip_ShouldResolveDeferredLinks_AfterGraphLoad()
-    {
-        var source = CreateDeferredGraph("shared-link");
-
-        var saveContext = new ChronicleContext();
-        saveContext.Links.RegisterInstance("shared-link", source.Provider.Resource, slot: "provider");
-
-        string json = JsonRecordSerializer.Serialize(source, saveContext, writeIndented: true);
-
-        var target = new DeferredLinkGraph();
-        JsonRecordSerializer.Populate(target, json, new ChronicleContext());
-
-        target.Consumer.Label.Should().Be("consumer");
-        target.Provider.Id.Should().Be("shared-link");
-        target.Consumer.Resource.Should().BeSameAs(target.Provider.Resource);
-        target.Consumer.Resource.Name.Should().Be("loaded-shared-link");
-    }
-
-    [Fact]
-    public void MemoryPackRoundTrip_ShouldResolveDeferredLinks_AfterGraphLoad()
-    {
-        var source = CreateDeferredGraph("shared-link");
-
-        var saveContext = new ChronicleContext();
-        saveContext.Links.RegisterInstance("shared-link", source.Provider.Resource, slot: "provider");
-
-        byte[] data = MemoryPackRecordSerializer.Serialize(source, saveContext);
-
-        var target = new DeferredLinkGraph();
-        MemoryPackRecordSerializer.Populate(target, data, new ChronicleContext());
-
-        target.Consumer.Label.Should().Be("consumer");
-        target.Provider.Id.Should().Be("shared-link");
-        target.Consumer.Resource.Should().BeSameAs(target.Provider.Resource);
-        target.Consumer.Resource.Name.Should().Be("loaded-shared-link");
-    }
-
-    [Fact]
-    public void JsonRoundTrip_ShouldThrow_WhenDeferredLinksRemainUnresolved()
-    {
-        var source = CreateDeferredGraph("shared-link");
-
-        var saveContext = new ChronicleContext();
-        saveContext.Links.RegisterInstance("shared-link", source.Provider.Resource, slot: "provider");
-
-        string json = JsonRecordSerializer.Serialize(source, saveContext, writeIndented: true);
-        json = SerializationPayloadEditor.RemoveJsonProperty(json, "provider");
-
-        var target = new DeferredLinkGraph();
-        Action act = () => JsonRecordSerializer.Populate(target, json, new ChronicleContext());
+        Action act = () => SerializationTestHarness.Populate(target, payload, transport, new ChronicleContext());
 
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*resource:ExternalResource:shared-link@provider*");
+            .WithMessage("*Unable to load link 'primary'*");
     }
 
-    [Fact]
-    public void MemoryPackRoundTrip_ShouldThrow_WhenDeferredLinksRemainUnresolved()
+    [Theory]
+    [MemberData(nameof(SerializationTransportData.All), MemberType = typeof(SerializationTransportData))]
+    public void Serialize_ShouldThrow_WhenStableLinkIdCannotBeProduced(SerializationTransport transport)
     {
-        var source = CreateDeferredGraph("shared-link");
+        var source = new ResolverLinkRecord
+        {
+            Name = "alpha",
+            Primary = new ExternalResource("source-primary")
+        };
 
-        var saveContext = new ChronicleContext();
-        saveContext.Links.RegisterInstance("shared-link", source.Provider.Resource, slot: "provider");
-
-        byte[] data = MemoryPackRecordSerializer.Serialize(source, saveContext);
-        data = SerializationPayloadEditor.RemoveMemoryPackEntry(data, "provider");
-
-        var target = new DeferredLinkGraph();
-        Action act = () => MemoryPackRecordSerializer.Populate(target, data, new ChronicleContext());
+        Action act = () => SerializationTestHarness.Serialize(source, transport, new ChronicleContext());
 
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*resource:ExternalResource:shared-link@provider*");
+            .WithMessage("*Unable to save link 'primary'*");
+    }
+
+    private static ChronicleContext CreateResolverContext(
+        IExternalResource primary,
+        IExternalResource secondary)
+    {
+        var context = new ChronicleContext();
+        var primaryResolver = new DictionaryLinkResolver<IExternalResource>();
+        var secondaryResolver = new DictionaryLinkResolver<IExternalResource>();
+        primaryResolver.Register("primary", primary);
+        secondaryResolver.Register("secondary", secondary);
+        context.Links.RegisterResolver(primaryResolver);
+        context.Links.RegisterResolver(secondaryResolver, slot: "secondary");
+        return context;
     }
 
     private static DeferredLinkGraph CreateDeferredGraph(string id)
     {
         var resource = new ExternalResource("source-resource");
-        return new DeferredLinkGraph()
+        return new DeferredLinkGraph
         {
-            Consumer = new DeferredLinkConsumer()
+            Consumer = new DeferredLinkConsumer
             {
                 Label = "consumer",
                 Resource = resource
             },
-            Provider = new DeferredLinkProvider()
+            Provider = new DeferredLinkProvider
             {
                 Id = id,
                 Resource = resource
@@ -268,9 +235,7 @@ public class RecordLinkSerializationTests
                 slot: "provider");
 
             if (chronicler.Mode == SerializationMode.Loading)
-            {
                 Label = label;
-            }
         }
     }
 

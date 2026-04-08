@@ -20,6 +20,7 @@
 		<Version>$(SemVer)</Version>
 		<AssemblyVersion>$(AssemblySemVer)</AssemblyVersion>
 		<FileVersion>$(AssemblySemFileVer)</FileVersion>
+		<IncludeSourceRevisionInInformationalVersion>true</IncludeSourceRevisionInInformationalVersion>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<IncludeSymbols>true</IncludeSymbols>
@@ -48,9 +49,12 @@
 	<PropertyGroup>
 		<PackageId>Chronicler</PackageId>
 		<Authors>mrdav30</Authors>
-		<Description></Description>
-		<PackageTags></PackageTags>
+		<Description>Deterministic, transport-neutral serialization for lockstep simulation, snapshot/restore workflows, and state transfer into existing runtime object graphs.</Description>
+		<PackageTags>deterministic;serialization;lockstep;snapshot;save-system;memorypack;json;gamedev</PackageTags>
+		<PackageProjectUrl>https://github.com/mrdav30/Chronicler</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/mrdav30/Chronicler</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageIconUrl>https://raw.githubusercontent.com/mrdav30/Chronicler/main/icon.png</PackageIconUrl>
 		<PackageReadmeFile>README.md</PackageReadmeFile>

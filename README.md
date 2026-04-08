@@ -1,183 +1,241 @@
-# Chronicler API Reference
+# Chronicler
 
-This document describes the reusable Chronicler serialization layer that Trailblazer currently ships inside the main library and intends to extract into its own shared project later.
+![Chronicler Icon](https://raw.githubusercontent.com/mrdav30/Chronicler/main/icon.png)
 
-If you need Trailblazer-specific coverage and runtime behavior, read [`../../../docs/SERIALIZATION.MD`](../../../docs/SERIALIZATION.MD).
-If you need the planned extraction strategy for moving Chronicler into its own project, read [`MIGRATION.MD`](MIGRATION.MD).
+[![.NET CI](https://github.com/mrdav30/Chronicler/actions/workflows/dotnet.yml/badge.svg)](https://github.com/mrdav30/Chronicler/actions/workflows/dotnet.yml)
+[![Coverage](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fmrdav30.github.io%2FChronicler%2FSummary.json&query=%24.summary.linecoverage&suffix=%25&label=coverage&color=brightgreen)](https://mrdav30.github.io/Chronicler/)
+[![NuGet](https://img.shields.io/nuget/v/Chronicler.svg)](https://www.nuget.org/packages/Chronicler)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/Chronicler.svg)](https://www.nuget.org/packages/Chronicler)
+[![License](https://img.shields.io/github/license/mrdav30/Chronicler.svg)](https://github.com/mrdav30/Chronicler/blob/main/LICENSE)
+[![Frameworks](https://img.shields.io/badge/frameworks-netstandard2.1%20%7C%20net8.0-512BD4.svg)](https://github.com/mrdav30/Chronicler)
 
-The code referenced here lives in:
+**Chronicler** is a deterministic, transport-neutral serialization library for lockstep simulation, snapshot/restore workflows, and runtime state transfer into existing object graphs.
 
-- `src/Chronicler/Abstractions/IRecordable.cs`
-- `src/Chronicler/Abstractions/IChronicler.cs`
-- `src/Chronicler/Recording/RecordValues.cs`
-- `src/Chronicler/Recording/RecordDeep.cs`
-- `src/Chronicler/Links/RecordLinks.cs`
-- `src/Chronicler/Context/ChronicleContext.cs`
-- `src/Chronicler/Links/ChronicleLinkRegistry.cs`
-- `src/Chronicler/Serialization/Json/JsonRecordSerializer.cs`
-- `src/Chronicler/Serialization/MemoryPack/MemoryPackRecordSerializer.cs`
+Unlike attribute-only serializers, Chronicler makes each type explicitly own its serialized shape through `RecordData(IChronicler chronicler)`.
 
-## 1. What Chronicler Is
+---
 
-Chronicler is an explicit, transport-neutral serialization API built around type-owned record passes.
+## Key Features
 
-The core idea is:
+- **Deterministic record passes** for systems that care about stable, explicit state flow.
+- **Transport-neutral core API** with built-in JSON and MemoryPack support.
+- **Type-owned schemas** through `IRecordable`, without requiring serializer attributes on most domain types.
+- **Canonical default handling** so omitted entries load into known values instead of ambient runtime state.
+- **Deep graph support** for nested owned objects and structs already present in the runtime shell.
+- **Stable link support** for runtime-owned or external references through a session-scoped registry.
+- **Designed for lockstep and restore flows** where the host owns construction and Chronicler owns state transfer.
 
-- serializable types implement `IRecordable`
-- those types write and read their own state through `RecordData(IChronicler chronicler)`
-- `RecordValues` handles leaf value data
-- `RecordDeep` handles owned nested `IRecordable` objects
-- `RecordLinks` handles stable references to external or runtime-owned objects through a session-scoped registry
+---
 
-This is intentionally different from relying on serializer attributes alone.
+## Installation
 
-## 2. Core API
+### NuGet
 
-The current core API surface is:
-
-```csharp
-public interface IRecordable
-{
-    void RecordData(IChronicler chronicler);
-}
-
-public interface IChronicler
-{
-    ChronicleContext Context { get; }
-    SerializationMode Mode { get; }
-    void LookValue<T>(ref T value, string name, T defaultValue = default);
-    void LookDeep<T>(ref T value, string name) where T : class, IRecordable;
-    void LookDeepStruct<T>(ref T value, string name) where T : struct, IRecordable;
-    void LookNullableDeep<T>(ref T? value, string name) where T : struct, IRecordable;
-    void LookLink<T>(
-        ref T value,
-        string name,
-        string slot = null,
-        RecordLinkResolveMode resolveMode = RecordLinkResolveMode.Immediate,
-        Action<T> assignLoadedValue = null);
-}
+```bash
+dotnet add package Chronicler
 ```
 
-Helper entry points:
+### Source
 
-```csharp
-RecordValues.Look(chronicler, ref value, "name", defaultValue);
-RecordDeep.Look(chronicler, ref nestedObject, "name");
-RecordDeepStruct.Look(chronicler, ref nestedStruct, "name");
-RecordNullableDeep.Look(chronicler, ref optionalNestedStruct, "name");
-RecordLinks.Look(chronicler, ref externalRef, "name");
-RecordLinks.LookDeferred(
-    chronicler,
-    externalRef,
-    "name",
-    resolved => Owner.ExternalRef = resolved);
+```bash
+git clone https://github.com/mrdav30/Chronicler.git
 ```
 
-Current mode enums:
+Then reference `src/Chronicler/Chronicler.csproj` directly or build the package locally.
 
-- `SerializationMode`: `Saving`, `Loading`
-- `RecordLinkResolveMode`: `Immediate`, `Deferred`
+---
 
-Important `LookValue(...)` rule:
+## API Overview
 
-- the `defaultValue` argument is a schema-level canonical default for that field
-- save omits entries whose current value equals that declared default
-- load assigns the declared default when the entry is missing or explicitly null
-- callers should not pass the instance's current runtime value as the default, because that turns omission into "preserve ambient state" instead of deterministic fallback
+Chronicler is built around three primary recording lanes:
 
-Deep-record rule of thumb:
+- **`RecordValues`** for leaf values such as primitives, enums, and small deterministic structs.
+- **`RecordDeep` / `RecordDeepStruct` / `RecordNullableDeep`** for owned nested recordable state.
+- **`RecordLinks`** for stable references to runtime-owned or external objects.
 
-- use `RecordDeep` / `LookDeep(...)` for owned nested reference types that already exist in the runtime shell
-- use `RecordDeepStruct` / `LookDeepStruct(...)` for non-nullable nested recordable structs
-- use `RecordNullableDeep` / `LookNullableDeep(...)` for optional nested recordable structs
+Core abstractions:
 
-## 3. Transports
-
-The current Chronicler transports are:
-
-- `JsonRecordSerializer.Serialize(IRecordable target, bool writeIndented = false)`
-- `JsonRecordSerializer.Serialize(IRecordable target, ChronicleContext context, bool writeIndented = false)`
-- `JsonRecordSerializer.Populate(IRecordable target, string json)`
-- `JsonRecordSerializer.Populate(IRecordable target, string json, ChronicleContext context)`
-- `MemoryPackRecordSerializer.Serialize(IRecordable target)`
-- `MemoryPackRecordSerializer.Serialize(IRecordable target, ChronicleContext context)`
-- `MemoryPackRecordSerializer.Populate(IRecordable target, byte[] data)`
-- `MemoryPackRecordSerializer.Populate(IRecordable target, byte[] data, ChronicleContext context)`
-
-Important details:
-
-- the Chronicler contract is serializer-agnostic
-- JSON and MemoryPack share the same `IChronicler` contract
-- types serialized through `RecordData(...)` generally do not need transport-specific attributes
-- transport-specific attributes should usually be reserved for leaf values still serialized directly by the transport
-
-## 4. Stable Links and Context
-
-The stable-link system is built around:
-
+- `IRecordable`
+- `IChronicler`
 - `ChronicleContext`
-- `ChronicleContext.Links`
-- `IRecordLinkResolver<T>`
-- `RecordLinks`
+- `ChronicleLinkRegistry`
 
-Important design rules:
+Built-in transports:
 
-- the link registry is built into the serialization layer, but it is session-scoped rather than a hidden global singleton
-- link lookup is type-based by default, with an optional slot override for cases where one type needs multiple resolution strategies
-- immediate links resolve during the current `RecordData(...)` call
-- deferred links resolve after the full load graph has finished its `RecordData(...)` pass
-- the registry can be backed either by custom resolvers or by directly registered runtime instances
+- `JsonRecordSerializer`
+- `MemoryPackRecordSerializer`
 
-This gives Chronicler three distinct lanes:
+Important design note:
 
-- `RecordValues` for pure data
-- `RecordDeep` for owned nested objects
-- `RecordLinks` for external or runtime-owned objects
+- Chronicler loads into an existing initialized runtime shell. It does not construct arbitrary object graphs from transport data alone.
 
-## 5. Current Load Model
+---
 
-The current implementation loads into existing initialized instances.
+## Quick Start
 
-That means:
+### Define a recordable type
 
-1. the host creates the runtime object graph or shell first
-2. the transport populates supported state into that existing graph
-3. deep-loaded nested objects must already exist before `LookDeep(...)` can populate them
+```csharp
+using Chronicler;
 
-Today this is designed for:
+public sealed class PlayerSnapshot : IRecordable
+{
+    public int Health = 100;
+    public int Mana = 50;
+    public WeaponState Weapon = new();
 
-- restoring state into a known runtime shell
-- deterministic snapshot/restore experiments
-- proving the shape of the shared API before broadening scope
+    public void RecordData(IChronicler chronicler)
+    {
+        RecordValues.Look(chronicler, ref Health, "health", 100);
+        RecordValues.Look(chronicler, ref Mana, "mana", 50);
+        RecordDeep.Look(chronicler, ref Weapon, "weapon");
+    }
+}
 
-Chronicler intentionally stays focused on transporting state into an existing runtime shell.
+public sealed class WeaponState : IRecordable
+{
+    public int Ammo = 30;
 
-Constructing runtime objects, choosing concrete types, and orchestrating framework bootstrap are expected to live in host code or in a separate opt-in factory layer rather than in the base Chronicler contract.
+    public void RecordData(IChronicler chronicler)
+    {
+        RecordValues.Look(chronicler, ref Ammo, "ammo", 30);
+    }
+}
+```
 
-So the current core is not designed for:
+### Serialize and populate with JSON
 
-- constructing arbitrary object graphs from serialized data alone
-- polymorphic root construction
-- full save bootstrap from transport data only
+```csharp
+PlayerSnapshot source = new();
+string json = JsonRecordSerializer.Serialize(source, writeIndented: true);
 
-## 6. Extension Guidance
+PlayerSnapshot target = new()
+{
+    Weapon = new WeaponState()
+};
 
-When adding Chronicler support to a new type:
+JsonRecordSerializer.Populate(target, json);
+```
 
-1. Start with the authoritative state.
-2. Skip or rebuild frame-local caches unless they are truly required for restore correctness.
-3. Prefer `RecordDeep` for owned nested runtime objects.
-4. Use `RecordLinks` for stable references to external or runtime-owned objects.
-5. Use canonical declared defaults for every `RecordValues.Look(...)` call rather than passing the current live value.
-6. Use value fields for small deterministic structs and enums.
-7. Add a focused round-trip test in the same change.
-8. Verify the type still behaves correctly after load, not just that raw values match.
+### Serialize and populate with MemoryPack
 
-## 7. Next Best Steps
+```csharp
+PlayerSnapshot source = new();
+byte[] data = MemoryPackRecordSerializer.Serialize(source);
 
-The highest-value Chronicler-specific follow-ups are:
+PlayerSnapshot target = new()
+{
+    Weapon = new WeaponState()
+};
 
-1. Extract the generic Chronicler files into their own project and package so Trailblazer consumes them as a normal dependency instead of hosting the code in-tree.
-2. Decide the package layout for transports: keep JSON and MemoryPack in one package, or split them into optional transport packages layered on top of the core abstractions.
-3. Add package-level compatibility guidance for schema evolution and transport parity so Chronicler has its own guarantees independent of Trailblazer.
-4. Keep the extracted package free of Trailblazer-specific JSON compatibility baggage unless a real downstream portability need appears.
+MemoryPackRecordSerializer.Populate(target, data);
+```
+
+---
+
+## Stable Links
+
+Use `RecordLinks` when a field points to a runtime-owned or external object that should not be serialized inline.
+
+```csharp
+public sealed class ActorState : IRecordable
+{
+    public RuntimeEntity? Target;
+
+    public void RecordData(IChronicler chronicler)
+    {
+        RuntimeEntity? target = Target;
+        RecordLinks.Look(chronicler, ref target, "target");
+
+        if (chronicler.Mode == SerializationMode.Loading)
+            Target = target;
+    }
+}
+```
+
+Resolve those links through the session context:
+
+```csharp
+ChronicleContext context = new();
+context.Links.RegisterInstance("player-42", runtimeEntity);
+```
+
+For cases where the target object is only available after the rest of the graph loads, use deferred link resolution with `RecordLinks.LookDeferred(...)`.
+
+---
+
+## Design Rules
+
+- Pass canonical declared defaults to `RecordValues.Look(...)`.
+- Use `RecordDeep` for owned nested objects that already exist in the runtime shell.
+- Use `RecordDeepStruct` for non-nullable nested recordable structs.
+- Use `RecordNullableDeep` for optional nested recordable structs.
+- Use `RecordLinks` for runtime-owned or external references.
+- Keep object construction and framework bootstrap outside the base Chronicler contract.
+
+---
+
+## Development
+
+Build the solution:
+
+```bash
+dotnet build Chronicler.sln -c Release
+```
+
+Run the unit tests:
+
+```bash
+dotnet test tests/Chronicler.Tests/Chronicler.Tests.csproj -c Release --no-build
+```
+
+Run tests with coverage:
+
+```bash
+dotnet test tests/Chronicler.Tests/Chronicler.Tests.csproj -c Release --collect:"XPlat Code Coverage" --settings coverlet.runsettings
+```
+
+---
+
+## Compatibility
+
+- `netstandard2.1`
+- `net8.0`
+- Windows, Linux, and macOS
+
+JSON support is provided through `System.Text.Json`, and binary transport support is provided through `MemoryPack`.
+
+---
+
+## Contributing
+
+We welcome contributions. Please see [CONTRIBUTING](https://github.com/mrdav30/Chronicler/blob/main/CONTRIBUTING.md) for contribution guidance and project expectations.
+
+---
+
+## Contributors
+
+- **mrdav30** - Lead Developer
+- Contributions are welcome through issues and pull requests.
+
+---
+
+## Community & Support
+
+For bug reports or feature requests, please open an issue in this repository.
+
+For general discussion and support, join the official Discord community:
+
+👉 **[Join the Discord Server](https://discord.gg/mhwK2QFNBA)**
+
+---
+
+## License
+
+This project is licensed under the MIT License.
+
+See the following files for details:
+
+- `LICENSE` - standard MIT license
+- `NOTICE` - additional terms regarding project branding and redistribution
+- `COPYRIGHT` - authorship information
