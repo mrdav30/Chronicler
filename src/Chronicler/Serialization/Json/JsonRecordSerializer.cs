@@ -265,12 +265,7 @@ public static class JsonRecordSerializer
                 return;
             }
 
-            string? id = JsonSerializer.Deserialize<string>(entry.GetRawText(), _options);
-            if (id == null)
-            {
-                value = default!;
-                return;
-            }
+            string id = JsonSerializer.Deserialize<string>(entry.GetRawText(), _options)!;
 
             if (resolveMode == RecordLinkResolveMode.Deferred)
             {

@@ -6,7 +6,7 @@
         <Configuration>
           <Format>cobertura</Format>
           <Include>[Chronicler]*</Include>
-          <ExcludeByFile>**/bin/**,**/obj/**</ExcludeByFile>
+          <ExcludeByFile>**/bin/**,**/obj/**,**/*.g.cs</ExcludeByFile>
           <ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
           <IncludeTestAssembly>false</IncludeTestAssembly>
         </Configuration>

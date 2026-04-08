@@ -157,6 +157,33 @@ public class RecordDeepSerializationTests
             .WithMessage("*must already be instantiated for a deep chronicler load*");
     }
 
+    [Theory]
+    [MemberData(nameof(SerializationTransportData.All), MemberType = typeof(SerializationTransportData))]
+    public void RoundTrip_ShouldLeaveExistingReferenceDeepObjectUntouched_WhenSerializedEntryIsNull(SerializationTransport transport)
+    {
+        var source = new DeepObjectContainer
+        {
+            Child = null
+        };
+
+        object payload = SerializationTestHarness.Serialize(source, transport);
+
+        var target = new DeepObjectContainer
+        {
+            Child = new NestedObjectRecord
+            {
+                Level = 99,
+                Name = "placeholder"
+            }
+        };
+
+        SerializationTestHarness.Populate(target, payload, transport);
+
+        target.Child.Should().NotBeNull();
+        target.Child!.Level.Should().Be(99);
+        target.Child.Name.Should().Be("placeholder");
+    }
+
     private sealed class DeepObjectContainer : IRecordable
     {
         public NestedObjectRecord? Child = new();

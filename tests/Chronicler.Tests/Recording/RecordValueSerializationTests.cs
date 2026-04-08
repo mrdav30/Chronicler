@@ -1,4 +1,6 @@
 using FluentAssertions;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Xunit;
 
 namespace Chronicler.Tests;
@@ -88,6 +90,27 @@ public class RecordValueSerializationTests
         target.Alias.Should().Be("mage");
     }
 
+    [Fact]
+    public void JsonPopulate_ShouldFallbackToDefault_WhenCustomLeafConverterReturnsNull()
+    {
+        var source = new ConverterBackedValueRecord
+        {
+            Value = new ConverterBackedLeaf { Raw = "present" }
+        };
+
+        string payload = JsonRecordSerializer.Serialize(source);
+
+        var target = new ConverterBackedValueRecord
+        {
+            Value = new ConverterBackedLeaf { Raw = "keep-me" }
+        };
+
+        JsonRecordSerializer.Populate(target, payload);
+
+        target.Value.Should().NotBeNull();
+        target.Value!.Raw.Should().Be("fallback");
+    }
+
     private sealed class ValueRecord : IRecordable
     {
         public const int DefaultCount = 7;
@@ -103,6 +126,48 @@ public class RecordValueSerializationTests
             RecordValues.Look(chronicler, ref Count, "count", DefaultCount);
             RecordValues.Look(chronicler, ref Enabled, "enabled", true);
             RecordValues.Look(chronicler, ref Alias, "alias", defaultValue: null);
+        }
+    }
+
+    private sealed class ConverterBackedValueRecord : IRecordable
+    {
+        public ConverterBackedLeaf? Value = new() { Raw = "fallback" };
+
+        public void RecordData(IChronicler chronicler)
+        {
+            RecordValues.Look(
+                chronicler,
+                ref Value,
+                "value",
+                defaultValue: new ConverterBackedLeaf { Raw = "fallback" });
+        }
+    }
+
+    [JsonConverter(typeof(NullReturningLeafConverter))]
+    private sealed class ConverterBackedLeaf
+    {
+        public string Raw { get; init; } = string.Empty;
+    }
+
+    private sealed class NullReturningLeafConverter : JsonConverter<ConverterBackedLeaf>
+    {
+        public override ConverterBackedLeaf? Read(
+            ref Utf8JsonReader reader,
+            System.Type typeToConvert,
+            JsonSerializerOptions options)
+        {
+            reader.Skip();
+            return null;
+        }
+
+        public override void Write(
+            Utf8JsonWriter writer,
+            ConverterBackedLeaf value,
+            JsonSerializerOptions options)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("raw", value.Raw);
+            writer.WriteEndObject();
         }
     }
 }
