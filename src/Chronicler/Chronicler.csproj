@@ -21,7 +21,7 @@
 		<AssemblyVersion>$(AssemblySemVer)</AssemblyVersion>
 		<FileVersion>$(AssemblySemFileVer)</FileVersion>
 		<ImplicitUsings>disable</ImplicitUsings>
-		<Nullable>disable</Nullable>
+		<Nullable>enable</Nullable>
 		<IncludeSymbols>true</IncludeSymbols>
 		<DebugType>portable</DebugType>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -67,9 +67,8 @@
 	</PropertyGroup>
 	<!-- Dependencies and Package References -->
 	<ItemGroup>
-		<PackageReference Include="SwiftCollections" Version="2.0.0">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>compile</IncludeAssets>
+		<PackageReference Include="SwiftCollections" Version="3.0.0">
+			<PrivateAssets>compile;contentfiles;build;buildMultitargeting;buildTransitive;analyzers</PrivateAssets>
 		</PackageReference>
 		<PackageReference Include="MemoryPack" Version="1.21.4" />
 		<PackageReference Include="System.Text.Json" Version="10.0.5" />

@@ -1,6 +1,7 @@
 using SwiftCollections;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Chronicler;
 
@@ -15,7 +16,7 @@ public sealed class ChronicleLinkRegistry
     /// <summary>
     /// Registers a custom link resolver for the given type and optional slot.
     /// </summary>
-    public void RegisterResolver<T>(IRecordLinkResolver<T> resolver, string slot = null)
+    public void RegisterResolver<T>(IRecordLinkResolver<T> resolver, string? slot = null)
     {
         _resolvers[new ChronicleLinkKey(typeof(T), slot)] = resolver ?? throw new ArgumentNullException(nameof(resolver));
     }
@@ -23,7 +24,7 @@ public sealed class ChronicleLinkRegistry
     /// <summary>
     /// Registers a concrete instance so the chronicler can save and load it through a stable identifier.
     /// </summary>
-    public void RegisterInstance<T>(string id, T value, string slot = null)
+    public void RegisterInstance<T>(string id, T value, string? slot = null)
     {
         if (string.IsNullOrWhiteSpace(id))
             throw new ArgumentException("A registered link id must not be null or empty.", nameof(id));
@@ -35,7 +36,7 @@ public sealed class ChronicleLinkRegistry
     /// <summary>
     /// Removes a previously registered concrete instance.
     /// </summary>
-    public bool UnregisterInstance<T>(string id, string slot = null)
+    public bool UnregisterInstance<T>(string id, string? slot = null)
     {
         if (string.IsNullOrWhiteSpace(id))
             return false;
@@ -50,7 +51,7 @@ public sealed class ChronicleLinkRegistry
     /// <summary>
     /// Attempts to resolve a stable identifier into an instance of the requested type.
     /// </summary>
-    public bool TryResolve<T>(string id, out T value, string slot = null)
+    public bool TryResolve<T>(string id, [MaybeNullWhen(false)] out T value, string? slot = null)
     {
         ChronicleLinkKey key = new(typeof(T), slot);
         if (_resolvers.TryGetValue(key, out object resolverObject)
@@ -65,14 +66,14 @@ public sealed class ChronicleLinkRegistry
             return true;
         }
 
-        value = default;
+        value = default!;
         return false;
     }
 
     /// <summary>
     /// Attempts to read a stable identifier from a concrete instance.
     /// </summary>
-    public bool TryGetReferenceId<T>(T value, out string id, string slot = null)
+    public bool TryGetReferenceId<T>(T value, [NotNullWhen(true)] out string? id, string? slot = null)
     {
         ChronicleLinkKey key = new(typeof(T), slot);
         if (_resolvers.TryGetValue(key, out object resolverObject)
@@ -91,7 +92,7 @@ public sealed class ChronicleLinkRegistry
         return false;
     }
 
-    private RegisteredLinkTable<T> GetOrCreateInstanceTable<T>(string slot)
+    private RegisteredLinkTable<T> GetOrCreateInstanceTable<T>(string? slot)
     {
         ChronicleLinkKey key = new(typeof(T), slot);
         if (_registeredInstances.TryGetValue(key, out object tableObject))
@@ -107,7 +108,7 @@ public sealed class ChronicleLinkRegistry
         private readonly Type _type;
         private readonly string _slot;
 
-        public ChronicleLinkKey(Type type, string slot)
+        public ChronicleLinkKey(Type type, string? slot)
         {
             _type = type ?? throw new ArgumentNullException(nameof(type));
             _slot = slot ?? string.Empty;
@@ -119,7 +120,7 @@ public sealed class ChronicleLinkRegistry
                 && string.Equals(_slot, other._slot, StringComparison.Ordinal);
         }
 
-        public override bool Equals(object obj) => obj is ChronicleLinkKey other && Equals(other);
+        public override bool Equals(object? obj) => obj is ChronicleLinkKey other && Equals(other);
 
         public override int GetHashCode()
         {
@@ -144,12 +145,12 @@ public sealed class ChronicleLinkRegistry
             return _byId.Remove(id);
         }
 
-        public bool TryResolve(string id, out T value)
+        public bool TryResolve(string id, [MaybeNullWhen(false)] out T value)
         {
             return _byId.TryGetValue(id, out value);
         }
 
-        public bool TryGetReferenceId(T value, out string id)
+        public bool TryGetReferenceId(T value, [NotNullWhen(true)] out string? id)
         {
             foreach (KeyValuePair<string, T> pair in _byId)
             {

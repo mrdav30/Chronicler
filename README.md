@@ -7,15 +7,15 @@ If you need the planned extraction strategy for moving Chronicler into its own p
 
 The code referenced here lives in:
 
-- `src/IRecordable.cs`
-- `src/IChronicler.cs`
-- `src/RecordValues.cs`
-- `src/RecordDeep.cs`
-- `src/RecordLinks.cs`
-- `src/ChronicleContext.cs`
-- `src/ChronicleLinkRegistry.cs`
-- `src/JsonRecordSerializer.cs`
-- `src/MemoryPackRecordSerializer.cs`
+- `src/Chronicler/Abstractions/IRecordable.cs`
+- `src/Chronicler/Abstractions/IChronicler.cs`
+- `src/Chronicler/Recording/RecordValues.cs`
+- `src/Chronicler/Recording/RecordDeep.cs`
+- `src/Chronicler/Links/RecordLinks.cs`
+- `src/Chronicler/Context/ChronicleContext.cs`
+- `src/Chronicler/Links/ChronicleLinkRegistry.cs`
+- `src/Chronicler/Serialization/Json/JsonRecordSerializer.cs`
+- `src/Chronicler/Serialization/MemoryPack/MemoryPackRecordSerializer.cs`
 
 ## 1. What Chronicler Is
 

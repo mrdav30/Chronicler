@@ -1,6 +1,7 @@
 using FluentAssertions;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Xunit;
 
 namespace Chronicler.Tests;
@@ -303,7 +304,7 @@ public class RecordLinkSerializationTests
             _values[id] = value;
         }
 
-        public bool TryGetReferenceId(T value, out string id)
+        public bool TryGetReferenceId(T value, [NotNullWhen(true)] out string? id)
         {
             foreach (KeyValuePair<string, T> pair in _values)
             {
@@ -318,7 +319,7 @@ public class RecordLinkSerializationTests
             return false;
         }
 
-        public bool TryResolveReference(string id, out T value)
+        public bool TryResolveReference(string id, [MaybeNullWhen(false)] out T value)
         {
             if (_values.TryGetValue(id, out T? resolvedValue))
             {

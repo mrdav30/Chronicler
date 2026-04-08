@@ -20,7 +20,7 @@ public interface IChronicler
     /// <summary>
     /// Reads or writes a value by name.
     /// </summary>
-    void LookValue<T>(ref T value, string name, T defaultValue = default);
+    void LookValue<T>(ref T value, string name, T? defaultValue = default);
 
     /// <summary>
     /// Reads or writes a nested recordable instance by name.
@@ -43,7 +43,7 @@ public interface IChronicler
     void LookLink<T>(
         ref T value,
         string name,
-        string slot = null,
+        string? slot = null,
         RecordLinkResolveMode resolveMode = RecordLinkResolveMode.Immediate,
-        Action<T> assignLoadedValue = null);
+        Action<T>? assignLoadedValue = null);
 }

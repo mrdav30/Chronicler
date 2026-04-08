@@ -1,5 +1,6 @@
 using SwiftCollections;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.Json;
@@ -22,7 +23,7 @@ public static class JsonRecordSerializer
     /// <summary>
     /// Serializes the current state of a recordable instance into JSON.
     /// </summary>
-    public static string Serialize(IRecordable target, ChronicleContext context, bool writeIndented = false)
+    public static string Serialize(IRecordable target, ChronicleContext? context, bool writeIndented = false)
     {
         if (target == null)
             throw new ArgumentNullException(nameof(target));
@@ -47,7 +48,7 @@ public static class JsonRecordSerializer
     /// <summary>
     /// Loads JSON state into an existing recordable instance.
     /// </summary>
-    public static void Populate(IRecordable target, string json, ChronicleContext context)
+    public static void Populate(IRecordable target, string json, ChronicleContext? context)
     {
         if (target == null)
             throw new ArgumentNullException(nameof(target));
@@ -92,10 +93,11 @@ public static class JsonRecordSerializer
 
         public SerializationMode Mode => SerializationMode.Saving;
 
-        public void LookValue<T>(ref T value, string name, T defaultValue = default)
+        public void LookValue<T>(ref T value, string name, T? defaultValue = default)
         {
-            if (value == null || value.Equals(defaultValue))
+            if (value is null || EqualityComparer<T>.Default.Equals(value, defaultValue!))
                 return;
+
             _entries[name] = JsonSerializer.Serialize(value, _options);
         }
 
@@ -133,11 +135,11 @@ public static class JsonRecordSerializer
         public void LookLink<T>(
             ref T value,
             string name,
-            string slot = null,
+            string? slot = null,
             RecordLinkResolveMode resolveMode = RecordLinkResolveMode.Immediate,
-            Action<T> assignLoadedValue = null)
+            Action<T>? assignLoadedValue = null)
         {
-            string id = null;
+            string? id = null;
             if (value is not null
                 && !Context.Links.TryGetReferenceId(value, out id, slot))
             {
@@ -187,22 +189,28 @@ public static class JsonRecordSerializer
 
         public SerializationMode Mode => SerializationMode.Loading;
 
-        public void LookValue<T>(ref T value, string name, T defaultValue = default)
+        public void LookValue<T>(ref T value, string name, T? defaultValue = default)
         {
             if (!_root.TryGetProperty(name, out JsonElement entry))
             {
-                value = defaultValue;
+                value = defaultValue!;
                 return;
             }
 
             if (entry.ValueKind == JsonValueKind.Null)
             {
-                value = defaultValue;
+                value = defaultValue!;
                 return;
             }
 
-            T loadedValue = JsonSerializer.Deserialize<T>(entry.GetRawText(), _options);
-            value = loadedValue == null ? defaultValue : loadedValue;
+            T? loadedValue = JsonSerializer.Deserialize<T>(entry.GetRawText(), _options);
+            if (loadedValue is null)
+            {
+                value = defaultValue!;
+                return;
+            }
+
+            value = loadedValue;
         }
 
         public void LookDeep<T>(ref T value, string name) where T : class, IRecordable
@@ -246,21 +254,21 @@ public static class JsonRecordSerializer
         public void LookLink<T>(
             ref T value,
             string name,
-            string slot = null,
+            string? slot = null,
             RecordLinkResolveMode resolveMode = RecordLinkResolveMode.Immediate,
-            Action<T> assignLoadedValue = null)
+            Action<T>? assignLoadedValue = null)
         {
             if (!_root.TryGetProperty(name, out JsonElement entry)
                 || entry.ValueKind == JsonValueKind.Null)
             {
-                value = default;
+                value = default!;
                 return;
             }
 
-            string id = JsonSerializer.Deserialize<string>(entry.GetRawText(), _options);
+            string? id = JsonSerializer.Deserialize<string>(entry.GetRawText(), _options);
             if (id == null)
             {
-                value = default;
+                value = default!;
                 return;
             }
 
@@ -270,26 +278,28 @@ public static class JsonRecordSerializer
                     throw new InvalidOperationException(
                         $"Deferred link '{name}' of type {typeof(T).Name} requires an assignment callback.");
 
-                if (Context.Links.TryResolve(id, out T deferredValue, slot))
+                T? deferredValue;
+                if (Context.Links.TryResolve(id, out deferredValue, slot))
                 {
-                    value = deferredValue;
-                    assignLoadedValue(deferredValue);
+                    value = deferredValue!;
+                    assignLoadedValue(deferredValue!);
                     return;
                 }
 
                 Context.QueueDeferredLink(name, id, slot, assignLoadedValue);
-                value = default;
+                value = default!;
                 return;
             }
 
-            if (!Context.Links.TryResolve(id, out T resolvedValue, slot))
+            T? resolvedValue;
+            if (!Context.Links.TryResolve(id, out resolvedValue, slot))
             {
                 throw new InvalidOperationException(
                     $"Unable to load link '{name}' of type {typeof(T).Name} with id '{id}'{FormatSlot(slot)}.");
             }
 
-            value = resolvedValue;
-            assignLoadedValue?.Invoke(resolvedValue);
+            value = resolvedValue!;
+            assignLoadedValue?.Invoke(resolvedValue!);
         }
 
         public void Dispose()
@@ -306,7 +316,7 @@ public static class JsonRecordSerializer
         }
     }
 
-    private static string FormatSlot(string slot)
+    private static string FormatSlot(string? slot)
     {
         return string.IsNullOrEmpty(slot)
             ? string.Empty

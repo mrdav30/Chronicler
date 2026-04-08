@@ -10,7 +10,7 @@ public static class RecordLinks
     /// <summary>
     /// Reads or writes a named external link that must resolve during the current load pass.
     /// </summary>
-    public static void Look<T>(IChronicler chronicler, ref T value, string name, string slot = null)
+    public static void Look<T>(IChronicler chronicler, ref T value, string name, string? slot = null)
     {
         chronicler.LookLink(ref value, name, slot);
     }
@@ -23,7 +23,7 @@ public static class RecordLinks
         T value,
         string name,
         Action<T> assignLoadedValue,
-        string slot = null)
+        string? slot = null)
     {
         if (assignLoadedValue == null)
             throw new ArgumentNullException(nameof(assignLoadedValue));

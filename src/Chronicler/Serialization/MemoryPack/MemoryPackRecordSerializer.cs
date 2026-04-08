@@ -1,6 +1,7 @@
 using MemoryPack;
 using SwiftCollections;
 using System;
+using System.Collections.Generic;
 
 namespace Chronicler;
 
@@ -20,7 +21,7 @@ public static class MemoryPackRecordSerializer
     /// <summary>
     /// Serializes the current state of a recordable instance into MemoryPack bytes.
     /// </summary>
-    public static byte[] Serialize(IRecordable target, ChronicleContext context)
+    public static byte[] Serialize(IRecordable target, ChronicleContext? context)
     {
         if (target == null)
             throw new ArgumentNullException(nameof(target));
@@ -41,7 +42,7 @@ public static class MemoryPackRecordSerializer
     /// <summary>
     /// Loads MemoryPack state into an existing recordable instance.
     /// </summary>
-    public static void Populate(IRecordable target, byte[] data, ChronicleContext context)
+    public static void Populate(IRecordable target, byte[] data, ChronicleContext? context)
     {
         if (data == null)
             throw new ArgumentNullException(nameof(data));
@@ -58,7 +59,7 @@ public static class MemoryPackRecordSerializer
     /// <summary>
     /// Loads MemoryPack state into an existing recordable instance.
     /// </summary>
-    public static void Populate(IRecordable target, ReadOnlySpan<byte> data, ChronicleContext context)
+    public static void Populate(IRecordable target, ReadOnlySpan<byte> data, ChronicleContext? context)
     {
         if (target == null)
             throw new ArgumentNullException(nameof(target));
@@ -74,7 +75,7 @@ public static class MemoryPackRecordSerializer
 
     private sealed class MemoryPackRecordWriter : IChronicler
     {
-        private readonly SwiftDictionary<string, byte[]> _entries = new(8, StringComparer.Ordinal);
+        private readonly SwiftDictionary<string, byte[]?> _entries = new(8, StringComparer.Ordinal);
 
         public MemoryPackRecordWriter(ChronicleContext context)
         {
@@ -85,10 +86,11 @@ public static class MemoryPackRecordSerializer
 
         public SerializationMode Mode => SerializationMode.Saving;
 
-        public void LookValue<T>(ref T value, string name, T defaultValue = default)
+        public void LookValue<T>(ref T value, string name, T? defaultValue = default)
         {
-            if (value == null || value.Equals(defaultValue))
+            if (value is null || EqualityComparer<T>.Default.Equals(value, defaultValue!))
                 return;
+
             _entries[name] = MemoryPackSerializer.Serialize(value);
         }
 
@@ -126,11 +128,11 @@ public static class MemoryPackRecordSerializer
         public void LookLink<T>(
             ref T value,
             string name,
-            string slot = null,
+            string? slot = null,
             RecordLinkResolveMode resolveMode = RecordLinkResolveMode.Immediate,
-            Action<T> assignLoadedValue = null)
+            Action<T>? assignLoadedValue = null)
         {
-            string id = null;
+            string? id = null;
             if (value is not null
                 && !Context.Links.TryGetReferenceId(value, out id, slot))
             {
@@ -152,12 +154,12 @@ public static class MemoryPackRecordSerializer
 
     private sealed class MemoryPackRecordReader : IChronicler
     {
-        private readonly SwiftDictionary<string, byte[]> _entries;
+        private readonly SwiftDictionary<string, byte[]?> _entries;
 
         public MemoryPackRecordReader(ReadOnlySpan<byte> data, ChronicleContext context)
         {
-            MemoryPackRecordEnvelope envelope = MemoryPackSerializer.Deserialize<MemoryPackRecordEnvelope>(data);
-            _entries = envelope?.Entries ?? new SwiftDictionary<string, byte[]>(8, StringComparer.Ordinal);
+            MemoryPackRecordEnvelope? envelope = MemoryPackSerializer.Deserialize<MemoryPackRecordEnvelope>(data);
+            _entries = envelope?.Entries ?? new SwiftDictionary<string, byte[]?>(8, StringComparer.Ordinal);
             Context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
@@ -165,22 +167,28 @@ public static class MemoryPackRecordSerializer
 
         public SerializationMode Mode => SerializationMode.Loading;
 
-        public void LookValue<T>(ref T value, string name, T defaultValue = default)
+        public void LookValue<T>(ref T value, string name, T? defaultValue = default)
         {
-            if (!_entries.TryGetValue(name, out byte[] entry)
+            if (!_entries.TryGetValue(name, out byte[]? entry)
                 || entry == null)
             {
-                value = defaultValue;
+                value = defaultValue!;
                 return;
             }
 
-            T loadedValue = MemoryPackSerializer.Deserialize<T>(entry);
-            value = loadedValue == null ? defaultValue : loadedValue;
+            T? loadedValue = MemoryPackSerializer.Deserialize<T>(entry);
+            if (loadedValue is null)
+            {
+                value = defaultValue!;
+                return;
+            }
+
+            value = loadedValue;
         }
 
         public void LookDeep<T>(ref T value, string name) where T : class, IRecordable
         {
-            if (!_entries.TryGetValue(name, out byte[] entry)
+            if (!_entries.TryGetValue(name, out byte[]? entry)
                 || entry == null)
                 return;
 
@@ -196,7 +204,7 @@ public static class MemoryPackRecordSerializer
         {
             value = CreateDefaultDeepStruct<T>();
 
-            if (!_entries.TryGetValue(name, out byte[] entry)
+            if (!_entries.TryGetValue(name, out byte[]? entry)
                 || entry == null)
                 return;
 
@@ -206,7 +214,7 @@ public static class MemoryPackRecordSerializer
 
         public void LookNullableDeep<T>(ref T? value, string name) where T : struct, IRecordable
         {
-            if (!_entries.TryGetValue(name, out byte[] entry)
+            if (!_entries.TryGetValue(name, out byte[]? entry)
                 || entry == null)
             {
                 value = null;
@@ -222,21 +230,21 @@ public static class MemoryPackRecordSerializer
         public void LookLink<T>(
             ref T value,
             string name,
-            string slot = null,
+            string? slot = null,
             RecordLinkResolveMode resolveMode = RecordLinkResolveMode.Immediate,
-            Action<T> assignLoadedValue = null)
+            Action<T>? assignLoadedValue = null)
         {
-            if (!_entries.TryGetValue(name, out byte[] entry)
+            if (!_entries.TryGetValue(name, out byte[]? entry)
                 || entry == null)
             {
-                value = default;
+                value = default!;
                 return;
             }
 
-            string id = MemoryPackSerializer.Deserialize<string>(entry);
+            string? id = MemoryPackSerializer.Deserialize<string>(entry);
             if (id == null)
             {
-                value = default;
+                value = default!;
                 return;
             }
 
@@ -246,26 +254,28 @@ public static class MemoryPackRecordSerializer
                     throw new InvalidOperationException(
                         $"Deferred link '{name}' of type {typeof(T).Name} requires an assignment callback.");
 
-                if (Context.Links.TryResolve(id, out T deferredValue, slot))
+                T? deferredValue;
+                if (Context.Links.TryResolve(id, out deferredValue, slot))
                 {
-                    value = deferredValue;
-                    assignLoadedValue(deferredValue);
+                    value = deferredValue!;
+                    assignLoadedValue(deferredValue!);
                     return;
                 }
 
                 Context.QueueDeferredLink(name, id, slot, assignLoadedValue);
-                value = default;
+                value = default!;
                 return;
             }
 
-            if (!Context.Links.TryResolve(id, out T resolvedValue, slot))
+            T? resolvedValue;
+            if (!Context.Links.TryResolve(id, out resolvedValue, slot))
             {
                 throw new InvalidOperationException(
                     $"Unable to load link '{name}' of type {typeof(T).Name} with id '{id}'{FormatSlot(slot)}.");
             }
 
-            value = resolvedValue;
-            assignLoadedValue?.Invoke(resolvedValue);
+            value = resolvedValue!;
+            assignLoadedValue?.Invoke(resolvedValue!);
         }
 
         private T CreateDefaultDeepStruct<T>() where T : struct, IRecordable
@@ -277,7 +287,7 @@ public static class MemoryPackRecordSerializer
         }
     }
 
-    private static string FormatSlot(string slot)
+    private static string FormatSlot(string? slot)
     {
         return string.IsNullOrEmpty(slot)
             ? string.Empty

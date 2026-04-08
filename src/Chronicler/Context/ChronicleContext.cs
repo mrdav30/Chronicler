@@ -24,7 +24,7 @@ public sealed class ChronicleContext
     /// </summary>
     public ChronicleLinkRegistry Links { get; }
 
-    internal void QueueDeferredLink<T>(string name, string id, string slot, Action<T> assignLoadedValue)
+    internal void QueueDeferredLink<T>(string name, string id, string? slot, Action<T> assignLoadedValue)
     {
         _deferredLinks.Add(new DeferredRecordLink<T>(name, id, slot, assignLoadedValue));
     }
@@ -80,10 +80,10 @@ public sealed class ChronicleContext
     {
         private readonly string _name;
         private readonly string _id;
-        private readonly string _slot;
+        private readonly string? _slot;
         private readonly Action<T> _assignLoadedValue;
 
-        public DeferredRecordLink(string name, string id, string slot, Action<T> assignLoadedValue)
+        public DeferredRecordLink(string name, string id, string? slot, Action<T> assignLoadedValue)
         {
             _name = name;
             _id = id;
@@ -93,10 +93,11 @@ public sealed class ChronicleContext
 
         public bool TryResolve(ChronicleLinkRegistry registry)
         {
-            if (!registry.TryResolve(_id, out T value, _slot))
+            T? value;
+            if (!registry.TryResolve(_id, out value, _slot))
                 return false;
 
-            _assignLoadedValue(value);
+            _assignLoadedValue(value!);
             return true;
         }
 

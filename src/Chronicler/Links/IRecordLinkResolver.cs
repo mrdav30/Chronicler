@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicler;
 
 /// <summary>
@@ -8,10 +10,10 @@ public interface IRecordLinkResolver<T>
     /// <summary>
     /// Attempts to produce a stable identifier for the provided value.
     /// </summary>
-    bool TryGetReferenceId(T value, out string id);
+    bool TryGetReferenceId(T value, [NotNullWhen(true)] out string? id);
 
     /// <summary>
     /// Attempts to resolve a previously recorded identifier back into a runtime value.
     /// </summary>
-    bool TryResolveReference(string id, out T value);
+    bool TryResolveReference(string id, [MaybeNullWhen(false)] out T value);
 }
