@@ -26,8 +26,6 @@
 		<IncludeSymbols>true</IncludeSymbols>
 		<DebugType>portable</DebugType>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
-		<!-- Optional: Suppress warnings about missing XML comments -->
-		<NoWarn>1591</NoWarn>
 		<DocumentationFile>bin\$(Configuration)\$(TargetFramework)\Chronicler.xml</DocumentationFile>
 		<!-- Configuration to ensure deterministic builds -->
 		<Deterministic>true</Deterministic>
@@ -41,7 +39,7 @@
 		<DefineConstants>DEBUG;TRACE</DefineConstants>
 	</PropertyGroup>
 	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-		<DebugType>pdbonly</DebugType>
+		<DebugSymbols>true</DebugSymbols>
 		<Optimize>true</Optimize>
 		<DefineConstants>TRACE</DefineConstants>
 	</PropertyGroup>

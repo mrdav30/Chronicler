@@ -5,6 +5,12 @@ namespace Chronicler;
 /// </summary>
 public enum SerializationMode
 {
+    /// <summary>
+    /// The chronicler is saving values out.
+    /// </summary>
     Saving,
+    /// <summary>
+    /// The chronicler is loading values in.
+    /// </summary>
     Loading
 }
