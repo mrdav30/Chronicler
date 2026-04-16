@@ -69,11 +69,11 @@
 	</PropertyGroup>
 	<!-- Dependencies and Package References -->
 	<ItemGroup>
-		<PackageReference Include="SwiftCollections" Version="3.0.0">
+		<PackageReference Include="SwiftCollections" Version="4.0.0">
 			<PrivateAssets>compile;contentfiles;build;buildMultitargeting;buildTransitive;analyzers</PrivateAssets>
 		</PackageReference>
 		<PackageReference Include="MemoryPack" Version="1.21.4" />
-		<PackageReference Include="System.Text.Json" Version="10.0.5" />
+		<PackageReference Include="System.Text.Json" Version="10.0.6" />
 	</ItemGroup>
 	<!-- Ensure LICENSE, README, & icon files are included in the NuGet package -->
 	<ItemGroup>

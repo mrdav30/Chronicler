@@ -9,12 +9,13 @@
 		<IsTestProject>true</IsTestProject>
 		<Configurations>Debug;Release</Configurations>
 		<OutputType>Exe</OutputType>
+		<RunSettingsFilePath>$(MSBuildThisFileDirectory)coverlet.runsettings</RunSettingsFilePath>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\Chronicler\Chronicler.csproj" />
 		<PackageReference Include="FluentAssertions" Version="8.9.0" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.4.0" />
 		<PackageReference Include="xunit.v3" Version="3.2.2" />
 		<PackageReference Include="xunit.v3.runner.console" Version="3.2.2">
 			<PrivateAssets>all</PrivateAssets>
