@@ -1,3 +1,5 @@
+#if !CHRONICLER_DISABLE_MEMORYPACK
+
 using MemoryPack;
 using SwiftCollections;
 using System;
@@ -23,8 +25,7 @@ public static class MemoryPackRecordSerializer
     /// </summary>
     public static byte[] Serialize(IRecordable target, ChronicleContext? context)
     {
-        if (target == null)
-            throw new ArgumentNullException(nameof(target));
+        SwiftThrowHelper.ThrowIfNull(target, nameof(target));
 
         context ??= new ChronicleContext();
 
@@ -44,8 +45,7 @@ public static class MemoryPackRecordSerializer
     /// </summary>
     public static void Populate(IRecordable target, byte[] data, ChronicleContext? context)
     {
-        if (data == null)
-            throw new ArgumentNullException(nameof(data));
+        SwiftThrowHelper.ThrowIfNull(data, nameof(data));
 
         Populate(target, data.AsSpan(), context);
     }
@@ -61,8 +61,7 @@ public static class MemoryPackRecordSerializer
     /// </summary>
     public static void Populate(IRecordable target, ReadOnlySpan<byte> data, ChronicleContext? context)
     {
-        if (target == null)
-            throw new ArgumentNullException(nameof(target));
+        SwiftThrowHelper.ThrowIfNull(target, nameof(target));
         if (data.IsEmpty)
             throw new ArgumentException("Serialized bytes must not be empty.", nameof(data));
 
@@ -254,8 +253,7 @@ public static class MemoryPackRecordSerializer
                     throw new InvalidOperationException(
                         $"Deferred link '{name}' of type {typeof(T).Name} requires an assignment callback.");
 
-                T? deferredValue;
-                if (Context.Links.TryResolve(id, out deferredValue, slot))
+                if (Context.Links.TryResolve(id, out T? deferredValue, slot))
                 {
                     value = deferredValue!;
                     assignLoadedValue(deferredValue!);
@@ -267,8 +265,7 @@ public static class MemoryPackRecordSerializer
                 return;
             }
 
-            T? resolvedValue;
-            if (!Context.Links.TryResolve(id, out resolvedValue, slot))
+            if (!Context.Links.TryResolve(id, out T? resolvedValue, slot))
             {
                 throw new InvalidOperationException(
                     $"Unable to load link '{name}' of type {typeof(T).Name} with id '{id}'{FormatSlot(slot)}.");
@@ -294,3 +291,5 @@ public static class MemoryPackRecordSerializer
             : $" in slot '{slot}'";
     }
 }
+
+#endif

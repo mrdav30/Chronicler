@@ -1,7 +1,7 @@
 function Get-SolutionDirectory {
     param (
 		[string]$StartPath = $(Get-Location),
-		[string]$SolutionPath = "Chronicler.sln"
+		[string]$SolutionPath = "Chronicler.slnx"
 	)
 
     $currentPath = $StartPath
@@ -55,7 +55,7 @@ function Ensure-GitVersion-Environment {
 
 function Build-Project {
     param (
-        [string]$SolutionPath = "Chronicler.sln",
+        [string]$SolutionPath = "Chronicler.slnx",
         [string]$Configuration = "Release"
     )
 

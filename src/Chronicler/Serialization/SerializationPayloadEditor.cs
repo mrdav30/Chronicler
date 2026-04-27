@@ -1,4 +1,6 @@
+#if !CHRONICLER_DISABLE_MEMORYPACK
 using MemoryPack;
+#endif
 using System;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -77,6 +79,8 @@ public static class SerializationPayloadEditor
     }
 
     #endregion
+
+#if !CHRONICLER_DISABLE_MEMORYPACK
 
     #region MemoryPack Editing
 
@@ -167,4 +171,6 @@ public static class SerializationPayloadEditor
     }
 
     #endregion
+
+#endif
 }
