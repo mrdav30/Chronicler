@@ -30,6 +30,24 @@ public class SerializationPayloadEditorGuardTests
     }
 
     [Fact]
+    public void RemoveJsonProperty_ShouldThrow_WhenRootIsJsonNull()
+    {
+        FluentActions.Invoking(() => SerializationPayloadEditor.RemoveJsonProperty("null", "value"))
+            .Should().Throw<System.InvalidOperationException>()
+            .WithMessage("*Unable to parse JSON payload.*");
+    }
+
+    [Fact]
+    public void SetJsonValue_ShouldThrow_WhenRootIsNotAnObject()
+    {
+        FluentActions.Invoking(() => SerializationPayloadEditor.SetJsonValue("[]", 1, "value"))
+            .Should().Throw<System.InvalidOperationException>()
+            .WithMessage("*Expected JSON root object.*");
+    }
+
+#if !CHRONICLER_DISABLE_MEMORYPACK
+
+    [Fact]
     public void RemoveMemoryPackEntry_ShouldThrow_WhenPathIsMissing()
     {
         byte[] payload = MemoryPackRecordSerializer.Serialize(new SimpleRecord());
@@ -57,21 +75,6 @@ public class SerializationPayloadEditorGuardTests
             .WithParameterName("path");
     }
 
-    [Fact]
-    public void RemoveJsonProperty_ShouldThrow_WhenRootIsJsonNull()
-    {
-        FluentActions.Invoking(() => SerializationPayloadEditor.RemoveJsonProperty("null", "value"))
-            .Should().Throw<System.InvalidOperationException>()
-            .WithMessage("*Unable to parse JSON payload.*");
-    }
-
-    [Fact]
-    public void SetJsonValue_ShouldThrow_WhenRootIsNotAnObject()
-    {
-        FluentActions.Invoking(() => SerializationPayloadEditor.SetJsonValue("[]", 1, "value"))
-            .Should().Throw<System.InvalidOperationException>()
-            .WithMessage("*Expected JSON root object.*");
-    }
 
     [Fact]
     public void RemoveMemoryPackEntry_ShouldThrow_WhenIntermediateEntryIsMissing()
@@ -82,6 +85,8 @@ public class SerializationPayloadEditorGuardTests
             .Should().Throw<System.InvalidOperationException>()
             .WithMessage("*Unable to locate MemoryPack entry 'missing' at depth 0.*");
     }
+
+#endif
 
     private sealed class SimpleRecord : IRecordable
     {

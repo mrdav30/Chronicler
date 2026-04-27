@@ -145,7 +145,7 @@ Current quality bar:
 Use these as the normal validation loop:
 
 ```bash
-dotnet build Chronicler.sln -c Release
+dotnet build Chronicler.slnx -c Release
 dotnet test tests/Chronicler.Tests/Chronicler.Tests.csproj -c Release --no-build
 dotnet test tests/Chronicler.Tests/Chronicler.Tests.csproj -c Release --collect:"XPlat Code Coverage" --settings coverlet.runsettings
 ```

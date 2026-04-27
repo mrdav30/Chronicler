@@ -180,7 +180,7 @@ For cases where the target object is only available after the rest of the graph 
 Build the solution:
 
 ```bash
-dotnet build Chronicler.sln -c Release
+dotnet build Chronicler.slnx -c Release
 ```
 
 Run the unit tests:

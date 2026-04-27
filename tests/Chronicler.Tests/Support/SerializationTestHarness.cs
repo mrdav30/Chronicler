@@ -31,7 +31,9 @@ internal static class SerializationTestHarness
         return transport switch
         {
             SerializationTransport.Json => JsonRecordSerializer.Serialize(target, context, writeIndented: true),
+#if !CHRONICLER_DISABLE_MEMORYPACK
             SerializationTransport.MemoryPack => MemoryPackRecordSerializer.Serialize(target, context),
+#endif
             _ => throw new ArgumentOutOfRangeException(nameof(transport))
         };
     }
@@ -47,9 +49,11 @@ internal static class SerializationTestHarness
             case SerializationTransport.Json:
                 JsonRecordSerializer.Populate(target, (string)payload, context);
                 return;
+#if !CHRONICLER_DISABLE_MEMORYPACK
             case SerializationTransport.MemoryPack:
                 MemoryPackRecordSerializer.Populate(target, (byte[])payload, context);
                 return;
+#endif
             default:
                 throw new ArgumentOutOfRangeException(nameof(transport));
         }
@@ -60,7 +64,9 @@ internal static class SerializationTestHarness
         return transport switch
         {
             SerializationTransport.Json => SerializationPayloadEditor.RemoveJsonProperty((string)payload, path),
+#if !CHRONICLER_DISABLE_MEMORYPACK
             SerializationTransport.MemoryPack => SerializationPayloadEditor.RemoveMemoryPackEntry((byte[])payload, path),
+#endif
             _ => throw new ArgumentOutOfRangeException(nameof(transport))
         };
     }
@@ -70,7 +76,9 @@ internal static class SerializationTestHarness
         return transport switch
         {
             SerializationTransport.Json => SerializationPayloadEditor.SetJsonValue((string)payload, value, path),
+#if !CHRONICLER_DISABLE_MEMORYPACK
             SerializationTransport.MemoryPack => SerializationPayloadEditor.SetMemoryPackValue((byte[])payload, value, path),
+#endif
             _ => throw new ArgumentOutOfRangeException(nameof(transport))
         };
     }

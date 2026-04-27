@@ -1,0 +1,13 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Release" />
+    <BuildType Name="ReleaseLean" />
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="src/Chronicler/Chronicler.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Chronicler.Tests/Chronicler.Tests.csproj" />
+  </Folder>
+</Solution>

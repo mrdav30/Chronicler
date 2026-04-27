@@ -48,6 +48,7 @@ public class SerializerGuardTests
         target.Count.Should().Be(12);
     }
 
+#if !CHRONICLER_DISABLE_MEMORYPACK
     [Fact]
     public void MemoryPackSerialize_ShouldThrow_WhenTargetIsNull()
     {
@@ -109,6 +110,7 @@ public class SerializerGuardTests
 
         target.Count.Should().Be(12);
     }
+#endif
 
     private sealed class SimpleRecord : IRecordable
     {
