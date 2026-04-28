@@ -18,7 +18,7 @@ Unlike attribute-only serializers, Chronicler makes each type explicitly own its
 ## Key Features
 
 - **Deterministic record passes** for systems that care about stable, explicit state flow.
-- **Transport-neutral core API** with built-in JSON and MemoryPack support.
+- **Transport-neutral core API** with built-in JSON support and an optional built-in MemoryPack transport in the standard package.
 - **Type-owned schemas** through `IRecordable`, without requiring serializer attributes on most domain types.
 - **Canonical default handling** so omitted entries load into known values instead of ambient runtime state.
 - **Deep graph support** for nested owned objects and structs already present in the runtime shell.
@@ -31,8 +31,25 @@ Unlike attribute-only serializers, Chronicler makes each type explicitly own its
 
 ### NuGet
 
+1. Choose the package that fits your runtime:
+
+- `Chronicler.Core`
+  The standard package. Includes the full Chronicler API with built-in JSON and MemoryPack transports.
+- `Chronicler.Core.Lean`
+  The lean package. Keeps the same core deterministic recording API and JSON transport, but removes the `MemoryPack` dependency and generated transport surface.
+
+2. Install via NuGet:
+
+- Standard package:
+
 ```bash
 dotnet add package Chronicler.Core
+```
+
+- Lean package:
+
+```bash
+dotnet add package Chronicler.Core.Lean
 ```
 
 ### Source
@@ -42,6 +59,22 @@ git clone https://github.com/mrdav30/Chronicler.git
 ```
 
 Then reference `src/Chronicler/Chronicler.csproj` directly or build the package locally.
+
+### Package Variants
+
+Chronicler is published in two build variants so you can choose between built-in binary transport support and a smaller dependency surface:
+
+- `Chronicler.Core`
+  Includes both `JsonRecordSerializer` and `MemoryPackRecordSerializer`. This is the best default choice when you want the built-in MemoryPack transport.
+- `Chronicler.Core.Lean`
+  Excludes the `MemoryPack` package, compiles out the built-in MemoryPack transport files, and keeps internal shim attributes so the same codebase can build without the dependency. Choose this when you only need JSON, when you plan to supply your own binary transport, or when you want to avoid `MemoryPack`-generated code paths entirely.
+
+Both variants preserve the same core `IRecordable` / `IChronicler` model and deterministic state transfer semantics. The main difference is whether the package includes the built-in MemoryPack transport.
+
+If you build from source, the repository provides matching release configurations:
+
+- `Release` builds the standard `Chronicler.Core` package.
+- `ReleaseLean` builds the `Chronicler.Core.Lean` package.
 
 ---
 
@@ -63,7 +96,7 @@ Core abstractions:
 Built-in transports:
 
 - `JsonRecordSerializer`
-- `MemoryPackRecordSerializer`
+- `MemoryPackRecordSerializer` in `Chronicler.Core`
 
 Important design note:
 
@@ -118,6 +151,8 @@ JsonRecordSerializer.Populate(target, json);
 ```
 
 ### Serialize and populate with MemoryPack
+
+Available in `Chronicler.Core`. The lean package does not include the built-in MemoryPack transport.
 
 ```csharp
 PlayerSnapshot source = new();
@@ -203,7 +238,9 @@ dotnet test tests/Chronicler.Tests/Chronicler.Tests.csproj -c Release --collect:
 - `net8.0`
 - Windows, Linux, and macOS
 
-JSON support is provided through `System.Text.Json`, and binary transport support is provided through `MemoryPack`.
+`Chronicler.Core` provides JSON support through `System.Text.Json` and binary transport support through `MemoryPack`.
+
+`Chronicler.Core.Lean` provides the same deterministic recording API with JSON support, but omits the built-in MemoryPack transport and dependency.
 
 ---
 
