@@ -105,11 +105,6 @@
 	<!-- Dependencies and Package References -->
 	<ItemGroup Condition="'$(DisableMemoryPack)' != 'true'">
 		<PackageReference Include="MemoryPack" Version="1.21.4" />
-		<PackageReference Include="SwiftCollections" Version="4.0.1" />
-	</ItemGroup>
-	
-	<ItemGroup Condition="'$(DisableMemoryPack)' == 'true'">
-		<PackageReference Include="SwiftCollections.Lean" Version="4.0.1" />
 	</ItemGroup>
 	
 	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">

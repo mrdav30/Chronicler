@@ -259,11 +259,11 @@ public static class SerializationPayloadEditor
     {
         if (depth == path.Length - 1)
         {
-            envelope.Entries.Remove(path[depth]);
+            envelope.RemoveEntry(path[depth]);
             return;
         }
 
-        if (!envelope.Entries.TryGetValue(path[depth], out byte[]? nestedData)
+        if (!envelope.TryGetEntry(path[depth], out byte[]? nestedData)
             || nestedData == null)
         {
             throw new InvalidOperationException(
@@ -272,7 +272,7 @@ public static class SerializationPayloadEditor
 
         MemoryPackRecordEnvelope nestedEnvelope = ReadEnvelope(nestedData);
         RemoveMemoryPackEntry(nestedEnvelope, path, depth + 1);
-        envelope.Entries[path[depth]] = MemoryPackSerializer.Serialize(nestedEnvelope);
+        envelope.SetEntry(path[depth], MemoryPackSerializer.Serialize(nestedEnvelope));
     }
 
     private static void SetMemoryPackValue(
@@ -283,11 +283,11 @@ public static class SerializationPayloadEditor
     {
         if (depth == path.Length - 1)
         {
-            envelope.Entries[path[depth]] = serializedValue;
+            envelope.SetEntry(path[depth], serializedValue);
             return;
         }
 
-        if (!envelope.Entries.TryGetValue(path[depth], out byte[]? nestedData)
+        if (!envelope.TryGetEntry(path[depth], out byte[]? nestedData)
             || nestedData == null)
         {
             throw new InvalidOperationException(
@@ -296,7 +296,7 @@ public static class SerializationPayloadEditor
 
         MemoryPackRecordEnvelope nestedEnvelope = ReadEnvelope(nestedData);
         SetMemoryPackValue(nestedEnvelope, path, depth + 1, serializedValue);
-        envelope.Entries[path[depth]] = MemoryPackSerializer.Serialize(nestedEnvelope);
+        envelope.SetEntry(path[depth], MemoryPackSerializer.Serialize(nestedEnvelope));
     }
 
     #endregion

@@ -34,7 +34,7 @@ Unlike attribute-only serializers, Chronicler makes each type explicitly own its
 1. Choose the package that fits your runtime:
 
 - `Chronicler.Core`
-  The standard package. Includes the full Chronicler API with built-in JSON and MemoryPack transports.
+  The standard package. Includes the full Chronicler API with built-in JSON and MemoryPack transports. Its external package surface is limited to the transport dependencies needed for those built-ins.
 - `Chronicler.Core.Lean`
   The lean package. Keeps the same core deterministic recording API and JSON transport, but removes the `MemoryPack` dependency and generated transport surface.
 
@@ -240,7 +240,7 @@ dotnet test tests/Chronicler.Tests/Chronicler.Tests.csproj -c Release --collect:
 
 `Chronicler.Core` provides JSON support through `System.Text.Json` and binary transport support through `MemoryPack`.
 
-`Chronicler.Core.Lean` provides the same deterministic recording API with JSON support, but omits the built-in MemoryPack transport and dependency.
+`Chronicler.Core.Lean` provides the same deterministic recording API with JSON support, but omits the built-in MemoryPack transport and dependency. Chronicler does not depend on an external collections package.
 
 ---
 

@@ -1,4 +1,3 @@
-using SwiftCollections;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -80,7 +79,7 @@ public static class JsonRecordSerializer
 
     private sealed class JsonRecordWriter : IChronicler
     {
-        private readonly SwiftDictionary<string, string> _entries = new(8, StringComparer.Ordinal);
+        private readonly OrderedStringMap<string> _entries = new(8, StringComparer.Ordinal);
         private readonly JsonSerializerOptions _options;
 
         public JsonRecordWriter(JsonSerializerOptions options, ChronicleContext context)

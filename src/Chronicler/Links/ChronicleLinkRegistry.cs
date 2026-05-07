@@ -1,4 +1,3 @@
-using SwiftCollections;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -10,8 +9,8 @@ namespace Chronicler;
 /// </summary>
 public sealed class ChronicleLinkRegistry
 {
-    private readonly SwiftDictionary<ChronicleLinkKey, object> _resolvers = new();
-    private readonly SwiftDictionary<ChronicleLinkKey, object> _registeredInstances = new();
+    private readonly Dictionary<ChronicleLinkKey, object> _resolvers = new();
+    private readonly Dictionary<ChronicleLinkKey, object> _registeredInstances = new();
 
     /// <summary>
     /// Registers a custom link resolver for the given type and optional slot.
@@ -42,10 +41,10 @@ public sealed class ChronicleLinkRegistry
             return false;
 
         ChronicleLinkKey key = new(typeof(T), slot);
-        if (!_registeredInstances.TryGetValue(key, out object tableObject))
+        if (!_registeredInstances.TryGetValue(key, out object? tableObject))
             return false;
 
-        return ((RegisteredLinkTable<T>)tableObject).Unregister(id);
+        return ((RegisteredLinkTable<T>)tableObject!).Unregister(id);
     }
 
     /// <summary>
@@ -54,14 +53,14 @@ public sealed class ChronicleLinkRegistry
     public bool TryResolve<T>(string id, [MaybeNullWhen(false)] out T value, string? slot = null)
     {
         ChronicleLinkKey key = new(typeof(T), slot);
-        if (_resolvers.TryGetValue(key, out object resolverObject)
-            && ((IRecordLinkResolver<T>)resolverObject).TryResolveReference(id, out value))
+        if (_resolvers.TryGetValue(key, out object? resolverObject)
+            && ((IRecordLinkResolver<T>)resolverObject!).TryResolveReference(id, out value))
         {
             return true;
         }
 
-        if (_registeredInstances.TryGetValue(key, out object tableObject)
-            && ((RegisteredLinkTable<T>)tableObject).TryResolve(id, out value))
+        if (_registeredInstances.TryGetValue(key, out object? tableObject)
+            && ((RegisteredLinkTable<T>)tableObject!).TryResolve(id, out value))
         {
             return true;
         }
@@ -76,14 +75,14 @@ public sealed class ChronicleLinkRegistry
     public bool TryGetReferenceId<T>(T value, [NotNullWhen(true)] out string? id, string? slot = null)
     {
         ChronicleLinkKey key = new(typeof(T), slot);
-        if (_resolvers.TryGetValue(key, out object resolverObject)
-            && ((IRecordLinkResolver<T>)resolverObject).TryGetReferenceId(value, out id))
+        if (_resolvers.TryGetValue(key, out object? resolverObject)
+            && ((IRecordLinkResolver<T>)resolverObject!).TryGetReferenceId(value, out id))
         {
             return true;
         }
 
-        if (_registeredInstances.TryGetValue(key, out object tableObject)
-            && ((RegisteredLinkTable<T>)tableObject).TryGetReferenceId(value, out id))
+        if (_registeredInstances.TryGetValue(key, out object? tableObject)
+            && ((RegisteredLinkTable<T>)tableObject!).TryGetReferenceId(value, out id))
         {
             return true;
         }
@@ -95,8 +94,8 @@ public sealed class ChronicleLinkRegistry
     private RegisteredLinkTable<T> GetOrCreateInstanceTable<T>(string? slot)
     {
         ChronicleLinkKey key = new(typeof(T), slot);
-        if (_registeredInstances.TryGetValue(key, out object tableObject))
-            return (RegisteredLinkTable<T>)tableObject;
+        if (_registeredInstances.TryGetValue(key, out object? tableObject))
+            return (RegisteredLinkTable<T>)tableObject!;
 
         var table = new RegisteredLinkTable<T>();
         _registeredInstances[key] = table;
@@ -133,7 +132,7 @@ public sealed class ChronicleLinkRegistry
 
     private sealed class RegisteredLinkTable<T>
     {
-        private readonly SwiftDictionary<string, T> _byId = new(8, StringComparer.Ordinal);
+        private readonly OrderedStringMap<T> _byId = new(8, StringComparer.Ordinal);
 
         public void Register(string id, T value)
         {

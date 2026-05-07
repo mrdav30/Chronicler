@@ -1,7 +1,6 @@
 #if !CHRONICLER_DISABLE_MEMORYPACK
 
 using MemoryPack;
-using SwiftCollections;
 using System;
 using System.Collections.Generic;
 
@@ -25,7 +24,8 @@ public static class MemoryPackRecordSerializer
     /// </summary>
     public static byte[] Serialize(IRecordable target, ChronicleContext? context)
     {
-        SwiftThrowHelper.ThrowIfNull(target, nameof(target));
+        if (target == null)
+            throw new ArgumentNullException(nameof(target));
 
         context ??= new ChronicleContext();
 
@@ -45,7 +45,8 @@ public static class MemoryPackRecordSerializer
     /// </summary>
     public static void Populate(IRecordable target, byte[] data, ChronicleContext? context)
     {
-        SwiftThrowHelper.ThrowIfNull(data, nameof(data));
+        if (data == null)
+            throw new ArgumentNullException(nameof(data));
 
         Populate(target, data.AsSpan(), context);
     }
@@ -61,7 +62,8 @@ public static class MemoryPackRecordSerializer
     /// </summary>
     public static void Populate(IRecordable target, ReadOnlySpan<byte> data, ChronicleContext? context)
     {
-        SwiftThrowHelper.ThrowIfNull(target, nameof(target));
+        if (target == null)
+            throw new ArgumentNullException(nameof(target));
         if (data.IsEmpty)
             throw new ArgumentException("Serialized bytes must not be empty.", nameof(data));
 
@@ -74,7 +76,7 @@ public static class MemoryPackRecordSerializer
 
     private sealed class MemoryPackRecordWriter : IChronicler
     {
-        private readonly SwiftDictionary<string, byte[]?> _entries = new(8, StringComparer.Ordinal);
+        private readonly OrderedStringMap<byte[]?> _entries = new(8, StringComparer.Ordinal);
 
         public MemoryPackRecordWriter(ChronicleContext context)
         {
@@ -144,21 +146,18 @@ public static class MemoryPackRecordSerializer
 
         public byte[] ToArray()
         {
-            return MemoryPackSerializer.Serialize(new MemoryPackRecordEnvelope()
-            {
-                Entries = _entries
-            });
+            return MemoryPackSerializer.Serialize(MemoryPackRecordEnvelope.FromEntries(_entries));
         }
     }
 
     private sealed class MemoryPackRecordReader : IChronicler
     {
-        private readonly SwiftDictionary<string, byte[]?> _entries;
+        private readonly OrderedStringMap<byte[]?> _entries;
 
         public MemoryPackRecordReader(ReadOnlySpan<byte> data, ChronicleContext context)
         {
             MemoryPackRecordEnvelope? envelope = MemoryPackSerializer.Deserialize<MemoryPackRecordEnvelope>(data);
-            _entries = envelope?.Entries ?? new SwiftDictionary<string, byte[]?>(8, StringComparer.Ordinal);
+            _entries = envelope?.ToEntryMap() ?? new OrderedStringMap<byte[]?>(8, StringComparer.Ordinal);
             Context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
