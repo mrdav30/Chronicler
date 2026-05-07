@@ -12,6 +12,135 @@ namespace Chronicler;
 /// </summary>
 public static class SerializationPayloadEditor
 {
+    #region Common
+
+#if CHRONICLER_DISABLE_MEMORYPACK
+
+    /// <summary>
+    /// Serializes a record to a payload format (JSON string or MemoryPack byte array) based on the specified options.
+    /// </summary>
+    /// <param name="record">The record to serialize.</param>
+    /// <returns>The serialized payload.</returns>
+    public static object SerializeRecord(IRecordable record)
+    {
+        return JsonRecordSerializer.Serialize(record, writeIndented: true);
+    }
+
+    /// <summary>
+    /// Populates a record with data from a serialized payload (JSON string or MemoryPack byte array) based on the specified options.
+    /// </summary>
+    /// <param name="target">The record to populate.</param>
+    /// <param name="payload">The serialized payload.</param>
+    public static void PopulateRecord(IRecordable target, object payload)
+    {
+        JsonRecordSerializer.Populate(target, (string)payload);
+    }
+
+    /// <summary>
+    /// Removes an entry from a serialized payload (JSON property or MemoryPack entry) at the specified path based on the specified options.
+    /// </summary>
+    /// <param name="payload">The serialized payload.</param>
+    /// <param name="path">The path to the entry to remove.</param>
+    /// <returns>The modified payload.</returns>
+    public static object RemovePayloadEntry(object payload, params string[] path)
+    {
+        return RemoveJsonProperty((string)payload, path);
+    }
+
+
+    /// <summary>
+    /// Sets a value in a serialized payload (JSON property or MemoryPack entry) at the specified path based on the specified options.
+    /// </summary>
+    /// <typeparam name="T">The type of the value to set.</typeparam>
+    /// <param name="payload">The serialized payload.</param>
+    /// <param name="value">The value to set.</param>
+    /// <param name="path">The path to the entry to set.</param>
+    /// <returns>The modified payload.</returns>
+    public static object SetPayloadValue<T>(
+        object payload,
+        T value,
+        params string[] path)
+    {
+        return SetJsonValue((string)payload, value, path);
+    }
+
+#else
+
+    /// <summary>
+    /// Serializes a record to a payload format (JSON string or MemoryPack byte array) based on the specified options.
+    /// </summary>
+    /// <param name="record">The record to serialize.</param>
+    /// <param name="useMemoryPack">Whether to use MemoryPack for serialization.</param>
+    /// <returns>The serialized payload.</returns>
+    public static object SerializeRecord(IRecordable record, bool useMemoryPack = true)
+    {
+        return useMemoryPack
+            ? MemoryPackRecordSerializer.Serialize(record)
+            : JsonRecordSerializer.Serialize(record, writeIndented: true);
+    }
+
+    /// <summary>
+    /// Populates a record with data from a serialized payload (JSON string or MemoryPack byte array) based on the specified options.
+    /// </summary>
+    /// <param name="target">The record to populate.</param>
+    /// <param name="payload">The serialized payload.</param>
+    ///  <param name="useMemoryPack">Whether to use MemoryPack for deserialization.</param>
+    public static void PopulateRecord(
+        IRecordable target,
+        object payload,
+        bool useMemoryPack = true)
+    {
+        if (useMemoryPack)
+        {
+            MemoryPackRecordSerializer.Populate(target, (byte[])payload);
+            return;
+        }
+
+        JsonRecordSerializer.Populate(target, (string)payload);
+    }
+
+    /// <summary>
+    /// Removes an entry from a serialized payload (JSON property or MemoryPack entry) at the specified path based on the specified options.
+    /// </summary>
+    /// <param name="payload">The serialized payload.</param>
+    /// <param name="useMemoryPack">Whether to use MemoryPack for deserialization.</param>
+    /// <param name="path">The path to the entry to remove.</param>
+    /// <returns>The modified payload.</returns>
+    public static object RemovePayloadEntry(
+        object payload,
+        bool useMemoryPack = true,
+        params string[] path)
+    {
+        return useMemoryPack
+            ? RemoveMemoryPackEntry((byte[])payload, path)
+            : RemoveJsonProperty((string)payload, path);
+    }
+
+
+    /// <summary>
+    /// Sets a value in a serialized payload (JSON property or MemoryPack entry) at the specified path based on the specified options.
+    /// </summary>
+    /// <typeparam name="T">The type of the value to set.</typeparam>
+    /// <param name="payload">The serialized payload.</param>
+    /// <param name="value">The value to set.</param>
+    /// <param name="useMemoryPack">Whether to use MemoryPack for deserialization.</param>
+    /// <param name="path">The path to the entry to set.</param>
+    /// <returns>The modified payload.</returns>
+    public static object SetPayloadValue<T>(
+        object payload,
+        T value,
+        bool useMemoryPack = true,
+        params string[] path)
+    {
+        return useMemoryPack
+            ? SetMemoryPackValue((byte[])payload, value, path)
+            : SetJsonValue((string)payload, value, path);
+    }
+
+#endif
+
+    #endregion
+
     #region JSON Editing
 
     private static readonly JsonSerializerOptions JsonOptions = new()

@@ -49,7 +49,7 @@
 	<PropertyGroup>
 		<Authors>mrdav30</Authors>
 		<Description>Deterministic, transport-neutral serialization for lockstep simulation, snapshot/restore workflows, and state transfer into existing runtime object graphs.</Description>
-		<PackageTags>deterministic;serialization;lockstep;snapshot;save-system;memorypack;json;gamedev</PackageTags>
+		<PackageTags>serialization;serializer;deterministic;lockstep;snapshot;restore;savegame;state-transfer;json;memorypack;gamedev</PackageTags>
 		<PackageProjectUrl>https://github.com/mrdav30/Chronicler</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/mrdav30/Chronicler</RepositoryUrl>
 		<PackageIcon>icon.png</PackageIcon>
