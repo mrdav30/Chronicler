@@ -90,12 +90,14 @@ Core abstractions:
 
 - `IRecordable`
 - `IChronicler`
+- `IStateBacked<TState>`
 - `ChronicleContext`
 - `ChronicleLinkRegistry`
 
 Built-in transports:
 
 - `JsonRecordSerializer`
+- `StateJsonConverter<TRecord, TState>` / `StateJsonConverterFactory`
 - `MemoryPackRecordSerializer` in `Chronicler.Core`
 
 Important design note:
@@ -164,6 +166,44 @@ PlayerSnapshot target = new()
 };
 
 MemoryPackRecordSerializer.Populate(target, data);
+```
+
+### Serialize state-backed helper types with System.Text.Json
+
+For helper types that own a canonical state object, implement `IStateBacked<TState>` and provide a public constructor that accepts the same state type. Register `StateJsonConverterFactory` with `System.Text.Json` to serialize those types as a single `State` payload.
+
+```csharp
+using System;
+using System.Text.Json;
+using Chronicler;
+
+public sealed class OrderedIds : IStateBacked<OrderedIdsState>
+{
+    private readonly string[] _items;
+
+    public OrderedIds(OrderedIdsState state)
+    {
+        _items = state.Items;
+    }
+
+    public OrderedIds(params string[] items)
+    {
+        _items = items;
+    }
+
+    public OrderedIdsState State => new()
+    {
+        Items = _items
+    };
+}
+
+public sealed class OrderedIdsState
+{
+    public string[] Items { get; set; } = Array.Empty<string>();
+}
+
+var options = new JsonSerializerOptions();
+options.Converters.Add(new StateJsonConverterFactory());
 ```
 
 ---
