@@ -39,6 +39,7 @@ public class RecordLinkEdgeCaseTests
         target.Resource.Should().BeNull();
     }
 
+#if !CHRONICLER_DISABLE_MEMORYPACK
     [Fact]
     public void MemoryPackPopulate_ShouldClearImmediateLink_WhenLinkIdPayloadIsNull()
     {
@@ -54,6 +55,7 @@ public class RecordLinkEdgeCaseTests
 
         target.Resource.Should().BeNull();
     }
+#endif
 
     [Theory]
     [MemberData(nameof(SerializationTransportData.All), MemberType = typeof(SerializationTransportData))]

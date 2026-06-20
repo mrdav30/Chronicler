@@ -16,7 +16,9 @@ public static class SerializationTransportData
         get
         {
             yield return new object[] { SerializationTransport.Json };
+#if !CHRONICLER_DISABLE_MEMORYPACK
             yield return new object[] { SerializationTransport.MemoryPack };
+#endif
         }
     }
 }
