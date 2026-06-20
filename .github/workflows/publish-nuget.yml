@@ -164,8 +164,8 @@ jobs:
         set -euo pipefail
 
         expected_ids=(
-          "Chronicler"
-          "Chronicler.Lean"
+          "Chronicler.Core"
+          "Chronicler.Core.Lean"
         )
 
         for package_id in "${expected_ids[@]}"; do
