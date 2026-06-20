@@ -9,7 +9,6 @@
 		<IsTestProject>true</IsTestProject>
 		<Configurations>Debug;Release;ReleaseLean</Configurations>
 		<OutputType>Exe</OutputType>
-		<RunSettingsFilePath>$(MSBuildThisFileDirectory)coverlet.runsettings</RunSettingsFilePath>
 	</PropertyGroup>
 	
 	<PropertyGroup Condition="'$(Configuration)' == 'ReleaseLean'">

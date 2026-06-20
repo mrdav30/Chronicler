@@ -2,7 +2,7 @@
 
 ![Chronicler Icon](https://raw.githubusercontent.com/mrdav30/Chronicler/main/icon.png)
 
-[![.NET CI](https://github.com/mrdav30/Chronicler/actions/workflows/dotnet.yml/badge.svg)](https://github.com/mrdav30/Chronicler/actions/workflows/dotnet.yml)
+[![build-and-test](https://github.com/mrdav30/Chronicler/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/mrdav30/Chronicler/actions/workflows/build-and-test.yml)
 [![Coverage](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fmrdav30.github.io%2FChronicler%2FSummary.json&query=%24.summary.linecoverage&suffix=%25&label=coverage&color=brightgreen)](https://mrdav30.github.io/Chronicler/)
 [![NuGet](https://img.shields.io/nuget/v/Chronicler.Core.svg)](https://www.nuget.org/packages/Chronicler.Core)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/Chronicler.Core.svg)](https://www.nuget.org/packages/Chronicler.Core)
