@@ -93,6 +93,7 @@ Core abstractions:
 - `IStateBacked<TState>`
 - `ChronicleContext`
 - `ChronicleLinkRegistry`
+- `DefaultSaver`
 
 Built-in transports:
 
@@ -247,6 +248,8 @@ For cases where the target object is only available after the rest of the graph 
 - Use `RecordNullableDeep` for optional nested recordable structs.
 - Use `RecordLinks` for runtime-owned or external references.
 - Keep object construction and framework bootstrap outside the base Chronicler contract.
+- Use `DefaultSaver` for reusable explicit save/apply helper lifecycles that need
+  `Save`, `EarlyApply`, `Apply`, and `LateApply` phases.
 
 ---
 
