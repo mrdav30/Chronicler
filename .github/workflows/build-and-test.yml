@@ -19,6 +19,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
+        configuration: [Release, ReleaseLean]
 
     steps:
     - name: Checkout repository
