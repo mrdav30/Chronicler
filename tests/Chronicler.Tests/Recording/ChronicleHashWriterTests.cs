@@ -17,6 +17,23 @@ public sealed class ChronicleHashWriterTests
         hash.GetHashCode().Should().Be(new ChronicleHash(0x0123_4567_89ab_cdefUL, 0xfedc_ba98_7654_3210UL).GetHashCode());
         hash.Should().Be(new ChronicleHash(0x0123_4567_89ab_cdefUL, 0xfedc_ba98_7654_3210UL));
         hash.Should().NotBe(new ChronicleHash(0x0123_4567_89ab_cdeeUL, 0xfedc_ba98_7654_3210UL));
+        (hash == new ChronicleHash(0x0123_4567_89ab_cdefUL, 0xfedc_ba98_7654_3210UL)).Should().BeTrue();
+        (hash != new ChronicleHash(0x0123_4567_89ab_cdeeUL, 0xfedc_ba98_7654_3210UL)).Should().BeTrue();
+        hash.Equals("not-a-hash").Should().BeFalse();
+    }
+
+    [Fact]
+    public void DefaultWriter_ShouldUseSameSeedAsConstructedWriter()
+    {
+        ChronicleHashWriter defaultWriter = default;
+        var constructedWriter = new ChronicleHashWriter();
+
+        defaultWriter.ToHash().Should().Be(constructedWriter.ToHash());
+
+        defaultWriter.WriteByte(7);
+        constructedWriter.WriteByte(7);
+
+        defaultWriter.ToHash().Should().Be(constructedWriter.ToHash());
     }
 
     [Fact]
@@ -143,14 +160,22 @@ public sealed class ChronicleHashWriterTests
     {
         var enumWriter = new ChronicleHashWriter();
         enumWriter.WriteEnum(SByteBacked.Negative);
+        enumWriter.WriteEnum(ByteBacked.Value);
+        enumWriter.WriteEnum(ShortBacked.Negative);
         enumWriter.WriteEnum(UShortBacked.Value);
         enumWriter.WriteEnum(IntBacked.Negative);
+        enumWriter.WriteEnum(UIntBacked.Value);
+        enumWriter.WriteEnum(LongBacked.Negative);
         enumWriter.WriteEnum(ULongBacked.Value);
 
         var primitiveWriter = new ChronicleHashWriter();
         primitiveWriter.WriteSByte(-7);
+        primitiveWriter.WriteByte(0xab);
+        primitiveWriter.WriteInt16(-0x1234);
         primitiveWriter.WriteUInt16(0x1234);
         primitiveWriter.WriteInt32(-9);
+        primitiveWriter.WriteUInt32(0x89ab_cdef);
+        primitiveWriter.WriteInt64(-0x0123_4567_89ab_cdefL);
         primitiveWriter.WriteUInt64(0x0123_4567_89ab_cdefUL);
 
         enumWriter.ToHash().Should().Be(primitiveWriter.ToHash());
@@ -202,6 +227,16 @@ public sealed class ChronicleHashWriterTests
         Negative = -7
     }
 
+    private enum ByteBacked : byte
+    {
+        Value = 0xab
+    }
+
+    private enum ShortBacked : short
+    {
+        Negative = -0x1234
+    }
+
     private enum UShortBacked : ushort
     {
         Value = 0x1234
@@ -210,6 +245,16 @@ public sealed class ChronicleHashWriterTests
     private enum IntBacked
     {
         Negative = -9
+    }
+
+    private enum UIntBacked : uint
+    {
+        Value = 0x89ab_cdef
+    }
+
+    private enum LongBacked : long
+    {
+        Negative = -0x0123_4567_89ab_cdefL
     }
 
     private enum ULongBacked : ulong

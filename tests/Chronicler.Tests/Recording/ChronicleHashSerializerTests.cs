@@ -1,5 +1,6 @@
 using FluentAssertions;
 using System;
+using System.Collections.Generic;
 using Xunit;
 
 namespace Chronicler.Tests;
@@ -41,6 +42,46 @@ public sealed class ChronicleHashSerializerTests
 
         ChronicleHashSerializer.Compute(source).ToString()
             .Should().Be("a4736ffd6ca10cef8f69b781360bd39f");
+    }
+
+    [Fact]
+    public void Compute_ShouldThrow_WhenTargetIsNull()
+    {
+        Action act = () => ChronicleHashSerializer.Compute(null!);
+
+        act.Should().Throw<ArgumentNullException>()
+            .WithParameterName("target");
+    }
+
+    [Fact]
+    public void Compute_ShouldThrow_WhenContextIsNull()
+    {
+        Action act = () => ChronicleHashSerializer.Compute(new GoldenRecord(), null!);
+
+        act.Should().Throw<ArgumentNullException>()
+            .WithParameterName("context");
+    }
+
+    [Fact]
+    public void Contribute_ShouldThrow_WhenTargetIsNull()
+    {
+        var writer = new ChronicleHashWriter();
+
+        Action act = () => ChronicleHashSerializer.Contribute(null!, ref writer);
+
+        act.Should().Throw<ArgumentNullException>()
+            .WithParameterName("target");
+    }
+
+    [Fact]
+    public void Contribute_ShouldThrow_WhenContextIsNull()
+    {
+        var writer = new ChronicleHashWriter();
+
+        Action act = () => ChronicleHashSerializer.Contribute(new GoldenRecord(), null!, ref writer);
+
+        act.Should().Throw<ArgumentNullException>()
+            .WithParameterName("context");
     }
 
     [Fact]
@@ -147,6 +188,91 @@ public sealed class ChronicleHashSerializerTests
 
         act.Should().Throw<NotSupportedException>()
             .WithMessage("*Unsupported record-hash leaf value 'temperature'*System.Double*");
+    }
+
+    [Fact]
+    public void Compute_ShouldRejectNullFieldNames()
+    {
+        var record = new NullFieldNameRecord();
+
+        Action act = () => ChronicleHashSerializer.Compute(record);
+
+        act.Should().Throw<ArgumentNullException>()
+            .WithParameterName("name");
+    }
+
+    [Fact]
+    public void Compute_ShouldThrowWhenUnslottedLinkCannotResolveToStableId()
+    {
+        var record = new UnslottedLinkRecord(new LinkResource());
+
+        Action act = () => ChronicleHashSerializer.Compute(record, new ChronicleContext());
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*Unable to hash link 'resource'*stable id*")
+            .And.Message.Should().NotContain("in slot");
+    }
+
+    [Fact]
+    public void Compute_ShouldHashNullDeepClassAndNullLinkValues()
+    {
+        var nullRecord = new NullableReferenceRecord();
+
+        var resource = new LinkResource();
+        var presentRecord = new NullableReferenceRecord
+        {
+            Child = new ChildRecord { Level = 5 },
+            Resource = resource
+        };
+        var context = new ChronicleContext();
+        context.Links.RegisterInstance("resource", resource);
+
+        ChronicleHashSerializer.Compute(nullRecord)
+            .Should().NotBe(ChronicleHashSerializer.Compute(presentRecord, context));
+    }
+
+    [Fact]
+    public void Compute_ShouldIncludeEverySupportedPrimitiveLeafInHash()
+    {
+        var baseline = new SupportedLeafRecord();
+        ChronicleHash baselineHash = ChronicleHashSerializer.Compute(baseline);
+
+        ChronicleHashSerializer.Compute(new SupportedLeafRecord()).Should().Be(baselineHash);
+        EachSupportedLeafMutation()
+            .Should().OnlyContain(record => ChronicleHashSerializer.Compute(record) != baselineHash);
+    }
+
+    [Fact]
+    public void Compute_ShouldIncludeEveryEnumUnderlyingWidthInHash()
+    {
+        var baseline = new EnumWidthRecord();
+        ChronicleHash baselineHash = ChronicleHashSerializer.Compute(baseline);
+
+        ChronicleHashSerializer.Compute(new EnumWidthRecord()).Should().Be(baselineHash);
+        EachEnumWidthMutation()
+            .Should().OnlyContain(record => ChronicleHashSerializer.Compute(record) != baselineHash);
+    }
+
+    [Fact]
+    public void Compute_ShouldUseStableTypeNamesForGenericArrayArguments()
+    {
+        ChronicleHash vectorHash = ChronicleHashSerializer.Compute(new GenericPairRecord<int[], string>());
+        ChronicleHash gridHash = ChronicleHashSerializer.Compute(new GenericPairRecord<int[,], string>());
+        ChronicleHash reversedHash = ChronicleHashSerializer.Compute(new GenericPairRecord<string, int[]>());
+
+        vectorHash.Should().NotBe(gridHash);
+        reversedHash.Should().NotBe(vectorHash);
+    }
+
+    [Fact]
+    public void Compute_ShouldAllowNestedHashComputationDuringRecordData()
+    {
+        var record = new ReentrantHashRecord(new GoldenRecord { Count = 5, Alias = "inner" });
+
+        ChronicleHash hash = ChronicleHashSerializer.Compute(record);
+
+        record.InnerHash.Should().Be(ChronicleHashSerializer.Compute(new GoldenRecord { Count = 5, Alias = "inner" }));
+        hash.Should().NotBe(default(ChronicleHash));
     }
 
     [Fact]
@@ -290,6 +416,25 @@ public sealed class ChronicleHashSerializerTests
         }
     }
 
+    private sealed class ReentrantHashRecord : IRecordable
+    {
+        private readonly IRecordable _inner;
+        private int _value = 7;
+
+        public ReentrantHashRecord(IRecordable inner)
+        {
+            _inner = inner;
+        }
+
+        public ChronicleHash InnerHash { get; private set; }
+
+        public void RecordData(IChronicler chronicler)
+        {
+            InnerHash = ChronicleHashSerializer.Compute(_inner);
+            RecordValues.Look(chronicler, ref _value, "value", 7);
+        }
+    }
+
     private sealed class ChildRecord : IRecordable
     {
         public int Level = 1;
@@ -386,6 +531,47 @@ public sealed class ChronicleHashSerializerTests
     {
     }
 
+    private sealed class NullableReferenceRecord : IRecordable
+    {
+        public ChildRecord? Child;
+        public LinkResource? Resource;
+
+        public void RecordData(IChronicler chronicler)
+        {
+            ChildRecord child = Child!;
+            RecordDeep.Look(chronicler, ref child, "child");
+            if (chronicler.Mode == SerializationMode.Loading)
+                Child = child;
+
+            RecordLinks.Look(chronicler, ref Resource, "resource");
+        }
+    }
+
+    private sealed class NullFieldNameRecord : IRecordable
+    {
+        private int _value = 1;
+
+        public void RecordData(IChronicler chronicler)
+        {
+            RecordValues.Look(chronicler, ref _value, null!);
+        }
+    }
+
+    private sealed class UnslottedLinkRecord : IRecordable
+    {
+        private LinkResource? _resource;
+
+        public UnslottedLinkRecord(LinkResource resource)
+        {
+            _resource = resource;
+        }
+
+        public void RecordData(IChronicler chronicler)
+        {
+            RecordLinks.Look(chronicler, ref _resource, "resource");
+        }
+    }
+
     private sealed class UnsupportedLeafRecord : IRecordable
     {
         private double _temperature = 98.6d;
@@ -394,6 +580,51 @@ public sealed class ChronicleHashSerializerTests
         {
             RecordValues.Look(chronicler, ref _temperature, "temperature");
         }
+    }
+
+    private sealed class SupportedLeafRecord : IRecordable
+    {
+        public bool BoolValue = true;
+        public byte ByteValue = 2;
+        public sbyte SByteValue = -3;
+        public short Int16Value = -4;
+        public ushort UInt16Value = 5;
+        public int Int32Value = -6;
+        public uint UInt32Value = 7;
+        public long Int64Value = -8;
+        public ulong UInt64Value = 9;
+        public char CharValue = 'x';
+        public string? StringValue = "mage";
+
+        public void RecordData(IChronicler chronicler)
+        {
+            RecordValues.Look(chronicler, ref BoolValue, "bool", false);
+            RecordValues.Look(chronicler, ref ByteValue, "byte", (byte)0);
+            RecordValues.Look(chronicler, ref SByteValue, "sbyte", (sbyte)0);
+            RecordValues.Look(chronicler, ref Int16Value, "int16", (short)0);
+            RecordValues.Look(chronicler, ref UInt16Value, "uint16", (ushort)0);
+            RecordValues.Look(chronicler, ref Int32Value, "int32", 0);
+            RecordValues.Look(chronicler, ref UInt32Value, "uint32", 0u);
+            RecordValues.Look(chronicler, ref Int64Value, "int64", 0L);
+            RecordValues.Look(chronicler, ref UInt64Value, "uint64", 0UL);
+            RecordValues.Look(chronicler, ref CharValue, "char", '\0');
+            RecordValues.Look(chronicler, ref StringValue, "string", defaultValue: null);
+        }
+    }
+
+    private static IEnumerable<SupportedLeafRecord> EachSupportedLeafMutation()
+    {
+        yield return new SupportedLeafRecord { BoolValue = false };
+        yield return new SupportedLeafRecord { ByteValue = 12 };
+        yield return new SupportedLeafRecord { SByteValue = -13 };
+        yield return new SupportedLeafRecord { Int16Value = -14 };
+        yield return new SupportedLeafRecord { UInt16Value = 15 };
+        yield return new SupportedLeafRecord { Int32Value = -16 };
+        yield return new SupportedLeafRecord { UInt32Value = 17 };
+        yield return new SupportedLeafRecord { Int64Value = -18 };
+        yield return new SupportedLeafRecord { UInt64Value = 19 };
+        yield return new SupportedLeafRecord { CharValue = 'y' };
+        yield return new SupportedLeafRecord { StringValue = null };
     }
 
     private sealed class EnumRecord : IRecordable
@@ -412,8 +643,110 @@ public sealed class ChronicleHashSerializerTests
         Second = 2
     }
 
+    private sealed class EnumWidthRecord : IRecordable
+    {
+        public SByteMode SByteMode = SByteMode.Second;
+        public ByteMode ByteMode = ByteMode.Second;
+        public Int16Mode Int16Mode = Int16Mode.Second;
+        public UInt16Mode UInt16Mode = UInt16Mode.Second;
+        public Int32Mode Int32Mode = Int32Mode.Second;
+        public UInt32Mode UInt32Mode = UInt32Mode.Second;
+        public Int64Mode Int64Mode = Int64Mode.Second;
+        public UInt64Mode UInt64Mode = UInt64Mode.Second;
+
+        public void RecordData(IChronicler chronicler)
+        {
+            RecordValues.Look(chronicler, ref SByteMode, "sbyte", SByteMode.First);
+            RecordValues.Look(chronicler, ref ByteMode, "byte", ByteMode.First);
+            RecordValues.Look(chronicler, ref Int16Mode, "int16", Int16Mode.First);
+            RecordValues.Look(chronicler, ref UInt16Mode, "uint16", UInt16Mode.First);
+            RecordValues.Look(chronicler, ref Int32Mode, "int32", Int32Mode.First);
+            RecordValues.Look(chronicler, ref UInt32Mode, "uint32", UInt32Mode.First);
+            RecordValues.Look(chronicler, ref Int64Mode, "int64", Int64Mode.First);
+            RecordValues.Look(chronicler, ref UInt64Mode, "uint64", UInt64Mode.First);
+        }
+    }
+
+    private static IEnumerable<EnumWidthRecord> EachEnumWidthMutation()
+    {
+        yield return new EnumWidthRecord { SByteMode = SByteMode.Third };
+        yield return new EnumWidthRecord { ByteMode = ByteMode.Third };
+        yield return new EnumWidthRecord { Int16Mode = Int16Mode.Third };
+        yield return new EnumWidthRecord { UInt16Mode = UInt16Mode.Third };
+        yield return new EnumWidthRecord { Int32Mode = Int32Mode.Third };
+        yield return new EnumWidthRecord { UInt32Mode = UInt32Mode.Third };
+        yield return new EnumWidthRecord { Int64Mode = Int64Mode.Third };
+        yield return new EnumWidthRecord { UInt64Mode = UInt64Mode.Third };
+    }
+
+    private enum SByteMode : sbyte
+    {
+        First = -1,
+        Second = -2,
+        Third = -3
+    }
+
+    private enum ByteMode : byte
+    {
+        First = 1,
+        Second = 2,
+        Third = 3
+    }
+
+    private enum Int16Mode : short
+    {
+        First = -1,
+        Second = -2,
+        Third = -3
+    }
+
+    private enum UInt16Mode : ushort
+    {
+        First = 1,
+        Second = 2,
+        Third = 3
+    }
+
+    private enum Int32Mode
+    {
+        First = -1,
+        Second = -2,
+        Third = -3
+    }
+
+    private enum UInt32Mode : uint
+    {
+        First = 1,
+        Second = 2,
+        Third = 3
+    }
+
+    private enum Int64Mode : long
+    {
+        First = -1,
+        Second = -2,
+        Third = -3
+    }
+
+    private enum UInt64Mode : ulong
+    {
+        First = 1,
+        Second = 2,
+        Third = 3
+    }
+
     private sealed class GenericRecord<T> : IRecordable
         where T : struct
+    {
+        private int _value = 7;
+
+        public void RecordData(IChronicler chronicler)
+        {
+            RecordValues.Look(chronicler, ref _value, "value");
+        }
+    }
+
+    private sealed class GenericPairRecord<TFirst, TSecond> : IRecordable
     {
         private int _value = 7;
 

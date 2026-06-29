@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace Chronicler;
 
@@ -184,23 +183,25 @@ public struct ChronicleHashWriter
     public void WriteEnum<TEnum>(TEnum value)
         where TEnum : struct, Enum
     {
-        ReadOnlySpan<TEnum> enumSpan = MemoryMarshal.CreateReadOnlySpan(ref value, 1);
-        ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(enumSpan);
-
-        if (BitConverter.IsLittleEndian)
+        if (Unsafe.SizeOf<TEnum>() == 1)
         {
-            for (int i = 0; i < bytes.Length; i++)
-            {
-                WriteByte(bytes[i]);
-            }
-
+            WriteByte(Unsafe.As<TEnum, byte>(ref value));
             return;
         }
 
-        for (int i = bytes.Length - 1; i >= 0; i--)
+        if (Unsafe.SizeOf<TEnum>() == 2)
         {
-            WriteByte(bytes[i]);
+            WriteUInt16(Unsafe.As<TEnum, ushort>(ref value));
+            return;
         }
+
+        if (Unsafe.SizeOf<TEnum>() == 4)
+        {
+            WriteUInt32(Unsafe.As<TEnum, uint>(ref value));
+            return;
+        }
+
+        WriteUInt64(Unsafe.As<TEnum, ulong>(ref value));
     }
 
     /// <summary>

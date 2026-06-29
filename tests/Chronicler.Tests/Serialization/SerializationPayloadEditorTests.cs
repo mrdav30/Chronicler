@@ -6,6 +6,33 @@ namespace Chronicler.Tests;
 
 public class SerializationPayloadEditorTests
 {
+#if !CHRONICLER_DISABLE_MEMORYPACK
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void WrapperMethods_ShouldRoundTripAndEditPayloadUsingSelectedTransport(bool useMemoryPack)
+    {
+        var source = new PayloadRoot
+        {
+            State = new PayloadState
+            {
+                Count = 12,
+                Enabled = false
+            }
+        };
+
+        object payload = SerializationPayloadEditor.SerializeRecord(source, useMemoryPack);
+        payload = SerializationPayloadEditor.SetPayloadValue(payload, 42, useMemoryPack, "state", nameof(PayloadState.Count));
+        payload = SerializationPayloadEditor.RemovePayloadEntry(payload, useMemoryPack, "state", nameof(PayloadState.Enabled));
+
+        var target = new PayloadRoot();
+        SerializationPayloadEditor.PopulateRecord(target, payload, useMemoryPack);
+
+        target.State.Count.Should().Be(42);
+        target.State.Enabled.Should().BeTrue();
+    }
+#endif
+
     [Theory]
     [MemberData(nameof(SerializationTransportData.All), MemberType = typeof(SerializationTransportData))]
     public void SetValue_ShouldMutateNestedValue(SerializationTransport transport)

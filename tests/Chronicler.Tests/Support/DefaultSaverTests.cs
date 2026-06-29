@@ -20,6 +20,17 @@ public sealed class DefaultSaverTests
             saver.Calls);
     }
 
+    [Fact]
+    public void LifecycleMethods_ShouldAllowNoOpBaseHooks()
+    {
+        var saver = new NoOpSaver();
+
+        saver.Save();
+        saver.EarlyApply();
+        saver.Apply();
+        saver.LateApply();
+    }
+
     private sealed class RecordingSaver : DefaultSaver
     {
         public readonly List<string> Calls = new List<string>();
@@ -31,5 +42,9 @@ public sealed class DefaultSaverTests
         protected override void OnApply() => Calls.Add("apply");
 
         protected override void OnLateApply() => Calls.Add("late-apply");
+    }
+
+    private sealed class NoOpSaver : DefaultSaver
+    {
     }
 }

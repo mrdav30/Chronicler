@@ -27,16 +27,33 @@ public sealed class StateJsonConverter<TRecord, TState> : JsonConverter<TRecord>
     /// <inheritdoc />
     public override TRecord Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        if (reader.TokenType != JsonTokenType.StartObject)
+        EnsureStartObject(reader.TokenType, typeToConvert);
+        ReadStateProperty(ref reader, typeToConvert);
+        TState state = ReadStateValue(ref reader, typeToConvert, options);
+        EnsureEndObject(ref reader, typeToConvert);
+
+        return _factory(state);
+    }
+
+    private static void EnsureStartObject(JsonTokenType tokenType, Type typeToConvert)
+    {
+        if (tokenType != JsonTokenType.StartObject)
             throw new JsonException($"Expected JSON object for state-backed type '{typeToConvert}'.");
+    }
 
-        if (!reader.Read()
-            || reader.TokenType != JsonTokenType.PropertyName
-            || !reader.ValueTextEquals(StatePropertyName))
-        {
+    private static void ReadStateProperty(ref Utf8JsonReader reader, Type typeToConvert)
+    {
+        if (!reader.Read())
             throw new JsonException($"Expected '{StatePropertyName}' property for state-backed type '{typeToConvert}'.");
-        }
+        if (reader.TokenType != JsonTokenType.PropertyName || !reader.ValueTextEquals(StatePropertyName))
+            throw new JsonException($"Expected '{StatePropertyName}' property for state-backed type '{typeToConvert}'.");
+    }
 
+    private static TState ReadStateValue(
+        ref Utf8JsonReader reader,
+        Type typeToConvert,
+        JsonSerializerOptions options)
+    {
         if (!reader.Read())
             throw new JsonException($"Expected '{StatePropertyName}' value for state-backed type '{typeToConvert}'.");
 
@@ -44,10 +61,15 @@ public sealed class StateJsonConverter<TRecord, TState> : JsonConverter<TRecord>
         if (state == null)
             throw new JsonException($"Unable to deserialize '{StatePropertyName}' for state-backed type '{typeToConvert}'.");
 
-        if (!reader.Read() || reader.TokenType != JsonTokenType.EndObject)
-            throw new JsonException($"Expected end of JSON object for state-backed type '{typeToConvert}'.");
+        return state;
+    }
 
-        return _factory(state);
+    private static void EnsureEndObject(ref Utf8JsonReader reader, Type typeToConvert)
+    {
+        if (!reader.Read())
+            throw new JsonException($"Expected end of JSON object for state-backed type '{typeToConvert}'.");
+        if (reader.TokenType != JsonTokenType.EndObject)
+            throw new JsonException($"Expected end of JSON object for state-backed type '{typeToConvert}'.");
     }
 
     /// <inheritdoc />

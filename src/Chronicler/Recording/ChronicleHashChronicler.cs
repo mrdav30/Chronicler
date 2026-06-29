@@ -35,6 +35,21 @@ internal sealed class ChronicleHashChronicler : IChronicler
     [ThreadStatic]
     private static ChronicleHashChronicler? _cached;
 
+    private static readonly Dictionary<Type, LeafKind> LeafKindsByType = new()
+    {
+        [typeof(bool)] = LeafKind.Bool,
+        [typeof(byte)] = LeafKind.Byte,
+        [typeof(sbyte)] = LeafKind.SByte,
+        [typeof(short)] = LeafKind.Int16,
+        [typeof(ushort)] = LeafKind.UInt16,
+        [typeof(int)] = LeafKind.Int32,
+        [typeof(uint)] = LeafKind.UInt32,
+        [typeof(long)] = LeafKind.Int64,
+        [typeof(ulong)] = LeafKind.UInt64,
+        [typeof(char)] = LeafKind.Char,
+        [typeof(string)] = LeafKind.String
+    };
+
     private static readonly Dictionary<Type, string> StableTypeNames = new();
     private static readonly object StableTypeNameSync = new();
 
@@ -213,21 +228,10 @@ internal sealed class ChronicleHashChronicler : IChronicler
         if (declaredType.IsEnum)
             return LeafKind.Enum;
 
-        return Type.GetTypeCode(declaredType) switch
-        {
-            TypeCode.Boolean => LeafKind.Bool,
-            TypeCode.Byte => LeafKind.Byte,
-            TypeCode.SByte => LeafKind.SByte,
-            TypeCode.Int16 => LeafKind.Int16,
-            TypeCode.UInt16 => LeafKind.UInt16,
-            TypeCode.Int32 => LeafKind.Int32,
-            TypeCode.UInt32 => LeafKind.UInt32,
-            TypeCode.Int64 => LeafKind.Int64,
-            TypeCode.UInt64 => LeafKind.UInt64,
-            TypeCode.Char => LeafKind.Char,
-            TypeCode.String => LeafKind.String,
-            _ => throw new NotSupportedException($"Unsupported record-hash leaf value '{name}' of type {GetStableTypeName(declaredType)}."),
-        };
+        if (LeafKindsByType.TryGetValue(declaredType, out LeafKind kind))
+            return kind;
+
+        throw new NotSupportedException($"Unsupported record-hash leaf value '{name}' of type {GetStableTypeName(declaredType)}.");
     }
 
     private void WriteLeafValue<T>(ref T value, string name)
@@ -328,23 +332,25 @@ internal sealed class ChronicleHashChronicler : IChronicler
 
     private void WriteEnumValue<T>(ref T value)
     {
-        switch (Unsafe.SizeOf<T>())
+        if (Unsafe.SizeOf<T>() == 1)
         {
-            case 1:
-                _writer.WriteByte(Unsafe.As<T, byte>(ref value));
-                return;
-            case 2:
-                _writer.WriteUInt16(Unsafe.As<T, ushort>(ref value));
-                return;
-            case 4:
-                _writer.WriteUInt32(Unsafe.As<T, uint>(ref value));
-                return;
-            case 8:
-                _writer.WriteUInt64(Unsafe.As<T, ulong>(ref value));
-                return;
-            default:
-                throw new InvalidOperationException("Unsupported enum width.");
+            _writer.WriteByte(Unsafe.As<T, byte>(ref value));
+            return;
         }
+
+        if (Unsafe.SizeOf<T>() == 2)
+        {
+            _writer.WriteUInt16(Unsafe.As<T, ushort>(ref value));
+            return;
+        }
+
+        if (Unsafe.SizeOf<T>() == 4)
+        {
+            _writer.WriteUInt32(Unsafe.As<T, uint>(ref value));
+            return;
+        }
+
+        _writer.WriteUInt64(Unsafe.As<T, ulong>(ref value));
     }
 
     private static string GetStableTypeName(Type type)
@@ -363,14 +369,7 @@ internal sealed class ChronicleHashChronicler : IChronicler
     private static string BuildStableTypeName(Type type)
     {
         if (type.IsArray)
-        {
-            Type elementType = type.GetElementType()!;
-            int rank = type.GetArrayRank();
-            if (rank == 1)
-                return GetStableTypeName(elementType) + "[]";
-
-            return GetStableTypeName(elementType) + "[" + new string(',', rank - 1) + "]";
-        }
+            return BuildStableArrayTypeName(type);
 
         if (type.IsGenericParameter)
             return type.Name;
@@ -378,6 +377,22 @@ internal sealed class ChronicleHashChronicler : IChronicler
         if (!type.IsGenericType)
             return type.FullName ?? type.Name;
 
+        return BuildStableGenericTypeName(type);
+    }
+
+    private static string BuildStableArrayTypeName(Type type)
+    {
+        Type elementType = type.GetElementType()!;
+        int rank = type.GetArrayRank();
+        string suffix = rank == 1
+            ? "[]"
+            : "[" + new string(',', rank - 1) + "]";
+
+        return GetStableTypeName(elementType) + suffix;
+    }
+
+    private static string BuildStableGenericTypeName(Type type)
+    {
         Type genericTypeDefinition = type.GetGenericTypeDefinition();
         string baseName = genericTypeDefinition.FullName ?? genericTypeDefinition.Name;
         Type[] arguments = type.GetGenericArguments();

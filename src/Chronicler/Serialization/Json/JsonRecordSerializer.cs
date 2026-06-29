@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
 using System.Text.Json;
@@ -257,40 +258,66 @@ public static class JsonRecordSerializer
             RecordLinkResolveMode resolveMode = RecordLinkResolveMode.Immediate,
             Action<T>? assignLoadedValue = null)
         {
-            if (!_root.TryGetProperty(name, out JsonElement entry)
-                || entry.ValueKind == JsonValueKind.Null)
+            if (!TryReadLinkId(name, out string? id))
             {
                 value = default!;
                 return;
             }
-
-            string id = JsonSerializer.Deserialize<string>(entry.GetRawText(), _options)!;
 
             if (resolveMode == RecordLinkResolveMode.Deferred)
             {
-                if (assignLoadedValue == null)
-                    throw new InvalidOperationException(
-                        $"Deferred link '{name}' of type {typeof(T).Name} requires an assignment callback.");
-
-                T? deferredValue;
-                if (Context.Links.TryResolve(id, out deferredValue, slot))
-                {
-                    value = deferredValue!;
-                    assignLoadedValue(deferredValue!);
-                    return;
-                }
-
-                Context.QueueDeferredLink(name, id, slot, assignLoadedValue);
-                value = default!;
+                LoadDeferredLink(ref value, name, id, slot, assignLoadedValue);
                 return;
             }
 
-            T? resolvedValue;
-            if (!Context.Links.TryResolve(id, out resolvedValue, slot))
+            LoadImmediateLink(ref value, name, id, slot, assignLoadedValue);
+        }
+
+        private bool TryReadLinkId(string name, [NotNullWhen(true)] out string? id)
+        {
+            if (!_root.TryGetProperty(name, out JsonElement entry)
+                || entry.ValueKind == JsonValueKind.Null)
             {
+                id = null;
+                return false;
+            }
+
+            id = JsonSerializer.Deserialize<string>(entry.GetRawText(), _options);
+            return id != null;
+        }
+
+        private void LoadDeferredLink<T>(
+            ref T value,
+            string name,
+            string id,
+            string? slot,
+            Action<T>? assignLoadedValue)
+        {
+            if (assignLoadedValue == null)
+                throw new InvalidOperationException(
+                    $"Deferred link '{name}' of type {typeof(T).Name} requires an assignment callback.");
+
+            if (Context.Links.TryResolve(id, out T? deferredValue, slot))
+            {
+                value = deferredValue!;
+                assignLoadedValue(deferredValue!);
+                return;
+            }
+
+            Context.QueueDeferredLink(name, id, slot, assignLoadedValue);
+            value = default!;
+        }
+
+        private void LoadImmediateLink<T>(
+            ref T value,
+            string name,
+            string id,
+            string? slot,
+            Action<T>? assignLoadedValue)
+        {
+            if (!Context.Links.TryResolve(id, out T? resolvedValue, slot))
                 throw new InvalidOperationException(
                     $"Unable to load link '{name}' of type {typeof(T).Name} with id '{id}'{FormatSlot(slot)}.");
-            }
 
             value = resolvedValue!;
             assignLoadedValue?.Invoke(resolvedValue!);

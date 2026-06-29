@@ -120,4 +120,57 @@ public class ChronicleLinkRegistryTests
         ((bool)equalsMethod.Invoke(first, new[] { second })!).Should().BeTrue();
         ((bool)equalsMethod.Invoke(first, new object?[] { "not-a-key" })!).Should().BeFalse();
     }
+
+    [Fact]
+    public void ChronicleLinkKey_ShouldRejectNullType()
+    {
+        Type keyType = typeof(ChronicleLinkRegistry).GetNestedType(
+            "ChronicleLinkKey",
+            BindingFlags.NonPublic)!;
+
+        Action act = () => Activator.CreateInstance(
+            keyType,
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+            binder: null,
+            args: new object?[] { null, null },
+            culture: null);
+
+        act.Should().Throw<TargetInvocationException>()
+            .Which.InnerException.Should().BeOfType<ArgumentNullException>()
+            .Which.ParamName.Should().Be("type");
+    }
+
+    [Fact]
+    public void ChronicleLinkKey_EqualsTyped_ShouldReturnFalseForDifferentKeys()
+    {
+        Type keyType = typeof(ChronicleLinkRegistry).GetNestedType(
+            "ChronicleLinkKey",
+            BindingFlags.NonPublic)!;
+
+        object first = Activator.CreateInstance(
+            keyType,
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+            binder: null,
+            args: new object?[] { typeof(int), null },
+            culture: null)!;
+
+        object differentType = Activator.CreateInstance(
+            keyType,
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+            binder: null,
+            args: new object?[] { typeof(string), null },
+            culture: null)!;
+
+        object differentSlot = Activator.CreateInstance(
+            keyType,
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+            binder: null,
+            args: new object?[] { typeof(int), "alternate" },
+            culture: null)!;
+
+        MethodInfo equalsMethod = keyType.GetMethod("Equals", new[] { keyType })!;
+
+        ((bool)equalsMethod.Invoke(first, new[] { differentType })!).Should().BeFalse();
+        ((bool)equalsMethod.Invoke(first, new[] { differentSlot })!).Should().BeFalse();
+    }
 }

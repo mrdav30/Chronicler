@@ -37,25 +37,38 @@ public sealed class ChronicleContext
         if (_deferredLinks.Count == 0)
             return;
 
+        ResolveQueuedLinks();
+
+        if (_deferredLinks.Count > 0)
+            ThrowUnresolvedDeferredLinks();
+    }
+
+    private void ResolveQueuedLinks()
+    {
         while (_deferredLinks.Count > 0)
         {
-            int resolvedCount = 0;
-            for (int i = _deferredLinks.Count - 1; i >= 0; i--)
-            {
-                if (!_deferredLinks[i].TryResolve(Links))
-                    continue;
+            if (ResolveQueuedLinkPass() == 0)
+                return;
+        }
+    }
 
-                _deferredLinks.RemoveAt(i);
-                resolvedCount++;
-            }
+    private int ResolveQueuedLinkPass()
+    {
+        int resolvedCount = 0;
+        for (int i = _deferredLinks.Count - 1; i >= 0; i--)
+        {
+            if (!_deferredLinks[i].TryResolve(Links))
+                continue;
 
-            if (resolvedCount == 0)
-                break;
+            _deferredLinks.RemoveAt(i);
+            resolvedCount++;
         }
 
-        if (_deferredLinks.Count == 0)
-            return;
+        return resolvedCount;
+    }
 
+    private void ThrowUnresolvedDeferredLinks()
+    {
         var builder = new StringBuilder();
         builder.Append("Unable to resolve deferred links:");
         foreach (IDeferredRecordLink deferredLink in _deferredLinks)
