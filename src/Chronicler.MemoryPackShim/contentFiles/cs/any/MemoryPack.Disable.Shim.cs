@@ -1,4 +1,5 @@
 // This shim allows consumers to disable MemoryPack entirely, and use their own serialization solution instead.
+using System;
 
 namespace MemoryPack;
 
