@@ -11,7 +11,7 @@
 ---
 
 **Date:** 2026-06-26  
-**Status:** Planned  
+**Status:** In Progress - Workstreams 1-4 complete; downstream migration pending  
 **Primary Repository:** `F:\gamedevrepos\Chronicler`  
 **Related Repositories:** `F:\gamedevrepos\FixedMathSharp`, `F:\gamedevrepos\SwiftCollections`, `F:\gamedevrepos\GridForge`, `F:\gamedevrepos\Gravitas`
 
@@ -155,16 +155,16 @@ The exact geometry list should be limited to FixedMathSharp primitives already u
 
 **Tasks:**
 
-- [ ] Add `ChronicleHash` as a public immutable 128-bit value with `Low`, `High`, equality, operators, deterministic `GetHashCode()`, and lowercase 32-character hex `ToString()`.
-- [ ] Add `ChronicleHashWriter` as a public mutable struct with explicit primitive write methods.
-- [ ] Port the current Gravitas lane algorithm only if review confirms it is adequate for Chronicler; otherwise choose a simple deterministic 128-bit non-cryptographic mixing algorithm with documented constants and stable output tests.
-- [ ] Require ASCII-only section tags in `WriteSection(...)` and throw `ArgumentException` for null, empty, or non-ASCII tags.
-- [ ] Encode strings as nullable marker plus length-prefixed UTF-16 code units or UTF-8 bytes. Pick one canonical encoding and lock it with tests.
-- [ ] Add tests proving primitive writes are little-endian and order-sensitive.
-- [ ] Add tests proving equal write streams produce equal hashes and different write streams produce different hashes.
-- [ ] Add tests for section tag validation and stable `ToString()` format.
-- [ ] Add an allocation assertion for a warmed primitive writer path.
-- [ ] Document the writer as deterministic record-hash infrastructure, not a security or cryptographic hash.
+- [x] Add `ChronicleHash` as a public immutable 128-bit value with `Low`, `High`, equality, operators, deterministic `GetHashCode()`, and lowercase 32-character hex `ToString()`.
+- [x] Add `ChronicleHashWriter` as a public mutable struct with explicit primitive write methods.
+- [x] Port the current Gravitas lane algorithm only if review confirms it is adequate for Chronicler; otherwise choose a simple deterministic 128-bit non-cryptographic mixing algorithm with documented constants and stable output tests.
+- [x] Require ASCII-only section tags in `WriteSection(...)` and throw `ArgumentException` for null, empty, or non-ASCII tags.
+- [x] Encode strings as nullable marker plus length-prefixed UTF-16 code units or UTF-8 bytes. Pick one canonical encoding and lock it with tests.
+- [x] Add tests proving primitive writes are little-endian and order-sensitive.
+- [x] Add tests proving equal write streams produce equal hashes and different write streams produce different hashes.
+- [x] Add tests for section tag validation and stable `ToString()` format.
+- [x] Add an allocation assertion for a warmed primitive writer path.
+- [x] Document the writer as deterministic record-hash infrastructure, not a security or cryptographic hash.
 
 **Validation:**
 
@@ -185,21 +185,21 @@ dotnet test tests/Chronicler.Tests/Chronicler.Tests.csproj -c Release --filter C
 
 **Tasks:**
 
-- [ ] Add `ChronicleHashSerializer.Compute(IRecordable target)` and `Compute(IRecordable target, ChronicleContext context)`.
-- [ ] Add `ChronicleHashSerializer.Contribute(...)` overloads for callers that own a larger domain writer and want to embed a recordable subtree.
-- [ ] Implement `ChronicleHashChronicler : IChronicler` with `SerializationMode.Saving`.
-- [ ] For `LookValue<T>`, include the field name, value type category, null marker, and canonical leaf value.
-- [ ] Support leaf values for `bool`, `byte`, `sbyte`, `short`, `ushort`, `int`, `uint`, `long`, `ulong`, `char`, `string`, and enums with 1/2/4/8-byte underlying values.
-- [ ] Decide float and double policy explicitly during implementation. If supported, hash IEEE bit patterns only. If rejected, throw `NotSupportedException` with a message that names the field and type.
-- [ ] For `LookDeep<T>`, include the field name, null marker, runtime-independent declared type name, and nested `RecordData(...)` payload. Null class deep values should hash as null and should not instantiate objects.
-- [ ] For `LookDeepStruct<T>`, include the field name and nested `RecordData(...)` payload.
-- [ ] For `LookNullableDeep<T>`, include the field name, presence marker, and nested payload only when present.
-- [ ] For `LookLink<T>`, include the field name, optional slot, resolve mode, and stable link ID from `ChronicleContext.Links.TryGetReferenceId(...)`.
-- [ ] Throw a clear exception when a non-null link value cannot be resolved to a stable ID.
-- [ ] Add tests for equivalent JSON/MemoryPack save data producing equivalent hash when `RecordData(...)` writes the same fields in the same order.
-- [ ] Add tests that changing field order, field name, nested value, nullable presence, or link ID changes the hash.
-- [ ] Add tests that unsupported leaf values fail loudly.
-- [ ] Add warmed allocation tests for a simple recordable and a nested recordable graph.
+- [x] Add `ChronicleHashSerializer.Compute(IRecordable target)` and `Compute(IRecordable target, ChronicleContext context)`.
+- [x] Add `ChronicleHashSerializer.Contribute(...)` overloads for callers that own a larger domain writer and want to embed a recordable subtree.
+- [x] Implement `ChronicleHashChronicler : IChronicler` with `SerializationMode.Saving`.
+- [x] For `LookValue<T>`, include the field name, value type category, null marker, and canonical leaf value.
+- [x] Support leaf values for `bool`, `byte`, `sbyte`, `short`, `ushort`, `int`, `uint`, `long`, `ulong`, `char`, `string`, and enums with 1/2/4/8-byte underlying values.
+- [x] Decide float and double policy explicitly during implementation. If supported, hash IEEE bit patterns only. If rejected, throw `NotSupportedException` with a message that names the field and type.
+- [x] For `LookDeep<T>`, include the field name, null marker, runtime-independent declared type name, and nested `RecordData(...)` payload. Null class deep values should hash as null and should not instantiate objects.
+- [x] For `LookDeepStruct<T>`, include the field name and nested `RecordData(...)` payload.
+- [x] For `LookNullableDeep<T>`, include the field name, presence marker, and nested payload only when present.
+- [x] For `LookLink<T>`, include the field name, optional slot, resolve mode, and stable link ID from `ChronicleContext.Links.TryGetReferenceId(...)`.
+- [x] Throw a clear exception when a non-null link value cannot be resolved to a stable ID.
+- [x] Add tests for equivalent JSON/MemoryPack save data producing equivalent hash when `RecordData(...)` writes the same fields in the same order.
+- [x] Add tests that changing field order, field name, nested value, nullable presence, or link ID changes the hash.
+- [x] Add tests that unsupported leaf values fail loudly.
+- [x] Add warmed allocation tests for a simple recordable and a nested recordable graph.
 
 **Validation:**
 
@@ -219,11 +219,11 @@ dotnet test tests/Chronicler.Tests/Chronicler.Tests.csproj -c Release --filter C
 
 **Tasks:**
 
-- [ ] Add README examples showing primitive writer use and `IRecordable` hash computation.
-- [ ] Document that record hashes are conformance/replay signals, not transport payloads and not cryptographic hashes.
-- [ ] Verify the standard package exposes the hash APIs.
-- [ ] Verify the lean package exposes the same hash APIs without MemoryPack dependency assumptions.
-- [ ] Generate concise release notes for the Chronicler release after tests pass.
+- [x] Add README examples showing primitive writer use and `IRecordable` hash computation.
+- [x] Document that record hashes are conformance/replay signals, not transport payloads and not cryptographic hashes.
+- [x] Verify the standard package exposes the hash APIs.
+- [x] Verify the lean package exposes the same hash APIs without MemoryPack dependency assumptions.
+- [x] Generate concise release notes for the Chronicler release after tests pass.
 
 **Validation:**
 
@@ -251,17 +251,24 @@ dotnet test tests/Chronicler.Tests/Chronicler.Tests.csproj -c ReleaseLean --no-b
 
 **Tasks:**
 
-- [ ] Create the companion project with package ID `FixedMathSharp.Chronicler`.
-- [ ] Reference released `Chronicler.Core` by package version, not a local project reference, for release validation.
-- [ ] Reference the core FixedMathSharp project or package according to the local release workflow being used.
-- [ ] Add extension methods for `Fixed64`, vectors, quaternion, transform, matrices, and commonly used FixedMathSharp geometry primitives.
-- [ ] Hash `Fixed64` by raw fixed-point value.
-- [ ] Hash vectors, matrices, quaternion, transform, and geometry types by writing fields in documented canonical order.
-- [ ] Keep extension methods allocation-free and avoid generic reflection.
-- [ ] Add tests proving canonical field order for each supported type.
-- [ ] Add tests proving two mathematically different values with close display formatting still hash differently when raw fixed values differ.
-- [ ] Add tests proving geometry types hash only deterministic fields and do not use `GetHashCode()`.
-- [ ] Update FixedMathSharp README with a short package section and usage example.
+- [x] Create the companion project with package ID `FixedMathSharp.Chronicler`.
+- [x] Reference local `Chronicler.Core` during active review; swap to the released package before FixedMathSharp release validation.
+- [x] Reference the core FixedMathSharp project or package according to the local release workflow being used.
+- [x] Add extension methods for `Fixed64`, vectors, quaternion, transform, matrices, and commonly used FixedMathSharp geometry primitives.
+- [x] Hash `Fixed64` by raw fixed-point value.
+- [x] Hash vectors, matrices, quaternion, transform, and geometry types by writing fields in documented canonical order.
+- [x] Keep extension methods allocation-free and avoid generic reflection.
+- [x] Add tests proving canonical field order for each supported type.
+- [x] Add tests proving two mathematically different values with close display formatting still hash differently when raw fixed values differ.
+- [x] Add tests proving geometry types hash only deterministic fields and do not use `GetHashCode()`.
+- [x] Update FixedMathSharp README with a short package section and usage example.
+
+**Implementation Notes:**
+
+- The companion package uses `WriteBoundSphere` for the existing `FixedBoundSphere` type instead of adding a duplicate `WriteBoundingSphere` alias.
+- Local project references are wired through the FixedMathSharp library, tests, and solution while Chronicler remains unreleased for this pass.
+- The FixedMathSharp solution includes the local Chronicler project during active review so `Release` and `ReleaseLean` configuration mapping stays explicit across the cross-repo reference.
+- Chronicler enum leaf hashing was hardened while validating this workstream because the existing serializer test exposed the missing enum branch.
 
 **Validation:**
 

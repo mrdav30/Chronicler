@@ -23,6 +23,7 @@ Unlike attribute-only serializers, Chronicler makes each type explicitly own its
 - **Canonical default handling** so omitted entries load into known values instead of ambient runtime state.
 - **Deep graph support** for nested owned objects and structs already present in the runtime shell.
 - **Stable link support** for runtime-owned or external references through a session-scoped registry.
+- **Deterministic record hashes** for replay, snapshot, and conformance checks without hashing JSON or MemoryPack payloads.
 - **Designed for lockstep and restore flows** where the host owns construction and Chronicler owns state transfer.
 
 ---
@@ -93,6 +94,9 @@ Core abstractions:
 - `IStateBacked<TState>`
 - `ChronicleContext`
 - `ChronicleLinkRegistry`
+- `ChronicleHash`
+- `ChronicleHashWriter`
+- `ChronicleHashSerializer`
 - `DefaultSaver`
 
 Built-in transports:
@@ -240,6 +244,28 @@ For cases where the target object is only available after the rest of the graph 
 
 ---
 
+## Record Hashes
+
+Use `ChronicleHashSerializer` when you need a deterministic conformance or replay signal from the same `RecordData(...)` schema used by Chronicler transports:
+
+```csharp
+ChronicleHash hash = ChronicleHashSerializer.Compute(playerSnapshot);
+```
+
+For domain-level hashes that include extra ordering or simulation metadata, write your own sections and embed recordable subtrees:
+
+```csharp
+var writer = new ChronicleHashWriter();
+writer.WriteSection("world.replay", 1);
+writer.WriteInt32(frameNumber);
+ChronicleHashSerializer.Contribute(playerSnapshot, context, ref writer);
+ChronicleHash hash = writer.ToHash();
+```
+
+Record hashes are deterministic comparison signals, not serialized transport payloads and not cryptographic hashes. See [`docs/wiki/RECORD_HASHES.md`](docs/wiki/RECORD_HASHES.md) for the full contract.
+
+---
+
 ## Design Rules
 
 - Pass canonical declared defaults to `RecordValues.Look(...)`.
@@ -247,6 +273,7 @@ For cases where the target object is only available after the rest of the graph 
 - Use `RecordDeepStruct` for non-nullable nested recordable structs.
 - Use `RecordNullableDeep` for optional nested recordable structs.
 - Use `RecordLinks` for runtime-owned or external references.
+- Use record hashes for replay/conformance checks, not as a replacement for JSON, MemoryPack, or security hashing.
 - Keep object construction and framework bootstrap outside the base Chronicler contract.
 - Use `DefaultSaver` for reusable explicit save/apply helper lifecycles that need
   `Save`, `EarlyApply`, `Apply`, and `LateApply` phases.

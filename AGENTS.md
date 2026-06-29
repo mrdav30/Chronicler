@@ -109,6 +109,9 @@ Keep the library structure simple. Prefer adding to these buckets over creating 
 - Prefer explicit guard clauses for invalid inputs and unsupported states.
 - Preserve deterministic load/save semantics when adding new helpers.
 - Do not hide important behavior in magic defaults.
+- Treat `ChronicleHash` and `ChronicleHashSerializer` as deterministic
+  replay/conformance signals over `RecordData(...)`, not as transport payloads
+  or cryptographic hashes.
 
 ### Dependency guidance
 
