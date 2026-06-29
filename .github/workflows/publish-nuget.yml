@@ -166,6 +166,7 @@ jobs:
         expected_ids=(
           "Chronicler.Core"
           "Chronicler.Core.Lean"
+          "Chronicler.MemoryPackShim"
         )
 
         for package_id in "${expected_ids[@]}"; do
