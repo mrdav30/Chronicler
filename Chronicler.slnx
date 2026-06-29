@@ -6,8 +6,10 @@
   </Configurations>
   <Folder Name="/src/">
     <Project Path="src/Chronicler/Chronicler.csproj" />
+    <Project Path="src/Chronicler.MemoryPackShim/Chronicler.MemoryPackShim.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Chronicler.MemoryPackShim.Tests/Chronicler.MemoryPackShim.Tests.csproj" />
     <Project Path="tests/Chronicler.Tests/Chronicler.Tests.csproj" />
   </Folder>
 </Solution>

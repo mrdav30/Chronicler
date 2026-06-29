@@ -38,6 +38,8 @@ Unlike attribute-only serializers, Chronicler makes each type explicitly own its
   The standard package. Includes the full Chronicler API with built-in JSON and MemoryPack transports. Its external package surface is limited to the transport dependencies needed for those built-ins.
 - `Chronicler.Core.Lean`
   The lean package. Keeps the same core deterministic recording API and JSON transport, but removes the `MemoryPack` dependency and generated transport surface.
+- `Chronicler.MemoryPackShim`
+  A source-only helper package for Lean libraries that keep MemoryPack annotations in source while disabling the real `MemoryPack` package. It contributes internal compatibility attributes only when `DisableMemoryPack=true`; it is not a serializer and ships no runtime assembly.
 
 2. Install via NuGet:
 
@@ -51,6 +53,12 @@ dotnet add package Chronicler.Core
 
 ```bash
 dotnet add package Chronicler.Core.Lean
+```
+
+- Source-only Lean MemoryPack shim:
+
+```bash
+dotnet add package Chronicler.MemoryPackShim
 ```
 
 ### Source
@@ -69,6 +77,8 @@ Chronicler is published in two build variants so you can choose between built-in
   Includes both `JsonRecordSerializer` and `MemoryPackRecordSerializer`. This is the best default choice when you want the built-in MemoryPack transport.
 - `Chronicler.Core.Lean`
   Excludes the `MemoryPack` package, compiles out the built-in MemoryPack transport files, and keeps internal shim attributes so the same codebase can build without the dependency. Choose this when you only need JSON, when you plan to supply your own binary transport, or when you want to avoid `MemoryPack`-generated code paths entirely.
+- `Chronicler.MemoryPackShim`
+  Contains only `buildTransitive` and source assets. Consumers reference it with `PrivateAssets="all"` from Lean item groups so public annotated types compile without exporting fake public `MemoryPack.*` APIs.
 
 Both variants preserve the same core `IRecordable` / `IChronicler` model and deterministic state transfer semantics. The main difference is whether the package includes the built-in MemoryPack transport.
 

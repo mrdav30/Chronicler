@@ -1,0 +1,7 @@
+<Project>
+  <ItemGroup Condition="'$(DisableMemoryPack)' == 'true' and '$(ChroniclerMemoryPackShimEnabled)' != 'false'">
+    <Compile Include="$(MSBuildThisFileDirectory)..\contentFiles\cs\any\MemoryPack.Disable.Shim.cs"
+             Link="Chronicler.Generated\MemoryPack.Disable.Shim.cs"
+             Visible="false" />
+  </ItemGroup>
+</Project>
