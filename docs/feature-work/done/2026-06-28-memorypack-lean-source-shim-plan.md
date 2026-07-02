@@ -1,5 +1,12 @@
 # MemoryPack Lean Source Shim Implementation Plan
 
+**Date:** 2026-06-28  
+**Status:** Done
+**Primary Repository:** `Chronicler`  
+**Related Repositories:** `FixedMathSharp`, `SwiftCollections`, `GridForge`, `Gravitas`
+
+---
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` for independent review tasks, or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace copied per-library Lean MemoryPack shim files with a Chronicler-owned source-only shim package that compiles internal placeholder attributes into each consuming Lean assembly without exporting fake `MemoryPack` APIs.
@@ -7,15 +14,6 @@
 **Architecture:** Chronicler owns a small source-only NuGet package that contributes `MemoryPack.*` compatibility attributes through `buildTransitive` assets only when `DisableMemoryPack=true`. Standard builds continue to reference the real MemoryPack package and must not compile the shim. Downstream LSF libraries consume the shim package in their Lean item groups, remove local shim files, and validate Release/ReleaseLean package graphs in stack order.
 
 **Tech Stack:** .NET `netstandard2.1`/`net8.0`, MSBuild `buildTransitive` assets, source-only NuGet packaging, MemoryPack attribute compatibility, Chronicler, FixedMathSharp, SwiftCollections, GridForge, Gravitas.
-
----
-
-**Date:** 2026-06-28  
-**Status:** In Progress - Workstreams 1-4 complete; SwiftCollections,
-GridForge, and Gravitas migrations remain pending after the shim package is
-released.  
-**Primary Repository:** `F:\gamedevrepos\Chronicler`  
-**Related Repositories:** `F:\gamedevrepos\FixedMathSharp`, `F:\gamedevrepos\SwiftCollections`, `F:\gamedevrepos\GridForge`, `F:\gamedevrepos\Gravitas`
 
 ## Purpose
 
@@ -333,14 +331,14 @@ source-only package in Lean builds.
 
 **Tasks:**
 
-- [ ] Add `Chronicler.MemoryPackShim` to Lean item groups where annotated
+- [x] Add `Chronicler.MemoryPackShim` to Lean item groups where annotated
   source compiles without real `MemoryPack`.
-- [ ] Delete the local shim file.
-- [ ] Keep `Chronicler.Core.Lean` references for actual Chronicler runtime APIs
+- [x] Delete the local shim file.
+- [x] Keep `Chronicler.Core.Lean` references for actual Chronicler runtime APIs
   where they are already used.
-- [ ] Verify standard builds still reference real `MemoryPack`.
-- [ ] Verify Lean builds do not reference real `MemoryPack`.
-- [ ] Run the SwiftCollections Release and ReleaseLean validation suites.
+- [x] Verify standard builds still reference real `MemoryPack`.
+- [x] Verify Lean builds do not reference real `MemoryPack`.
+- [x] Run the SwiftCollections Release and ReleaseLean validation suites.
 
 **Validation:**
 
@@ -369,14 +367,14 @@ package in Lean builds.
 
 **Tasks:**
 
-- [ ] Add `Chronicler.MemoryPackShim` to the Lean item group with
+- [x] Add `Chronicler.MemoryPackShim` to the Lean item group with
   `PrivateAssets="all"`.
-- [ ] Delete the local shim file.
-- [ ] Keep MemoryPack annotations directly in source; do not wrap them in
+- [x] Delete the local shim file.
+- [x] Keep MemoryPack annotations directly in source; do not wrap them in
   `#if !GRIDFORGE_DISABLE_MEMORYPACK`.
-- [ ] Verify standard builds still reference real `MemoryPack`.
-- [ ] Verify Lean builds do not reference real `MemoryPack`.
-- [ ] Run the GridForge Release and ReleaseLean validation suites.
+- [x] Verify standard builds still reference real `MemoryPack`.
+- [x] Verify Lean builds do not reference real `MemoryPack`.
+- [x] Run the GridForge Release and ReleaseLean validation suites.
 
 **Validation:**
 
@@ -407,21 +405,21 @@ lower-stack work.
 
 **Tasks:**
 
-- [ ] Add `Chronicler.MemoryPackShim` to the Lean item group with
+- [x] Add `Chronicler.MemoryPackShim` to the Lean item group with
   `PrivateAssets="all"`.
-- [ ] Delete the local shim file.
-- [ ] Keep MemoryPack annotations directly in source; do not wrap them in
+- [x] Delete the local shim file.
+- [x] Keep MemoryPack annotations directly in source; do not wrap them in
   `#if !GRAVITAS_DISABLE_MEMORYPACK`.
-- [ ] When local project references are needed for sibling packages, add them
+- [x] When local project references are needed for sibling packages, add them
   to the main, test, and benchmark projects only as active validation scaffolding.
-- [ ] For local project references, pass `DisableMemoryPack=$(DisableMemoryPack)`
+- [x] For local project references, pass `DisableMemoryPack=$(DisableMemoryPack)`
   and remove parent `DefineConstants` from child builds so one library's Lean
   symbol does not leak into another library's compile.
-- [ ] Leave local project references unstaged/uncommitted unless the repository
+- [x] Leave local project references unstaged/uncommitted unless the repository
   owner explicitly asks to commit them.
-- [ ] Remove local project references before package release validation unless
+- [x] Remove local project references before package release validation unless
   the repository owner explicitly asks to keep them in place.
-- [ ] Run the Gravitas Release and ReleaseLean validation suites.
+- [x] Run the Gravitas Release and ReleaseLean validation suites.
 
 **Validation:**
 

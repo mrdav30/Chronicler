@@ -1,19 +1,33 @@
 # Deterministic Record Hash Framework Implementation Plan
 
+**Date:** 2026-06-26  
+**Status:** Done - reusable framework, FixedMathSharp companion package, and downstream package preparation complete; Gravitas migration extracted  
+**Completed:** 2026-07-02  
+**Primary Repository:** `F:\gamedevrepos\Chronicler`  
+**Related Repositories:** `F:\gamedevrepos\FixedMathSharp`, `F:\gamedevrepos\SwiftCollections`, `F:\gamedevrepos\GridForge`, `F:\gamedevrepos\Gravitas`
+
+---
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` for independent review tasks, or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add a reusable deterministic record-hash framework to Chronicler, then layer FixedMathSharp-specific hash codecs in a separate FixedMathSharp package so Gravitas and future LSF libraries can share replay/conformance hashing without duplicating infrastructure.
 
-**Architecture:** Chronicler owns only dependency-free hash primitives and an `IRecordable` traversal backend. FixedMathSharp owns fixed-point, vector, matrix, quaternion, transform, and geometry hash writer extensions in a new package that depends on released `Chronicler.Core`. Gravitas keeps domain-specific replay policy, ordering, and inclusion modes, but migrates the generic writer/hash value logic to the lower-stack APIs after package releases.
+**Architecture:** Chronicler owns only dependency-free hash primitives and an `IRecordable` traversal backend. FixedMathSharp owns fixed-point, vector, matrix, quaternion, transform, and geometry hash writer extensions in a companion package that depends on released `Chronicler.Core`. Gravitas keeps domain-specific replay policy, ordering, and inclusion modes; the remaining Gravitas migration has been extracted into the Gravitas feature-work queue.
 
 **Tech Stack:** .NET `netstandard2.1`/`net8.0`, `Chronicler.Core`, `IRecordable`, `IChronicler`, xUnit, FixedMathSharp companion package, downstream LSF package release flow.
 
----
+## Completion Notes
 
-**Date:** 2026-06-26  
-**Status:** In Progress - Workstreams 1-4 complete; downstream migration pending  
-**Primary Repository:** `F:\gamedevrepos\Chronicler`  
-**Related Repositories:** `F:\gamedevrepos\FixedMathSharp`, `F:\gamedevrepos\SwiftCollections`, `F:\gamedevrepos\GridForge`, `F:\gamedevrepos\Gravitas`
+- Chronicler owns the dependency-free `ChronicleHash`,
+  `ChronicleHashWriter`, and `ChronicleHashSerializer` infrastructure.
+- FixedMathSharp owns the `FixedMathSharp.Chronicler` companion package for
+  deterministic fixed-point, vector, matrix, transform, and geometry hash writer
+  extensions.
+- SwiftCollections, GridForge, and Gravitas package graphs have been moved to
+  the released lower-stack package set.
+- The original Workstream 6 is no longer tracked in this Chronicler plan. It has
+  been extracted to
+  `F:\gamedevrepos\Gravitas\docs\feature-work\2026-07-02-chronicler-replay-hash-migration-plan.md`.
 
 ## Purpose
 
@@ -32,7 +46,8 @@ The extraction should happen in package order:
 1. Implement and release dependency-free Chronicler hash infrastructure.
 2. Create and release a new FixedMathSharp companion package that depends on released Chronicler.
 3. Bump downstream dependencies in SwiftCollections and GridForge as needed.
-4. Migrate Gravitas replay hashing to the released lower-stack APIs.
+4. Migrate Gravitas replay hashing to the released lower-stack APIs from the
+   dedicated Gravitas feature-work plan.
 
 ## Non-Goals
 
@@ -291,15 +306,15 @@ dotnet test tests/FixedMathSharp.Chronicler.Tests/FixedMathSharp.Chronicler.Test
 
 **Tasks:**
 
-- [ ] Bump SwiftCollections dependencies to the released FixedMathSharp package set when required by package graph changes.
-- [ ] Run SwiftCollections Release and ReleaseLean validation.
-- [ ] Release SwiftCollections if a dependency migration package is needed.
-- [ ] Bump GridForge dependencies to the released SwiftCollections and FixedMathSharp package set.
-- [ ] Run GridForge Release and ReleaseLean validation.
-- [ ] Release GridForge if a dependency migration package is needed.
-- [ ] Bump Gravitas dependencies to the released Chronicler, FixedMathSharp, SwiftCollections, and GridForge package set.
-- [ ] Use local project references only during active migration, and add the matching local link to child test and benchmark projects when required by the current .NET restore behavior.
-- [ ] Remove local project references before Gravitas release validation unless the repo owner explicitly asks to leave them in place.
+- [x] Bump SwiftCollections dependencies to the released FixedMathSharp package set when required by package graph changes.
+- [x] Run SwiftCollections Release and ReleaseLean validation.
+- [x] Release SwiftCollections if a dependency migration package is needed.
+- [x] Bump GridForge dependencies to the released SwiftCollections and FixedMathSharp package set.
+- [x] Run GridForge Release and ReleaseLean validation.
+- [x] Release GridForge if a dependency migration package is needed.
+- [x] Bump Gravitas dependencies to the released Chronicler, FixedMathSharp, SwiftCollections, and GridForge package set.
+- [x] Use local project references only during active migration, and add the matching local link to child test and benchmark projects when required by the current .NET restore behavior.
+- [x] Remove local project references before Gravitas release validation unless the repo owner explicitly asks to leave them in place.
 
 **Validation:**
 
@@ -315,44 +330,14 @@ dotnet build GridForge.slnx -c ReleaseLean
 dotnet test GridForge.slnx -c ReleaseLean
 ```
 
-## Workstream 6: Gravitas Replay Hash Migration
+## Extracted Workstream: Gravitas Replay Hash Migration
 
-**Goal:** Replace Gravitas-local generic hash infrastructure with the released Chronicler and FixedMathSharp APIs while keeping Gravitas-specific replay policy and performance guarantees.
+The original Workstream 6 has been moved out of this Chronicler plan because
+the remaining work is now entirely Gravitas-owned. The dedicated Gravitas plan
+tracks API decisions, writer migration, `IRecordable` contribution evaluation,
+tests, Release/ReleaseLean validation, and replay-hash benchmark evidence:
 
-**Repository:** `F:\gamedevrepos\Gravitas`
-
-**Files:**
-
-- Modify or remove: `src/Gravitas/Determinism/GravitasReplayHash.cs`
-- Modify or remove: `src/Gravitas/Determinism/GravitasReplayHashWriter.cs`
-- Modify: `src/Gravitas/Determinism/GravitasReplayHashService.cs`
-- Modify: all `ContributeReplayHash(...)` partials and helpers that currently use `GravitasReplayHashWriter`
-- Modify: determinism tests under `tests/Gravitas.Tests/Determinism`
-- Modify: `tests/Gravitas.Benchmarks/Core/ReplayHashBenchmarks.cs`
-- Modify: `docs/wiki/SERIALIZATION.md`, `docs/wiki/HOST_INTEGRATION.md`, and benchmark docs if public API names change
-
-**Tasks:**
-
-- [ ] Replace the local replay hash value with `ChronicleHash` unless review finds a strong reason for a Gravitas domain wrapper.
-- [ ] Replace the local replay hash writer with `ChronicleHashWriter` plus `FixedMathSharp.Chronicler` extension methods.
-- [ ] Keep `GravitasReplayHashMode` in Gravitas because inclusion modes are physics-domain policy.
-- [ ] Update `GravitasWorldContext.ComputeReplayHash(...)` return type if the clean public API is `ChronicleHash`.
-- [ ] Remove duplicate local primitive/fixed-math writer methods after the migration.
-- [ ] Use `ChronicleHashSerializer.Contribute(...)` for recordable subtrees only where it preserves the existing authoritative replay signal and allocation profile.
-- [ ] Keep manual Gravitas contributors for service-owned ordered collections, solver caches, pair tables, partition identity, and dimensional inclusion policy.
-- [ ] Run existing replay hash determinism tests and update expected type/name assertions.
-- [ ] Add a regression test proving `IRecordable` hash contribution matches manual primitive contribution for a representative Gravitas state shell.
-- [ ] Re-run replay hash allocation tests and benchmarks to prove the lower-stack writer does not regress steady-state allocation behavior.
-
-**Validation:**
-
-```bash
-dotnet test tests/Gravitas.Tests/Gravitas.Tests.csproj --configuration Release --filter Determinism
-dotnet test Gravitas.slnx --configuration Release
-dotnet test Gravitas.slnx --configuration ReleaseLean
-dotnet build tests/Gravitas.Benchmarks/Gravitas.Benchmarks.csproj -c Release -f net8.0
-dotnet tests/Gravitas.Benchmarks/bin/Release/net8.0/Gravitas.Benchmarks.dll replay-hash --filter "*" -j Short -i
-```
+- `F:\gamedevrepos\Gravitas\docs\feature-work\2026-07-02-chronicler-replay-hash-migration-plan.md`
 
 ## Final Acceptance Criteria
 
@@ -360,6 +345,7 @@ dotnet tests/Gravitas.Benchmarks/bin/Release/net8.0/Gravitas.Benchmarks.dll repl
 - Chronicler can compute a hash by traversing `IRecordable.RecordData(...)` without serializing to JSON or MemoryPack first.
 - FixedMathSharp exposes fixed-point and geometry hash writer extensions from a separate package that depends on Chronicler.
 - SwiftCollections and GridForge dependency graphs are compatible with the new released package set.
-- Gravitas no longer owns generic hash value/writer infrastructure.
-- Gravitas replay hashing remains deterministic, allocation-conscious, and benchmarked.
+- Gravitas can reference the released lower-stack package set.
+- Gravitas replay hash migration is tracked in a dedicated Gravitas feature-work
+  plan.
 - Docs in each touched repository describe only the public package behavior that exists after release.
