@@ -39,7 +39,7 @@ Unlike attribute-only serializers, Chronicler makes each type explicitly own its
 - `Chronicler.Core.Lean`
   The lean package. Keeps the same core deterministic recording API and JSON transport, but removes the `MemoryPack` dependency and generated transport surface.
 - `Chronicler.MemoryPackShim`
-  A source-only helper package for Lean libraries that keep MemoryPack annotations in source while disabling the real `MemoryPack` package. It contributes internal compatibility attributes only when `DisableMemoryPack=true`; it is not a serializer and ships no runtime assembly.
+  A small compatibility assembly for Lean libraries that keep MemoryPack annotations in source while disabling the real `MemoryPack` package. It provides one shared attribute identity across friend assemblies; it is not a serializer.
 
 2. Install via NuGet:
 
@@ -55,7 +55,7 @@ dotnet add package Chronicler.Core
 dotnet add package Chronicler.Core.Lean
 ```
 
-- Source-only Lean MemoryPack shim:
+- Lean MemoryPack compatibility shim:
 
 ```bash
 dotnet add package Chronicler.MemoryPackShim
@@ -76,9 +76,9 @@ Chronicler is published in two build variants so you can choose between built-in
 - `Chronicler.Core`
   Includes both `JsonRecordSerializer` and `MemoryPackRecordSerializer`. This is the best default choice when you want the built-in MemoryPack transport.
 - `Chronicler.Core.Lean`
-  Excludes the `MemoryPack` package, compiles out the built-in MemoryPack transport files, and keeps internal shim attributes so the same codebase can build without the dependency. Choose this when you only need JSON, when you plan to supply your own binary transport, or when you want to avoid `MemoryPack`-generated code paths entirely.
+  Excludes the `MemoryPack` package and compiles out the built-in MemoryPack transport files. Choose this when you only need JSON, when you plan to supply your own binary transport, or when you want to avoid `MemoryPack`-generated code paths entirely.
 - `Chronicler.MemoryPackShim`
-  Contains only `buildTransitive` and source assets. Consumers reference it with `PrivateAssets="all"` from Lean item groups so public annotated types compile without exporting fake public `MemoryPack.*` APIs.
+  Provides the public placeholder attributes required by annotated Lean assemblies without injecting duplicate source types into each consumer. Lean libraries should expose this dependency transitively whenever their public metadata references those attributes.
 
 Both variants preserve the same core `IRecordable` / `IChronicler` model and deterministic state transfer semantics. The main difference is whether the package includes the built-in MemoryPack transport.
 

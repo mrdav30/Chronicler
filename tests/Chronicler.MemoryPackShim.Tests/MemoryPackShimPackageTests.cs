@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using Xunit;
@@ -11,7 +12,59 @@ namespace Chronicler.MemoryPackShim.Tests;
 public sealed class MemoryPackShimPackageTests
 {
     private const string PackageId = "Chronicler.MemoryPackShim";
-    private const string MemoryPackVersion = "1.21.4";
+    private static readonly string[] CompatibilityTypeNames =
+    {
+        "MemoryPack.GenerateType",
+        "MemoryPack.MemoryPackableAttribute",
+        "MemoryPack.MemoryPackAllowSerializeAttribute",
+        "MemoryPack.MemoryPackConstructorAttribute",
+        "MemoryPack.MemoryPackIgnoreAttribute",
+        "MemoryPack.MemoryPackIncludeAttribute",
+        "MemoryPack.MemoryPackOrderAttribute",
+        "MemoryPack.SerializeLayout"
+    };
+
+    [Fact]
+    public void PublicContract_MatchesMemoryPackCoreAttributes()
+    {
+        using TestWorkspace workspace = TestWorkspace.Create();
+        PackShim(workspace);
+
+        Assembly shimAssembly = LoadShimAssembly();
+        Assembly memoryPackAssembly = typeof(MemoryPack.MemoryPackableAttribute).Assembly;
+
+        Assert.Equal(
+            CompatibilityTypeNames,
+            shimAssembly.ExportedTypes.Select(type => type.FullName).OrderBy(name => name).ToArray());
+
+        foreach (string typeName in CompatibilityTypeNames)
+        {
+            Type expected = memoryPackAssembly.GetType(typeName, throwOnError: true)!;
+            Type actual = shimAssembly.GetType(typeName, throwOnError: true)!;
+
+            Assert.Equal(expected.IsEnum, actual.IsEnum);
+            Assert.Equal(expected.IsSealed, actual.IsSealed);
+            Assert.Equal(GetConstructorSignatures(expected), GetConstructorSignatures(actual));
+            Assert.Equal(GetPropertySignatures(expected), GetPropertySignatures(actual));
+
+            if (expected.IsEnum)
+            {
+                Assert.Equal(Enum.GetNames(expected), Enum.GetNames(actual));
+                Assert.Equal(
+                    Enum.GetValues(expected).Cast<object>().Select(Convert.ToInt32),
+                    Enum.GetValues(actual).Cast<object>().Select(Convert.ToInt32));
+                continue;
+            }
+
+            AttributeUsageAttribute expectedUsage = expected.GetCustomAttribute<AttributeUsageAttribute>()!;
+            AttributeUsageAttribute actualUsage = actual.GetCustomAttribute<AttributeUsageAttribute>()!;
+            Assert.Equal(expectedUsage.ValidOn, actualUsage.ValidOn);
+            Assert.Equal(expectedUsage.AllowMultiple, actualUsage.AllowMultiple);
+            Assert.Equal(expectedUsage.Inherited, actualUsage.Inherited);
+        }
+
+        AssertMemoryPackableDefaultsMatch(memoryPackAssembly, shimAssembly);
+    }
 
     [Fact]
     public void LeanConsumer_CompilesAnnotatedPublicTypesWithoutMemoryPackPackage()
@@ -21,13 +74,7 @@ public sealed class MemoryPackShimPackageTests
         string projectDirectory = workspace.CreateDirectory("lean-consumer");
 
         WriteNuGetConfig(projectDirectory, workspace.PackageSource);
-        WriteConsumerProject(
-            projectDirectory,
-            version,
-            disableMemoryPack: true,
-            includeRealMemoryPack: false,
-            disableShim: false,
-            treatWarningsAsErrors: true);
+        WriteConsumerProject(projectDirectory, version);
         WriteAnnotatedType(projectDirectory);
 
         DotNetResult result = RunDotNet("build --configuration Release --nologo", projectDirectory);
@@ -36,73 +83,70 @@ public sealed class MemoryPackShimPackageTests
         string assets = ReadAssetsFile(projectDirectory);
         Assert.DoesNotContain("\"MemoryPack/", assets);
         Assert.DoesNotContain("\"MemoryPack.Core/", assets);
-
-        Assembly assembly = LoadConsumerAssembly(projectDirectory);
-        Type? shimType = assembly.GetType("MemoryPack.MemoryPackableAttribute", throwOnError: false);
-        Assert.NotNull(shimType);
-        Assert.False(shimType!.IsPublic);
-    }
-
-    [Fact]
-    public void StandardConsumer_UsesRealMemoryPackAndDoesNotCompileShimSource()
-    {
-        using TestWorkspace workspace = TestWorkspace.Create();
-        string version = PackShim(workspace);
-        string projectDirectory = workspace.CreateDirectory("standard-consumer");
-
-        WriteNuGetConfig(projectDirectory, workspace.PackageSource);
-        WriteConsumerProject(
-            projectDirectory,
-            version,
-            disableMemoryPack: false,
-            includeRealMemoryPack: true,
-            disableShim: false,
-            treatWarningsAsErrors: true);
-        WriteAnnotatedType(projectDirectory);
-
-        DotNetResult result = RunDotNet("build --configuration Release --nologo", projectDirectory);
-
-        AssertBuildSucceeded(result);
-        Assert.Contains("MemoryPack.Core", ReadAssetsFile(projectDirectory));
+        Assert.Contains($"\"{PackageId.ToLowerInvariant()}/{version}\"", assets);
 
         Assembly assembly = LoadConsumerAssembly(projectDirectory);
         Assert.Null(assembly.GetType("MemoryPack.MemoryPackableAttribute", throwOnError: false));
+
+        Assembly shimAssembly = LoadShimAssembly();
+        Type? shimType = shimAssembly.GetType("MemoryPack.MemoryPackableAttribute", throwOnError: false);
+        Assert.NotNull(shimType);
+        Assert.True(shimType!.IsPublic);
     }
 
     [Fact]
-    public void DisabledShim_DoesNotInjectSource()
+    public void FriendAssemblyConsumer_UsesOneSharedAttributeIdentity()
     {
         using TestWorkspace workspace = TestWorkspace.Create();
         string version = PackShim(workspace);
-        string projectDirectory = workspace.CreateDirectory("disabled-consumer");
+        string libraryDirectory = workspace.CreateDirectory("friend-library");
+        string consumerDirectory = workspace.CreateDirectory("friend-consumer");
 
-        WriteNuGetConfig(projectDirectory, workspace.PackageSource);
-        WriteConsumerProject(
-            projectDirectory,
-            version,
-            disableMemoryPack: true,
-            includeRealMemoryPack: false,
-            disableShim: true,
-            treatWarningsAsErrors: false);
-        WriteAnnotatedType(projectDirectory);
+        WriteNuGetConfig(libraryDirectory, workspace.PackageSource);
+        WriteFriendLibraryProject(libraryDirectory, version);
+        WriteAnnotatedType(libraryDirectory);
+        File.WriteAllText(
+            Path.Combine(libraryDirectory, "AssemblyInfo.cs"),
+            """
+            using System.Runtime.CompilerServices;
 
-        DotNetResult result = RunDotNet("build --configuration Release --nologo", projectDirectory);
+            [assembly: InternalsVisibleTo("FriendConsumer")]
+            """);
 
-        Assert.NotEqual(0, result.ExitCode);
-        Assert.Contains("MemoryPack", result.CombinedOutput, StringComparison.Ordinal);
+        DotNetResult libraryResult = RunDotNet(
+            "build --configuration Release --nologo",
+            libraryDirectory);
+        AssertBuildSucceeded(libraryResult);
+
+        WriteNuGetConfig(consumerDirectory, workspace.PackageSource);
+        WriteFriendConsumerProject(
+            consumerDirectory,
+            libraryDirectory,
+            version);
+        WriteAnnotatedType(consumerDirectory);
+
+        DotNetResult consumerResult = RunDotNet(
+            "build --configuration Release --nologo",
+            consumerDirectory);
+
+        AssertBuildSucceeded(consumerResult);
     }
 
     [Fact]
-    public void Package_ContainsOnlyBuildAndSourceAssets()
+    public void Package_ContainsOnlyCompiledCompatibilityAssets()
     {
         using TestWorkspace workspace = TestWorkspace.Create();
         string version = PackShim(workspace);
         string packagePath = Path.Combine(workspace.PackageSource, $"{PackageId}.{version}.nupkg");
 
         using var archive = ZipFile.OpenRead(packagePath);
-        Assert.Contains(archive.Entries, entry => entry.FullName == "buildTransitive/Chronicler.MemoryPackShim.targets");
-        Assert.Contains(archive.Entries, entry => entry.FullName == "contentFiles/cs/any/MemoryPack.Disable.Shim.cs");
-        Assert.DoesNotContain(archive.Entries, entry => entry.FullName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(archive.Entries, entry =>
+            entry.FullName == "lib/net8.0/Chronicler.MemoryPackShim.dll");
+        Assert.Contains(archive.Entries, entry =>
+            entry.FullName == "lib/netstandard2.1/Chronicler.MemoryPackShim.dll");
+        Assert.DoesNotContain(archive.Entries, entry =>
+            entry.FullName.StartsWith("build", StringComparison.OrdinalIgnoreCase)
+            || entry.FullName.StartsWith("contentFiles", StringComparison.OrdinalIgnoreCase));
     }
 
     private static string PackShim(TestWorkspace workspace)
@@ -138,19 +182,8 @@ public sealed class MemoryPackShimPackageTests
 
     private static void WriteConsumerProject(
         string projectDirectory,
-        string packageVersion,
-        bool disableMemoryPack,
-        bool includeRealMemoryPack,
-        bool disableShim,
-        bool treatWarningsAsErrors)
+        string packageVersion)
     {
-        string memoryPackReference = includeRealMemoryPack
-            ? $"""<PackageReference Include="MemoryPack" Version="{MemoryPackVersion}" />"""
-            : string.Empty;
-        string disableShimProperty = disableShim
-            ? "<ChroniclerMemoryPackShimEnabled>false</ChroniclerMemoryPackShimEnabled>"
-            : string.Empty;
-
         string content = $$"""
             <Project Sdk="Microsoft.NET.Sdk">
               <PropertyGroup>
@@ -158,18 +191,68 @@ public sealed class MemoryPackShimPackageTests
                 <LangVersion>11.0</LangVersion>
                 <ImplicitUsings>disable</ImplicitUsings>
                 <Nullable>enable</Nullable>
-                <DisableMemoryPack>{{disableMemoryPack.ToString().ToLowerInvariant()}}</DisableMemoryPack>
-                <TreatWarningsAsErrors>{{treatWarningsAsErrors.ToString().ToLowerInvariant()}}</TreatWarningsAsErrors>
-                {{disableShimProperty}}
+                <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
               </PropertyGroup>
               <ItemGroup>
-                <PackageReference Include="{{PackageId}}" Version="{{packageVersion}}" PrivateAssets="all" />
-                {{memoryPackReference}}
+                <PackageReference Include="{{PackageId}}" Version="{{packageVersion}}" />
               </ItemGroup>
             </Project>
             """;
 
         File.WriteAllText(Path.Combine(projectDirectory, "Consumer.csproj"), content);
+    }
+
+    private static void WriteFriendLibraryProject(
+        string projectDirectory,
+        string packageVersion)
+    {
+        string content = $$"""
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net8.0</TargetFramework>
+                <AssemblyName>FriendLibrary</AssemblyName>
+                <LangVersion>11.0</LangVersion>
+                <ImplicitUsings>disable</ImplicitUsings>
+                <Nullable>enable</Nullable>
+                <DisableMemoryPack>true</DisableMemoryPack>
+                <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+              </PropertyGroup>
+              <ItemGroup>
+                <PackageReference Include="{{PackageId}}" Version="{{packageVersion}}" />
+              </ItemGroup>
+            </Project>
+            """;
+
+        File.WriteAllText(Path.Combine(projectDirectory, "FriendLibrary.csproj"), content);
+    }
+
+    private static void WriteFriendConsumerProject(
+        string projectDirectory,
+        string libraryDirectory,
+        string packageVersion)
+    {
+        string libraryProject = Path.Combine(
+            libraryDirectory,
+            "FriendLibrary.csproj");
+        string content = $$"""
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net8.0</TargetFramework>
+                <AssemblyName>FriendConsumer</AssemblyName>
+                <LangVersion>11.0</LangVersion>
+                <ImplicitUsings>disable</ImplicitUsings>
+                <Nullable>enable</Nullable>
+                <DisableMemoryPack>true</DisableMemoryPack>
+                <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+              </PropertyGroup>
+              <ItemGroup>
+                <ProjectReference Include="{{libraryProject}}" />
+                <PackageReference Include="{{PackageId}}" Version="{{packageVersion}}" />
+              </ItemGroup>
+            </Project>
+            """;
+
+        File.WriteAllText(Path.Combine(projectDirectory, "FriendConsumer.csproj"), content);
     }
 
     private static void WriteAnnotatedType(string projectDirectory)
@@ -213,6 +296,58 @@ public sealed class MemoryPackShimPackageTests
             "net8.0",
             "Consumer.dll");
         return Assembly.LoadFile(assemblyPath);
+    }
+
+    private static Assembly LoadShimAssembly()
+    {
+        string assemblyPath = Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Chronicler.MemoryPackShim",
+            "bin",
+            "Release",
+            "net8.0",
+            "Chronicler.MemoryPackShim.dll");
+        return Assembly.LoadFile(assemblyPath);
+    }
+
+    private static string[] GetConstructorSignatures(Type type)
+    {
+        return type.GetConstructors()
+            .Select(constructor => string.Join(
+                ",",
+                constructor.GetParameters().Select(parameter =>
+                    $"{parameter.ParameterType.FullName}:{parameter.Name}:{parameter.IsOptional}:{parameter.DefaultValue}")))
+            .OrderBy(signature => signature)
+            .ToArray();
+    }
+
+    private static string[] GetPropertySignatures(Type type)
+    {
+        return type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+            .Select(property =>
+                $"{property.PropertyType.FullName}:{property.Name}:{property.CanRead}:{property.CanWrite}")
+            .OrderBy(signature => signature)
+            .ToArray();
+    }
+
+    private static void AssertMemoryPackableDefaultsMatch(Assembly expectedAssembly, Assembly actualAssembly)
+    {
+        foreach (string name in Enum.GetNames(expectedAssembly.GetType("MemoryPack.GenerateType", true)!))
+        {
+            object expectedMode = Enum.Parse(expectedAssembly.GetType("MemoryPack.GenerateType", true)!, name);
+            object actualMode = Enum.Parse(actualAssembly.GetType("MemoryPack.GenerateType", true)!, name);
+            object expected = Activator.CreateInstance(
+                expectedAssembly.GetType("MemoryPack.MemoryPackableAttribute", true)!,
+                expectedMode)!;
+            object actual = Activator.CreateInstance(
+                actualAssembly.GetType("MemoryPack.MemoryPackableAttribute", true)!,
+                actualMode)!;
+
+            Assert.Equal(
+                expected.GetType().GetProperty("SerializeLayout")!.GetValue(expected)!.ToString(),
+                actual.GetType().GetProperty("SerializeLayout")!.GetValue(actual)!.ToString());
+        }
     }
 
     private static string ReadAssetsFile(string projectDirectory)

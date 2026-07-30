@@ -7,6 +7,12 @@
 
 ---
 
+> **Superseded:** The source-injection design described below was replaced by a
+> compiled compatibility assembly after friend-assembly builds proved that
+> separate internal attribute identities conflict across local project
+> references. `Chronicler.MemoryPackShim` now supplies one shared public
+> attribute identity and remains serialization-free.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` for independent review tasks, or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace copied per-library Lean MemoryPack shim files with a Chronicler-owned source-only shim package that compiles internal placeholder attributes into each consuming Lean assembly without exporting fake `MemoryPack` APIs.

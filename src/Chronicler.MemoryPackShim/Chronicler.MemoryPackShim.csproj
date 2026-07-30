@@ -20,13 +20,17 @@
 		<Deterministic>true</Deterministic>
 		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<IncludeBuildOutput>false</IncludeBuildOutput>
-		<SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
-		<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+		<IncludeSymbols>true</IncludeSymbols>
+		<DebugType>portable</DebugType>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<DocumentationFile>bin\$(Configuration)\$(TargetFramework)\Chronicler.MemoryPackShim.xml</DocumentationFile>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<AssemblyName>Chronicler.MemoryPackShim</AssemblyName>
+		<RootNamespace>Chronicler.MemoryPackShim</RootNamespace>
 		<PackageId>Chronicler.MemoryPackShim</PackageId>
 		<Authors>mrdav30</Authors>
-		<Description>Source-only internal MemoryPack compatibility attributes for Lean builds that disable the real MemoryPack package.</Description>
-		<PackageTags>memorypack;lean;source-only;shim;serialization;deterministic;lockstep;buildtransitive</PackageTags>
+		<Description>Shared MemoryPack compatibility attributes for Lean builds that disable the real MemoryPack package.</Description>
+		<PackageTags>memorypack;lean;shim;serialization;deterministic;lockstep</PackageTags>
 		<PackageProjectUrl>https://github.com/mrdav30/Chronicler</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/mrdav30/Chronicler</RepositoryUrl>
 		<PackageIcon>icon.png</PackageIcon>
@@ -35,8 +39,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<None Include="buildTransitive\Chronicler.MemoryPackShim.targets" Pack="true" PackagePath="buildTransitive\" Visible="false" />
-		<None Include="contentFiles\cs\any\MemoryPack.Disable.Shim.cs" Pack="true" PackagePath="contentFiles\cs\any\" Visible="false" />
 		<None Include="..\..\COPYRIGHT" Pack="true" PackagePath="\" Visible="false" />
 		<None Include="..\..\NOTICE" Pack="true" PackagePath="\" Visible="false" />
 		<None Include="..\..\LICENSE" Pack="true" PackagePath="\" Visible="false" />
