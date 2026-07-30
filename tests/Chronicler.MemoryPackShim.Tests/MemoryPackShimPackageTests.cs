@@ -154,7 +154,7 @@ public sealed class MemoryPackShimPackageTests
         string version = "99.0.0-test" + Guid.NewGuid().ToString("N").Substring(0, 8);
         string projectPath = Path.Combine(RepositoryRoot, "src", "Chronicler.MemoryPackShim", "Chronicler.MemoryPackShim.csproj");
         DotNetResult result = RunDotNet(
-            $"pack \"{projectPath}\" --configuration Release --output \"{workspace.PackageSource}\" --nologo /p:PackageVersion={version}",
+            $"build \"{projectPath}\" --configuration Release --nologo /p:PackageVersion={version} /p:PackageOutputPath=\"{workspace.PackageSource}\"",
             RepositoryRoot);
 
         AssertBuildSucceeded(result);
