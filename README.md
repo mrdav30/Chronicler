@@ -3,11 +3,12 @@
 ![Chronicler Icon](https://raw.githubusercontent.com/mrdav30/Chronicler/main/icon.png)
 
 [![build-and-test](https://github.com/mrdav30/Chronicler/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/mrdav30/Chronicler/actions/workflows/build-and-test.yml)
-[![Coverage](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fmrdav30.github.io%2FChronicler%2FSummary.json&query=%24.summary.linecoverage&suffix=%25&label=coverage&color=brightgreen)](https://mrdav30.github.io/Chronicler/)
+[![Branch Coverage](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fmrdav30.github.io%2FChronicler%2Fcoverage%2FSummary.json&query=%24.summary.branchcoverage&suffix=%25&label=branch%20coverage&color=brightgreen)](https://mrdav30.github.io/Chronicler/coverage/)
 [![NuGet](https://img.shields.io/nuget/v/Chronicler.Core.svg)](https://www.nuget.org/packages/Chronicler.Core)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/Chronicler.Core.svg)](https://www.nuget.org/packages/Chronicler.Core)
 [![License](https://img.shields.io/github/license/mrdav30/Chronicler.svg)](https://github.com/mrdav30/Chronicler/blob/main/LICENSE)
 [![Frameworks](https://img.shields.io/badge/frameworks-netstandard2.1%20%7C%20net8.0-512BD4.svg)](https://github.com/mrdav30/Chronicler)
+[![Discord](https://img.shields.io/badge/discord-join%20community-5865F2?logo=discord&logoColor=white)](https://discord.gg/mhwK2QFNBA)
 
 **Chronicler** is a deterministic, transport-neutral serialization library for lockstep simulation, snapshot/restore workflows, and runtime state transfer into existing object graphs.
 
