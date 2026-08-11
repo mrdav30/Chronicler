@@ -1,0 +1,11 @@
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.wordWrap": "on"
+  },
+  "[csharp]": {
+    "editor.defaultFormatter": "ms-dotnettools.csharp"
+  }
+}

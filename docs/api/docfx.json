@@ -1,0 +1,41 @@
+{
+  "metadata": [
+    {
+      "src": [
+        {
+          "files": [
+            "src/Chronicler/bin/Release/net8.0/Chronicler.dll",
+            "src/Chronicler.MemoryPackShim/bin/Release/net8.0/Chronicler.MemoryPackShim.dll"
+          ],
+          "src": "../.."
+        }
+      ],
+      "dest": "obj/api"
+    }
+  ],
+  "build": {
+    "content": [
+      { "files": ["index.md", "toc.yml"] },
+      { "files": ["guides/**/*.md"] },
+      { "files": ["**/*.yml"], "src": "obj/api", "dest": "api" }
+    ],
+    "resource": [
+      {
+        "files": ["icon_128x128.png"],
+        "src": "../../.assets",
+        "dest": "assets"
+      }
+    ],
+    "overwrite": [{ "files": ["overrides/*.md"] }],
+    "output": "obj/_site",
+    "template": ["default", "modern", "templates/chronicler"],
+    "globalMetadata": {
+      "_appName": "Chronicler",
+      "_appTitle": "Chronicler API",
+      "_enableSearch": true,
+      "_enableNewTab": true,
+      "_appLogoPath": "assets/icon_128x128.png",
+      "_appFaviconPath": "assets/icon_128x128.png"
+    }
+  }
+}

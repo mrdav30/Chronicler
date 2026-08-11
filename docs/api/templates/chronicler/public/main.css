@@ -1,0 +1,113 @@
+:root {
+  --chr-green-rgb: 32, 128, 45;
+  --chr-mint-rgb: 137, 230, 149;
+}
+
+body {
+  --bs-primary-rgb: var(--chr-green-rgb);
+  --bs-link-color-rgb: 19, 105, 31;
+  --bs-link-hover-color-rgb: 25, 124, 39;
+}
+
+[data-bs-theme="dark"] body {
+  --bs-link-color-rgb: var(--chr-mint-rgb);
+  --bs-link-hover-color-rgb: 188, 247, 196;
+}
+
+#logo {
+  width: 2rem;
+  height: 2rem;
+  margin-inline-end: 0.5rem;
+  object-fit: contain;
+}
+
+.chr-hero {
+  margin-block: 1rem 2.5rem;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  border: 1px solid rgba(var(--chr-green-rgb), 0.38);
+  border-radius: 1rem;
+  background:
+    radial-gradient(circle at 91% 10%, rgba(var(--chr-mint-rgb), 0.26), transparent 32%),
+    radial-gradient(circle at 75% 44%, rgba(var(--chr-green-rgb), 0.18), transparent 46%),
+    var(--bs-tertiary-bg);
+}
+
+.chr-hero h1 {
+  max-width: 17ch;
+  margin-block: 0.2rem 0.75rem;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.05;
+}
+
+.chr-hero > p:not(.chr-kicker) {
+  max-width: 62ch;
+  font-size: 1.08rem;
+}
+
+.chr-kicker {
+  margin: 0;
+  color: rgb(19, 105, 31);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+[data-bs-theme="dark"] .chr-kicker {
+  color: rgb(var(--chr-mint-rgb));
+}
+
+.chr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.chr-actions a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.4rem;
+  color: var(--bs-body-color);
+  font-weight: 600;
+  line-height: 1.25;
+  text-decoration: none;
+}
+
+.chr-actions a:first-child {
+  border-color: rgb(var(--chr-green-rgb));
+  background: rgb(var(--chr-green-rgb));
+  color: #fff;
+}
+
+.chr-actions a:hover,
+.chr-actions a:focus-visible {
+  border-color: rgb(var(--chr-green-rgb));
+  box-shadow: 0 0 0 0.2rem rgba(var(--chr-green-rgb), 0.2);
+}
+
+.chr-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 1rem;
+  margin-block: 1rem 2.5rem;
+}
+
+.chr-card {
+  padding: 1.25rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.75rem;
+  background: var(--bs-body-bg);
+  box-shadow: 0 0.35rem 1.1rem rgba(var(--chr-green-rgb), 0.08);
+}
+
+.chr-card h3 {
+  margin-top: 0;
+  font-size: 1.05rem;
+}
+
+.chr-card p {
+  margin-bottom: 0;
+}

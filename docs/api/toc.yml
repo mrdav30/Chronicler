@@ -1,0 +1,22 @@
+items:
+  - name: Home
+    href: index.md
+  - name: Guides
+    items:
+      - name: Getting Started
+        href: guides/getting-started.md
+      - name: Values, Owned State, and Links
+        href: guides/serialization-model.md
+      - name: Deterministic Record Hashes
+        href: guides/record-hashes.md
+  - name: API Reference
+    href: obj/api/
+    homepage: obj/api/Chronicler.yml
+  - name: Resources
+    items:
+      - name: Source
+        href: https://github.com/mrdav30/Chronicler
+      - name: NuGet
+        href: https://www.nuget.org/packages/Chronicler.Core
+      - name: Core Test Coverage
+        href: https://mrdav30.github.io/Chronicler/coverage/
