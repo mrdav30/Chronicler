@@ -9,6 +9,8 @@ items:
         href: guides/serialization-model.md
       - name: Deterministic Record Hashes
         href: guides/record-hashes.md
+      - name: Simulation Time Values
+        href: guides/simulation-timing.md
   - name: API Reference
     href: obj/api/
     homepage: obj/api/Chronicler.yml

@@ -13,6 +13,11 @@ Use `RecordValues` for leaf data, the deep helpers for owned nested state, and
 walks the same schema to produce replay and conformance signals without hashing
 a transport payload.
 
+`ChronicleTimestamp` and `ChronicleDuration` provide immutable, dependency-free
+simulation time values with 64-bit whole seconds and 32 binary fractional bits.
+They separate nonnegative instants from signed intervals without owning the
+host's simulation loop or lifetime.
+
 Chronicler is designed for the deterministic
 [Lockstep Simulation Framework](https://github.com/mrdav30/FixedMathSharp)
 ecosystem, including

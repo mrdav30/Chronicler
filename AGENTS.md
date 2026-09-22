@@ -2,8 +2,8 @@
 
 ## Purpose
 
-Chronicler is a small, focused serialization library for deterministic state
-transfer.
+Chronicler provides explicit deterministic state transfer and dependency-free
+simulation time values.
 
 Its primary use cases are:
 
@@ -138,6 +138,9 @@ Keep the distinction clear:
   support.
 - `src/Chronicler/Recording` High-level recording helpers and serialization mode
   concepts.
+- `src/Chronicler/Timing` Immutable signed durations and nonnegative timestamps
+  with exact binary fractions. Keep arithmetic dependency-free and compatible
+  with both target frameworks; check the final result after carry/borrow.
 - `src/Chronicler/Serialization` Shared serialization infrastructure.
 - `src/Chronicler/Serialization/Json` JSON transport implementation.
 - `src/Chronicler/Serialization/MemoryPack` MemoryPack transport implementation.

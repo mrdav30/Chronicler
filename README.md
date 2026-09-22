@@ -17,6 +17,10 @@ schema for JSON, MemoryPack, restore workflows, stable runtime links, and
 deterministic record hashes. Your host constructs the object graph; Chronicler
 transfers state into it without taking ownership of your runtime.
 
+It also provides exact, immutable simulation timestamps and signed durations
+with 64-bit whole seconds and 32 fractional bits, independent of any engine
+or math package.
+
 ## Why Chronicler?
 
 - **Schemas stay in your code.** `RecordData(...)` makes names, defaults, order,
@@ -89,6 +93,7 @@ The same `RecordData(...)` implementation works with
 - [Getting started](https://mrdav30.github.io/Chronicler/guides/getting-started.html)
 - [Understand values, owned state, and links](https://mrdav30.github.io/Chronicler/guides/serialization-model.html)
 - [Use deterministic record hashes](https://mrdav30.github.io/Chronicler/guides/record-hashes.html)
+- [Represent simulation time](https://mrdav30.github.io/Chronicler/guides/simulation-timing.html)
 - [Browse the API reference](https://mrdav30.github.io/Chronicler/api/Chronicler.html)
 - [View test coverage](https://mrdav30.github.io/Chronicler/coverage/)
 

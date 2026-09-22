@@ -6,7 +6,7 @@
 > delegated implementation. Track progress with the checkboxes below.
 
 **Date:** 2026-09-22  
-**Status:** Proposed; implementation has not started  
+**Status:** Phase 0 and Phase 1 complete; Phase 2 pending  
 **Primary repository:** `F:\gamedevrepos\Chronicler`  
 **Related repositories:** `FixedMathSharp`, `Gravitas`, `Trailblazer`  
 **Origin:** Trailblazer `TRB-Issue-124` and the owner's request for a reusable,
@@ -21,8 +21,8 @@ pending-work invalidation, and coordinated restore policy.
 **Tech stack:** C# 11, `netstandard2.1` and `net8.0`, xUnit v3, Chronicler's
 existing JSON/MemoryPack record paths and Standard/Lean package families.  
 **Spec:** The [design contract](#design-contract) in this document is the design
-source of truth. This combined design and implementation plan is for owner
-review before any runtime implementation.
+source of truth. The owner approved Phase 0 followed by Phase 1; later phases
+remain pending.
 
 ## Why This Work Exists
 
@@ -346,24 +346,24 @@ FixedMathSharp's `Numerics/Scalars` and companion package; both consumer clocks,
 contexts, and all callers of `FrameCount`, `TotalTime`, `GetFrameFromTime`,
 `LogicalFrameIndex`, and frame-stamped records.
 
-- [ ] Record exact commits, runtime, package/source mode, configuration, and
+- [x] Record exact commits, runtime, package/source mode, configuration, and
   dirty-tree ownership for all affected repositories.
-- [ ] Add a Trailblazer context/publication regression that advances through
+- [x] Add a Trailblazer context/publication regression that advances through
   `int.MaxValue` with a pending operation on each side. Confirm the current
   failure before changing the implementation. Seed boundary state through a
   focused test helper, not billions of simulated frames or a public setter.
-- [ ] Add Gravitas regressions through real retained-partition retirement and
+- [x] Add Gravitas regressions through real retained-partition retirement and
   coroutine service execution across that boundary; distinguish existing
   wrap-safe waits from consumers that genuinely fail.
-- [ ] Capture Fixed64 elapsed-time saturation and narrow frame conversion with
+- [x] Capture Fixed64 elapsed-time saturation and narrow frame conversion with
   tests that will be replaced by the wide contract's behavior assertions.
-- [ ] Audit other per-step tokens, especially Gravitas `LateSimulateToken`,
+- [x] Audit other per-step tokens, especially Gravitas `LateSimulateToken`,
   manifold update stamps, diagnostic fields, replay fields, and cached phase
   tokens. Include any consumed as absolute ordering/identity; retain bounded
   modular counters only with a documented safe contract and boundary tests.
-- [ ] Run existing Release/ReleaseLean suites and coverage before changes.
+- [x] Run existing Release/ReleaseLean suites and coverage before changes.
   Record pre-existing failures separately; do not attribute them to this feature.
-- [ ] Capture comparable existing Gravitas `WorldContextBenchmarks` and
+- [x] Capture comparable existing Gravitas `WorldContextBenchmarks` and
   Trailblazer guided-frame/publication baselines. If a focused clock case is
   necessary, add it to an existing benchmark project before either baseline or
   implementation. No new regression project or CI benchmark service.
@@ -379,7 +379,7 @@ contexts, and all callers of `FrameCount`, `TotalTime`, `GetFrameFromTime`,
 **Produces:** the value constructors, comparisons, and operators in the design
 contract; no downstream dependency is needed.
 
-- [ ] Write failing value/ordering and boundary arithmetic tests. Include this
+- [x] Write failing value/ordering and boundary arithmetic tests. Include this
   assertion in a Fact with `using System; using Xunit;`:
 
   ```csharp
@@ -387,14 +387,16 @@ contract; no downstream dependency is needed.
   var right = new ChronicleDuration(long.MinValue, 1);
   Assert.Equal(new ChronicleDuration(long.MinValue, 0), left + right);
   Assert.Throws<OverflowException>(() =>
-      new ChronicleDuration(long.MaxValue, uint.MaxValue)
-      + new ChronicleDuration(0, 1));
+  {
+      _ = new ChronicleDuration(long.MaxValue, uint.MaxValue)
+          + new ChronicleDuration(0, 1);
+  });
   ```
 
-- [ ] Run `dotnet test tests/Chronicler.Tests/Chronicler.Tests.csproj -c Release
+- [x] Run `dotnet test tests/Chronicler.Tests/Chronicler.Tests.csproj -c Release
   --filter FullyQualifiedName~ChronicleDurationTests`; first establish the
   missing/incorrect contract, then implement the smallest bounded arithmetic.
-- [ ] Cover zero/default, equal values, each ordering limb, negative fractions,
+- [x] Cover zero/default, equal values, each ordering limb, negative fractions,
   positive carry, negative borrow, valid intermediate-overflow cases, genuine
   positive/negative overflow, and timestamp results below zero.
   In particular, pin both subtraction directions across the full timestamp range:
@@ -406,11 +408,11 @@ contract; no downstream dependency is needed.
   Assert.Equal(new ChronicleDuration(long.MaxValue, uint.MaxValue),
       last - ChronicleTimestamp.Zero);
   ```
-- [ ] Prove translation invariance: the same short interval is obtained near
+- [x] Prove translation invariance: the same short interval is obtained near
   time zero and beyond `int.MaxValue` whole seconds. Check arithmetic against
   hand-derived boundary vectors and a test-only BigInteger oracle; never use
   that oracle in runtime code.
-- [ ] Run the focused Timing filter in Release and ReleaseLean, then measure
+- [x] Run the focused Timing filter in Release and ReleaseLean, then measure
   warmed successful arithmetic allocations using the existing test helper.
 
 **Suggested commit:** `feat: add deterministic wide time values`
@@ -675,16 +677,258 @@ begins; a separate task or branch is created only if requested.
 - [x] Independent plan review approved after clarifying signed endpoint
   subtraction, fixed value hashing, widened body-record schemas, and package
   metadata. Deep-struct carrier validation was also checked against both
-  current transport implementations. Runtime acceptance remains unexecuted.
-- [ ] Owner review of this plan.
-- [ ] Phase 0: boundary regressions and baseline evidence.
-- [ ] Phase 1: canonical wide values.
+  current transport implementations. Later-phase runtime acceptance remains
+  unexecuted.
+- [x] Owner review of this plan; Phase 0 and Phase 1 authorized on 2026-09-22.
+- [x] Phase 0: boundary regressions and baseline evidence.
+- [x] Phase 1: canonical wide values.
 - [ ] Phase 2: clock and explicit recording.
 - [ ] Phase 3: FixedMathSharp bridge and source graph.
 - [ ] Phase 4: Gravitas adoption.
 - [ ] Phase 5: Trailblazer and adapter adoption.
 - [ ] Phase 6: documentation, full validation, review, and closeout.
 
-No implementation, new test execution, benchmark result, or issue resolution is
-claimed by this planning document. Record commands, counts, provenance, and
-review findings here as each phase is executed.
+### Phase 0 / 1 execution record - 2026-09-22
+
+All checkouts began clean on `develop`. No branches, commits, package releases,
+dependency changes, or downstream runtime fixes were made. Evidence is under
+Chronicler `artifacts/timing/phase0` and `artifacts/timing/phase1`.
+
+| Repository | Baseline commit |
+| --- | --- |
+| Chronicler | `d2de217832019a39567185e892c5b3973b87d22d` |
+| FixedMathSharp | `d5d8782d4e031a372bf39a79d9f46f73d8ed9aee` |
+| Gravitas | `21a22ab1ac8ac2d16fb8a41fcf1f65659029378d` |
+| Trailblazer | `fd6b4849a95e468a4464a95dbef0f432f610ebb6` |
+| SwiftCollections (unchanged dependency) | `1ed2be3482798c7800d917fb46865a55dc222cbf` |
+| GridForge (unchanged dependency) | `e7223aef007a9c74e830b1e820c59fc01e49b7d8` |
+
+Windows x64 uses SDK 10.0.302 and .NET 8.0.29. Downstream baseline commands use
+`UseLocalLsfStack=true`; their existing Chronicler dependency still resolves
+published 0.4.0. Phase 1 values are not silently injected into those consumers.
+The full baseline suites use `dotnet test <repo>.slnx -c <configuration>
+-p:UseLocalLsfStack=true --collect:"XPlat Code Coverage"
+--settings tests/<repo>.Tests/coverlet.runsettings --results-directory <output>`.
+Chronicler omits the local-stack property. Trailblazer's adapter is also
+collected separately with its own runsettings so core coverage cannot mask it.
+
+**Execution decisions:** Keep the existing checkouts and leave changes
+uncommitted, as authorized. Run intentionally red downstream probes temporarily
+in their owning test assemblies, retain their source/output in ignored evidence,
+then remove only those temporary files. Do not introduce skipped tests or tests
+that bless broken behavior. Phases 4/5 must promote these assertions into normal
+regressions with the fixes. After the probes confirmed the design, standalone
+Phase 1 work overlapped the remaining baseline checks; it cannot affect the
+unchanged downstream package graph. Timing captures run without concurrent
+tests/builds. If that separation is broken, repeat the affected capture.
+
+#### Reproduced boundaries
+
+Each probe runs in the normal net8.0 xUnit test assembly, not PowerShell's CLR.
+Use `dotnet test tests/<repo>.Tests/<repo>.Tests.csproj -c Release
+-p:UseLocalLsfStack=true --filter FullyQualifiedName~TimingBoundaryProbeTests
+--logger:"console;verbosity=normal"`. Only test setup uses reflection to seed
+private clock state. No runtime setters were added.
+
+- **Trailblazer publication:** Create an owned context with one area,
+  capacity for two one-rule policies, and `MaxDependencyEntries = 5`; preserve
+  other default settings. Seed `_clock._frameIndex = int.MaxValue - 1`.
+  Admit distinct policies with sequences 1/2, both effective at `int.MaxValue`.
+  On the first `Simulate`, the first receipt is Applied at `int.MaxValue`; the
+  second is Pending because the budget fits only the first publication. On the
+  second `Simulate`, expect the second to apply at 2,147,483,648. Actual:
+  `NavigationOperationProcessor.ProcessFrame` throws `ArgumentException`
+  after `FrameCount` becomes -2,147,483,648, leaving the receipt Pending.
+  Control: seed zero and make both policies effective at 1; they publish at
+  frames 1 and 2. A genuinely future effective frame above int.MaxValue cannot
+  even be expressed by today's public constructor; test that new capability in
+  Phase 5. `TRB-Issue-124` now records this containing-frame evidence.
+- **Gravitas retirement:** Create a grid from (-2,-2,-2) to (2,2,2), initialize
+  a mass-one sphere at zero, set retention TTL to 2 and sweep budget to 1024.
+  Seed the clock's `FrameCount` to int.MaxValue, run `Simulate`/`LateSimulate`,
+  deactivate the collider, then run two more complete steps. Expected retained
+  partitions: zero; actual: 27. Control starting at zero retires every partition.
+  The wrapped `EmptySinceFrame` is mistaken for the negative unset sentinel.
+- **Gravitas coroutine control:** Seed int.MaxValue - 1; start a coroutine that
+  yields `WaitForFrames(2)` on its first step. It resumes exactly once on the
+  third step, even across signed wrap. Unsigned subtraction is sufficient for
+  that bounded wait; this is not evidence that every frame consumer is safe.
+- **Gravitas seconds wait:** Seed `TotalTime = Fixed64.MaxValue - DeltaTime`.
+  On the next step, start a one-second coroutine wait. It resumes on the very
+  next 1/32-second step instead of remaining pending: the absolute deadline
+  saturated. This demonstrates early completion, not only frozen time.
+- **Both clocks:** Seed TotalTime at Fixed64.MaxValue and step once. An assertion
+  that time increases fails while frames advance. At 32 Hz,
+  `GetFrameFromTime((Fixed64)67108864)` returns 2,147,483,647 instead of
+  2,147,483,648. Expected values follow exact integer division.
+
+Gravitas probes: two passing controls and four expected failures. Trailblazer:
+one passing control and three expected failures. Logs are `gravitas-probes.log`
+and `trailblazer-probes.log`; the adjacent `*TimingBoundaryProbeTests.cs` files
+retain the full reproduction code. Gravitas tracks the confirmed pre-existing
+defects as `GRV-Issue-076`. Neither issue is resolved by adding value types.
+
+#### Consumer inventory and migration decisions
+
+| Consumer | Classification / required handling |
+| --- | --- |
+| Both clocks and world contexts | Absolute frame/time state; replace narrow frame and Fixed64 total, preflight exhaustion before owner mutation |
+| Trailblazer operation descriptors, receipt PublishedFrame, processors and graph maintenance | Absolute ordering; widen together, preserve atomic receipt publication and pending-work rules |
+| Trailblazer LogicalFrameIndex, LOS attempt/grant frames and ClockLifetime | Existing unsigned absolute stamps plus transient identity; unify the stamp, retain lifetime invalidation |
+| MovementGroupMember/Membership.LastSeenFrame and coordinator cutoffs | Absolute history/order; widen stamps, keep one-frame history duration bounded |
+| NavMotor pending traversal, NavigationCommittedCellState, GravitasNavigator3D prepare frame | Absolute exactly-once ownership stamps; migrate core and adapter together |
+| JumpLocomotion.JumpStartTime and its record | Absolute seconds; wide timestamp and explicit schema change; independently verify the existing mixed-unit hold formula in Phase 5 |
+| Gravitas retained 2D/3D/mixed partitions | Absolute empty-since stamp and negative sentinel; wide stamp, bounded TTL/sweep budget |
+| CollisionPair/2D/Mixed.LastFrame, 3D LastCollidedFrame, ContactManifold/2D.LastUpdatedFrame | Absolute contact history/identity, ages and replay fields; widen, preserve reset semantics |
+| SolidBody grounding stamp and LastGroundCheckFrame record | Absolute cached age; widen/version the body record independently of replay hashing |
+| Gravitas LateSimulateToken and CCD frame/handoff/query-refresh tokens | Per-phase identity, not a duration; equality-only does not prove unlimited stale-token safety. int.MinValue is also used for invalid trajectories. Widen with explicit exhaustion and reset tests |
+| Diagnostic event/draw frame fields and GravitasReplayHashService | Externally observed absolute stamps; widen and deliberately version replay schema |
+| WaitForFrames / WaitForNextSimulate | Bounded unsigned subtraction / equality currently survive immediate signed wrap; preserve exact service behavior, add wide duration/lifetime rules with migration |
+| WaitForRealSeconds | Absolute deadline; construct from wide elapsed time and compare without narrowing |
+| Sleep counters, ground-check intervals, retention TTLs, work budgets, solver iterations, LOS intervals | Bounded durations/counts; do not widen merely because the field mentions frames |
+
+Current source searches found no FrameCount/TotalTime/GetFrameFromTime/DeltaTime
+clock consumers in GridForge or SwiftCollections. Their unrelated topology,
+publication and identity counters are not included in this migration.
+
+#### Unchanged Windows baseline results
+
+| Suite | Release tests | ReleaseLean tests | Baseline core coverage: lines / branches / methods |
+| --- | ---: | ---: | --- |
+| Chronicler | 143 + 4 shim | 104 + 4 shim | Release 931/935, 402/421, 197/197; Lean 694/756, 285/321, 143/165 |
+| FixedMathSharp | 2,824 + 8 companion | 2,803 + 8 companion | Release 47,681/47,681, 8,898/8,898, 3,409/3,409; Lean 47,673/47,673, 8,898/8,898, 3,405/3,405 |
+| Gravitas | 4,062 | 4,007 | Release 44,265/44,265, 13,030/13,030, 4,536/4,536; Lean 44,263/44,263, 13,030/13,030, 4,535/4,535 |
+| Trailblazer | 3,187 + 84 adapter | 3,096 + 80 adapter | Both: 32,267/32,267, 13,248/13,248, 3,175/3,175 |
+
+All existing suites passed, without skips. FixedMathSharp.Chronicler separately
+reports 70/70 lines, 2/2 branches, 14/14 methods in each configuration;
+Trailblazer.Gravitas reports 192/192, 30/30, 13/13. Do not interpret the adapter
+test assembly's partial coverage of core as the core suite's coverage.
+
+Chronicler's existing gaps precede this feature. No exclusions or weakened
+assertions were added to conceal them. Shim package tests build external
+consumers, so a core report containing an uninstrumented shim does not establish
+shim coverage. Phase 1's exact new-code gate is separate from those baselines.
+
+#### Phase 1 implementation and verification
+
+Added only `ChronicleDuration` and `ChronicleTimestamp`; no clock, recording
+helper or Fixed64 bridge exists yet. Timestamp stores the duration components
+privately to reuse exact comparison, hashing and arithmetic. Signed overflow is
+checked after fractional carry/borrow, without a generic wide-number helper.
+
+The initial test build failed because both public value types were absent
+(`timing-red.log`). Eighteen new cases then passed, including 2,025 endpoint
+pairs and 2,048 seeded pairs checked against a test-only BigInteger oracle,
+timestamp range/translation tests, fixed hash vectors and warmed allocation
+checks. Both allocation cases perform 1,024 value-operation iterations and
+assert the resulting time and ordering count, not merely API existence.
+
+Windows full suites pass 161 core + 4 shim cases in Release and 122 + 4 in Lean.
+Introduced timing code is **48/48 lines, 20/20 branches, 30/30 methods** in each
+configuration: duration 26/14/14 and timestamp 22/6/16. Existing uncovered code
+is unchanged. No runtime dependency, net8-only API or coverage exclusion was
+introduced. Both library target frameworks build.
+
+Linux/WSL independently builds both target frameworks and passes the same full
+suite counts in both configurations (SDK 10.0.203, runtime 8.0.26). The first
+Linux run passed the core suite but stalled inside unchanged shim package tests
+after a nested build left a reused MSBuild worker alive. That run was terminated
+and retained as incomplete, not counted as green. Repeating the full commands
+with `MSBUILDDISABLENODEREUSE=1` passes all tests; no source change or increased
+timeout was used. Logs: `linux-Release.log` (incomplete),
+`linux-no-node-reuse-Release.log`, `linux-no-node-reuse-ReleaseLean.log`.
+
+The public guide's complete example is exercised by a behavior test. A fresh
+Windows Release build and `dotnet tool run docfx docs/api/docfx.json
+--warningsAsErrors` pass with zero warnings/errors. Package metadata and docs
+describe only the implemented values, not the future clock or interop helpers.
+
+Independent correctness and Ponytail review approved the Phase 0/1 source,
+tests, docs and probe-evidence approach with no findings or recommended
+deletions. It independently checked 131,072 reduced-width arithmetic operations
+without mismatches. Final benchmark/provenance acceptance remains the primary
+executor's responsibility; Phase 2+ behavior and release readiness are not
+claimed by that review.
+
+#### Frozen performance baselines
+
+These are unchanged-consumer baselines for the later migrations, not a Phase 1
+performance improvement. All timing runs used the Windows machine described
+above (Intel i7-9700K, eight physical/logical cores), with no concurrent test or
+build workload. BenchmarkDotNet is 0.15.8. Build each existing benchmark project
+in Release/net8.0 with `-p:UseLocalLsfStack=true`, then launch its built DLL from
+the owning repository with environment `UseLocalLsfStack=true`.
+
+Trailblazer commands after that build, with `<evidence>` denoting this capture's
+output directory:
+
+```powershell
+dotnet tests/Trailblazer.Benchmarks/bin/Release/net8.0/Trailblazer.Benchmarks.dll navigation-guided-frame --filter '*Simulate64GuidedFrames(AgentCount: 100,*' '*Simulate64GuidedFrames(AgentCount: 500,*FlowField*' --launchCount 3 --warmupCount 1 --iterationCount 3 --keepFiles --exporters json --artifacts <evidence>/guided
+./tests/Trailblazer.Benchmarks/AnalyzeGuidedFrames.ps1 -LogPath <evidence>/guided.log -OutputPath <evidence>/guided-summary.json
+dotnet tests/Trailblazer.Benchmarks/bin/Release/net8.0/Trailblazer.Benchmarks.dll navigation-graph-lifecycle --filter '*PublishOnePhysicalCellChange*' --keepFiles --exporters json --artifacts <evidence>/publication
+```
+
+Capture the complete console output in the indicated log before analysis. The
+existing Trailblazer launcher supplies `UsePrebuiltLocalLsfStack=true` and `/m:1`
+to generated builds. Guided acquisition uses the original
+`Simulate64GuidedFrames` case, not an instrumented phase variant. Each case has
+three launches, one warmup and three actual 64-frame blocks per launch: nine
+actual blocks / 576 frames per case. All nine children exited successfully;
+the existing analyzer validated block-stage pairing and replay. Its nested
+containing-frame results are:
+
+| Case | Median ms | Observed P99 ms | Maximum ms | Measured allocated bytes |
+| --- | ---: | ---: | ---: | ---: |
+| AStar / 100 | 1.74665 | 4.746525 | 5.3656 | 0 |
+| Flow / 100 | 1.30415 | 5.509075 | 6.0120 | 0 |
+| Flow / 500 | 3.08190 | 15.166950 | 15.9739 | 0 |
+
+No measured frame overlapped a collection or exceeded 31.25 ms. Launch drift,
+especially Flow/100, prevents treating these few launches as a precise historical
+comparison. Do not compare against TRB-Benchmark-005's older stopping-point
+capture or divide the outer 64-frame benchmark mean into a gameplay-frame claim.
+Raw logs, exported results and analyzer JSON remain beside this evidence.
+
+Publication's existing canonical Monitoring job (three launches, 100 measured
+iterations per launch) has medians **31.450 / 34.700 / 49.600 microseconds** for
+1/16/128 maps and reports 5.35/5.52/5.68 KB allocated. The harness also runs its
+separate short in-process job; do not blend those samples. All six configured
+cases executed. Minimum-iteration/bimodal warnings remain in `publication.log`;
+this capture is a reproducible reference, not a fine-grained optimization claim.
+
+Gravitas's out-of-process local-stack benchmark did not produce a valid result.
+The first generated build failed with CS2012 during a parallel intermediate DLL
+write; a serial-build retry compiled but its child failed to load GridForge
+9.1.0.0. The child emitted GridForge/SwiftCollections identities 0.0.0.0, unlike
+the source-built parent. Both launchers misleadingly returned zero.
+**GRV-Issue-077** records the pre-existing build-graph/result-handling defect.
+Neither failed run is counted as a successful baseline.
+
+The existing full in-process toolchain successfully captured the unchanged
+Gravitas case (not a short job):
+
+```powershell
+dotnet tests/Gravitas.Benchmarks/bin/Release/net8.0/Gravitas.Benchmarks.dll world-context --filter '*RunEmptySimulationFrame*' --inProcess --exporters json --artifacts <evidence>/gravitas-inprocess
+```
+
+`RunEmptySimulationFrame` reports **63.063 ns mean**, 15 actual iterations,
+0.010 ns standard deviation, and no allocated bytes. Its scope is an empty
+containing simulation frame, not a populated physics workload. Phase 4 must
+repeat this same toolchain or recapture the unchanged baseline before migration
+if GRV-Issue-077 is fixed and out-of-process measurement is selected instead.
+No benchmark source, runtime workaround, or new benchmark project was added.
+
+`phase0/frozen-manifest.json` records SHA-256 for 364 frozen files: successful
+Trailblazer generated build trees, the failed serial Gravitas child, and the
+successful in-process Gravitas host assemblies. All copied hashes were verified.
+The Trailblazer parent Chronicler assembly matches published 0.4.0, SHA-256
+`EF1A69BFA0940A0C8593F06242EE189547E9455DA9C22FF34F8F7AA81A50CBBD`.
+Logs, reports, reproduction sources and generated files are local ignored
+evidence, not release artifacts; keep them through the migration comparison.
+
+**Phase boundary:** Phase 0/1 are complete. Phase 2 is next; no clock,
+serialization schema, Fixed64 conversion or consumer migration is implemented
+by this change. TRB-Issue-124 and GRV-Issue-076 remain open until their owning
+simulation regressions pass with those later changes. GRV-Issue-077 is a
+separate benchmark-tooling follow-up, not a blocker for the standalone values.

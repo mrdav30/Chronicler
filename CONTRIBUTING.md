@@ -1,7 +1,8 @@
 # Contributing to Chronicler
 
 Thanks for helping improve Chronicler. Focused bug fixes, tests, documentation,
-and proposals that strengthen explicit deterministic state transfer are welcome.
+and proposals that strengthen explicit deterministic state transfer and
+simulation time values are welcome.
 For a large or breaking change, open an issue first so the serialization
 contract and migration impact can be discussed before implementation.
 
@@ -38,6 +39,9 @@ dotnet tool run docfx docs/api/docfx.json --warningsAsErrors
 1. Keep the change focused and preserve the public `Chronicler` namespace.
 2. Add or update tests for meaningful behavior changes. Exercise JSON and
    MemoryPack where transport parity is part of the contract.
+   For time values, cover signed endpoints, fractional carry/borrow, exact
+   ordering and allocation-free successful arithmetic. Wide-number test
+   oracles belong in tests, not the runtime library.
 3. Update XML comments, the root README, and the matching guide when public
    behavior, package shape, or developer workflow changes.
 4. Run the relevant Release and ReleaseLean validation commands and describe the
