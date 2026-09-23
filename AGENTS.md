@@ -28,9 +28,10 @@ explicit contracts over convenience features.
 - Nullable reference types: enabled
 - Release symbols: portable PDBs
 
-Keep recording APIs in `Chronicler` and timing values/clock in the established
-`Chronicler.Timing` namespace. Do not introduce further sub-namespaces without
-an explicit request.
+Recording APIs currently use `Chronicler`; timing values and the clock use
+`Chronicler.Timing`. Suggest focused namespace changes when they clarify public
+ownership, explaining migration and record-hash implications. Avoid namespace
+sprawl or unrelated restructuring.
 
 ## Start Here
 

@@ -36,6 +36,11 @@ dotnet tool run docfx docs/api/docfx.json --warningsAsErrors
 
 ## Pull Request Process
 
+For coordinated sibling builds, pass `-p:UseLocalLsfStack=true`. Chronicler and
+its Lean shim use source-only 0.4.0 identities to match the existing dependency
+graph. These do not select release versions or make generated local packages
+publishable. Leave package mode as the default for real release validation.
+
 1. Keep the change focused; recording APIs use `Chronicler`, and timing values
    and the clock use `Chronicler.Timing`.
 2. Add or update tests for meaningful behavior changes. Exercise JSON and

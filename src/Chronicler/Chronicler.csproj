@@ -12,6 +12,8 @@
 	<!-- Git Versioning -->
 	<PropertyGroup>
 		<SemVer Condition="'$(GitVersion_FullSemVer)' != ''">$(GitVersion_FullSemVer)</SemVer>
+		<!-- Stable source-only identity for sibling restores, not a selected release version. -->
+		<SemVer Condition="'$(UseLocalLsfStack)' == 'true' And '$(SemVer)' == ''">0.4.0</SemVer>
 		<SemVer Condition="'$(SemVer)' == ''">0.0.0</SemVer>
 		<InfoVer Condition="'$(GitVersion_InformationalVersion)' != ''">$(GitVersion_InformationalVersion)</InfoVer>
 		<InfoVer Condition="'$(InfoVer)' == ''">$(SemVer)</InfoVer>

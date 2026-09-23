@@ -6,7 +6,7 @@
 > delegated implementation. Track progress with the checkboxes below.
 
 **Date:** 2026-09-22  
-**Status:** Phases 0-2 complete; Phase 3 pending  
+**Status:** Phases 0-3 complete; Phase 4 pending  
 **Primary repository:** `F:\gamedevrepos\Chronicler`  
 **Related repositories:** `FixedMathSharp`, `Gravitas`, `Trailblazer`  
 **Origin:** Trailblazer `TRB-Issue-124` and the owner's request for a reusable,
@@ -21,8 +21,8 @@ pending-work invalidation, and coordinated restore policy.
 **Tech stack:** C# 11, `netstandard2.1` and `net8.0`, xUnit v3, Chronicler's
 existing JSON/MemoryPack record paths and Standard/Lean package families.  
 **Spec:** The [design contract](#design-contract) in this document is the design
-source of truth. The owner approved Phase 2 after committing Phase 0/1;
-Phase 3 onward remains pending.
+source of truth. The owner approved Phase 3 after committing Phase 2;
+Phases 4-6 remain pending.
 
 ## Why This Work Exists
 
@@ -475,7 +475,7 @@ repositories. Package references remain the default; local mode must resolve
 one consistent Chronicler assembly transitively, not mix a new source assembly
 with the published 0.4.0 copy.
 
-- [ ] Add exact conversion tests, including:
+- [x] Add exact conversion tests, including:
 
   ```csharp
   var tiny = FixedMathChronicleTime.FromFixed64(Fixed64.FromRaw(-1));
@@ -486,20 +486,20 @@ with the published 0.4.0 copy.
   Assert.Equal(Fixed64.Zero, result);
   ```
 
-- [ ] Verify all extreme/raw sign-transition vectors, exact integral seconds,
+- [x] Verify all extreme/raw sign-transition vectors, exact integral seconds,
   negative subsecond values, and seeded representative raw payloads. Test the
   throwing conversion independently of the Try contract.
-- [ ] Implement the explicit bridge without changing Fixed64 saturation or
+- [x] Implement the explicit bridge without changing Fixed64 saturation or
   conversion semantics elsewhere. Run
   `dotnet test tests/FixedMathSharp.Chronicler.Tests/FixedMathSharp.Chronicler.Tests.csproj
   -c Release -p:UseLocalLsfStack=true --filter FullyQualifiedName~FixedMathChronicleTimeTests`
   and repeat for ReleaseLean.
-- [ ] Prove the 100-year timestamp difference example narrows exactly to 0.25
+- [x] Prove the 100-year timestamp difference example narrows exactly to 0.25
   seconds while attempting to narrow a 100-year duration fails explicitly.
-- [ ] Test `GetFrameCountForDuration` at zero, one fractional unit, an exact step,
+- [x] Test `GetFrameCountForDuration` at zero, one fractional unit, an exact step,
   one unit below/above it, a result beyond `int.MaxValue`, invalid signs, and
   non-power-of-two frame rates. Expected values use raw integer division.
-- [ ] Inspect restored project assets and built assembly references in both
+- [x] Inspect restored project assets and built assembly references in both
   configurations. Ensure no Chronicler-to-FixedMathSharp dependency or mixed
   Standard/Lean family was introduced. Do not release an upstream package merely
   to make this development pass compile.
@@ -1005,3 +1005,100 @@ atomic; later host/deferred-link failures cannot roll back arbitrary world state
 **Phase boundary:** Phase 2 is complete and uncommitted for owner review. Only
 Chronicler changed. Phase 3 (FixedMathSharp bridge/source dependency graph) is
 next; no downstream clock defect is claimed fixed and no release is authorized.
+
+### Phase 3 execution record
+
+Base commits: Chronicler `f41b6c1` and FixedMathSharp `d5d8782`. All four
+repositories began clean on `develop`. Work stays in those owner-managed
+checkouts, without staging, committing or publishing. Evidence is retained in
+`artifacts/timing/phase3`; earlier phase baselines remain intact.
+
+`FixedMathChronicleTime` adds the four approved APIs to the existing companion.
+Widening splits Q32.32 into floor seconds and unsigned fraction; narrowing
+checks the full Fixed64 range before reconstructing raw bits. No timestamp
+conversion, saturation, reciprocal arithmetic or new dependency is introduced.
+Complete-step counting validates its signs before raw signed-long division.
+
+Tests first failed because the bridge was missing (`bridge-red.log`). The
+final set includes 41 new cases: signed extrema and fractional boundaries,
+4,096 seeded payload round trips, independent Try/throw rejection, the runnable
+100-Julian-year difference example, raw one-below/exact/one-above step boundaries,
+counts through `long.MaxValue`, invalid arguments, and represented 30/60 Hz
+steps rounded in opposite directions. The warmed allocation test reuses the
+existing non-inlined test helper and checks useful results as well as zero
+bytes. Blocking GC applies only to the companion test host, not consumers.
+
+#### Source graph and review findings
+
+The companion-only reference initially built successfully while Trailblazer
+still compiled against published Chronicler 0.4.0. Roots that disable transitive
+project references need explicit Chronicler and Lean shim references. Those
+were added to Gravitas/Trailblazer libraries, adapter, test and benchmark hosts;
+the prebuilt benchmark path remains unchanged. Source-only 0.4.0 defaults in
+Chronicler/shim align NuGet restore with build-time reference identities.
+These are existing-graph fixtures, not new release versions. SwiftCollections
+and GridForge remain unchanged consumers of the existing ABI; the containing
+source host selects one Chronicler/shim implementation.
+
+Independent correctness and Ponytail review found one configuration defect:
+Chronicler's nested shim could fall back to Debug under a Lean solution build.
+The same local-only `ShouldUnsetParentConfigurationAndPlatform=false` rule used
+by the sibling repos now preserves that configuration. Subsequent graph checks
+include Chronicler's own shim copy. The reviewer approved the source after this
+fix, with no outstanding findings or suggested abstraction/deletion.
+
+`check-source-graph.ps1` inspects restored assets, resolved compile paths, actual
+PE assembly references and SHA-256 equality of copied runtime DLLs for both
+target frameworks/configurations at the affected boundaries. It uses
+`BuildProjectReferences=false` so inspection cannot rewrite the outputs under
+test. Final reports are `source-graph-Release.json` and
+`source-graph-ReleaseLean.json`. No reverse Chronicler-to-math dependency or
+mixed Standard/Lean family is permitted. No physics/navigation code changed.
+
+#### Verification and release boundary
+
+Windows full suites pass without skips:
+
+| Suite | Release | ReleaseLean |
+| --- | ---: | ---: |
+| Chronicler | 228 core + 4 shim | 161 core + 4 shim |
+| FixedMathSharp | 2,824 core + 49 companion | 2,803 core + 49 companion |
+| Gravitas | 4,062 | 4,007 |
+| Trailblazer | 3,187 core + 84 adapter | 3,096 core + 80 adapter |
+
+Final coverage remains exact: the new bridge has **15/15 lines, 10/10 branches,
+4/4 methods** in both configurations; the whole companion has **85/85, 12/12,
+18/18**. Core math remains **47,681/47,681, 8,898/8,898, 3,409/3,409** in
+Release and **47,673/47,673, 8,898/8,898, 3,405/3,405** in Lean. Existing
+Chronicler coverage gaps are unchanged; no runtime exclusions were added.
+Coverage and logs are `final-fms-coverage-*` and `fms-final-*.log`.
+
+Linux/WSL independently builds both target frameworks and passes the same
+Chronicler and FixedMathSharp suite counts in both configurations (SDK
+10.0.203). The first launcher lacked the login shell's .NET PATH; that short
+failed log is retained as `linux-launch-environment.log`. Running the same
+matrix through `bash -l` succeeds without source changes. Windows uses SDK
+10.0.302. All matrix runs retain the established
+`MSBUILDDISABLENODEREUSE=1` environment. Final Windows builds restore the shared
+checkout's outputs. Fresh DocFX builds with `--warningsAsErrors` pass: 44 HTML
+pages for Chronicler and 55 for FixedMathSharp, both with zero warnings/errors.
+Final source-graph audits pass after those Windows builds, including exact
+Chronicler/shim copies at every checked boundary and both library targets.
+
+Package mode remains the default and published dependency pins are unchanged.
+The new companion cannot compile against published Chronicler 0.4.0 because
+that package has no timing types. Coordinated development therefore requires
+`UseLocalLsfStack=true`. Before release, the owner must choose/publish the
+timing-capable Chronicler package, update the companion's dependency floor,
+and validate isolated real-package consumers. Do not distribute source-mode
+fixture packages or mistake source validation for this deferred release gate.
+
+The namespace guidance now welcomes considered recommendations without moving
+any existing type. The companion guide documents exact conversions, floor
+counting and source availability; Chronicler's timing guide links to it without
+taking a math dependency. Phases 4/5 retain downstream lifecycle ownership;
+`TRB-Issue-124` and `GRV-Issue-076` remain unresolved by this bridge alone.
+
+**Phase boundary:** Phase 3 is complete and uncommitted for owner review.
+Phase 4 is next: migrate Gravitas's owning clock and lifecycle consumers,
+then rerun its real boundary regressions and matched performance gates.

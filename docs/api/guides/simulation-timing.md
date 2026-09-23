@@ -87,6 +87,16 @@ The value types remain readonly and do not implement `IRecordable`. Their
 in-memory layout is not a serialization format. Use the explicit recording
 helper below instead. No Fixed64 conversion API is provided by Chronicler.
 
+Applications using FixedMathSharp can use the optional
+[`FixedMathSharp.Chronicler` companion](https://github.com/mrdav30/FixedMathSharp/blob/main/src/FixedMathSharp.Chronicler/README.md).
+Its `FixedMathChronicleTime` widens Fixed64 seconds exactly and narrows a
+duration only when it fits. Subtract wide timestamps first, then use
+`TryToFixed64` or the throwing `ToFixed64` conversion. The companion also counts
+complete fixed-size steps using raw integer division; that is not a wait
+scheduler or a lookup of historical frame numbers. This dependency points
+toward Chronicler, never from Chronicler to the math library. See the companion
+guide for source-development requirements while these APIs are unpublished.
+
 ## Advance a clock explicitly
 
 <xref:Chronicler.Timing.ChronicleClock> starts at frame/time zero and advances
