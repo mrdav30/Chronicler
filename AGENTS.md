@@ -3,7 +3,7 @@
 ## Purpose
 
 Chronicler provides explicit deterministic state transfer and dependency-free
-simulation time values.
+simulation time values and an explicitly advanced, recordable clock.
 
 Its primary use cases are:
 
@@ -28,9 +28,9 @@ explicit contracts over convenience features.
 - Nullable reference types: enabled
 - Release symbols: portable PDBs
 
-Important: keep the public namespace as `Chronicler`. Even though files are
-organized into folders, avoid introducing sub-namespaces unless there is an
-explicit request to do so.
+Keep recording APIs in `Chronicler` and timing values/clock in the established
+`Chronicler.Timing` namespace. Do not introduce further sub-namespaces without
+an explicit request.
 
 ## Start Here
 
@@ -138,9 +138,12 @@ Keep the distinction clear:
   support.
 - `src/Chronicler/Recording` High-level recording helpers and serialization mode
   concepts.
-- `src/Chronicler/Timing` Immutable signed durations and nonnegative timestamps
-  with exact binary fractions. Keep arithmetic dependency-free and compatible
+- `src/Chronicler/Timing` Immutable signed durations, nonnegative timestamps,
+  and a host-advanced clock. Keep arithmetic dependency-free and compatible
   with both target frameworks; check the final result after carry/borrow.
+  Advance and clock population validate before mutation. `RecordChronicleTime`
+  in Recording validates carriers after deep loading, not during the transports'
+  empty-reader initialization. Hosts own reset/restore lifetime invalidation.
 - `src/Chronicler/Serialization` Shared serialization infrastructure.
 - `src/Chronicler/Serialization/Json` JSON transport implementation.
 - `src/Chronicler/Serialization/MemoryPack` MemoryPack transport implementation.

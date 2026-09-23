@@ -9,7 +9,7 @@ items:
         href: guides/serialization-model.md
       - name: Deterministic Record Hashes
         href: guides/record-hashes.md
-      - name: Simulation Time Values
+      - name: Simulation Timing
         href: guides/simulation-timing.md
   - name: API Reference
     href: obj/api/

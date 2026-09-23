@@ -6,7 +6,7 @@
 > delegated implementation. Track progress with the checkboxes below.
 
 **Date:** 2026-09-22  
-**Status:** Phase 0 and Phase 1 complete; Phase 2 pending  
+**Status:** Phases 0-2 complete; Phase 3 pending  
 **Primary repository:** `F:\gamedevrepos\Chronicler`  
 **Related repositories:** `FixedMathSharp`, `Gravitas`, `Trailblazer`  
 **Origin:** Trailblazer `TRB-Issue-124` and the owner's request for a reusable,
@@ -21,8 +21,8 @@ pending-work invalidation, and coordinated restore policy.
 **Tech stack:** C# 11, `netstandard2.1` and `net8.0`, xUnit v3, Chronicler's
 existing JSON/MemoryPack record paths and Standard/Lean package families.  
 **Spec:** The [design contract](#design-contract) in this document is the design
-source of truth. The owner approved Phase 0 followed by Phase 1; later phases
-remain pending.
+source of truth. The owner approved Phase 2 after committing Phase 0/1;
+Phase 3 onward remains pending.
 
 ## Why This Work Exists
 
@@ -55,7 +55,8 @@ part of this work.
 
 - Correctness, lockstep determinism, maintainability, then performance.
 - C# 11; library targets `netstandard2.1` and `net8.0`; tests run on `net8.0`.
-- Keep Chronicler's public namespace `Chronicler` and existing package IDs.
+- Keep recording APIs in `Chronicler`, timing types in the committed
+  `Chronicler.Timing` namespace, and existing package IDs unchanged.
 - No FixedMathSharp, SwiftCollections, GridForge, Gravitas, or Trailblazer
   dependency in Chronicler. No new package is needed for this feature.
 - FixedMathSharp interop belongs in the existing `FixedMathSharp.Chronicler`
@@ -427,7 +428,7 @@ contract; no downstream dependency is needed.
 
 **Consumes:** Phase 1 values. **Produces:** the clock and recording contracts.
 
-- [ ] Write step-change tests before implementation, including:
+- [x] Write step-change tests before implementation, including:
 
   ```csharp
   var clock = new ChronicleClock(new ChronicleDuration(0, 0x80000000u));
@@ -438,23 +439,23 @@ contract; no downstream dependency is needed.
   Assert.Equal(new ChronicleTimestamp(0, 0xC0000000u), clock.ElapsedTime);
   ```
 
-- [ ] Implement staged advance, positive-step validation, deadline checks,
+- [x] Implement staged advance, positive-step validation, deadline checks,
   reset-preserves-step behavior, and exact typed recording. Run the Timing filter
   after each red/green step in both configurations.
-- [ ] Reuse `SerializationTestHarness` for each enabled transport. Round-trip
+- [x] Reuse `SerializationTestHarness` for each enabled transport. Round-trip
   zero/default time, negative durations, fractional endpoints, and a clock past
   `int.MaxValue` frames and whole seconds; continue advancing after load.
-- [ ] Seed a clock at `long.MaxValue` frames through a valid record; assert
+- [x] Seed a clock at `long.MaxValue` frames through a valid record; assert
   advancement fails with frame/time/step unchanged. Separately seed timestamp
   exhaustion with a smaller frame value. Test zero/negative step and deadline
   offsets at zero, exact remaining capacity, and one beyond capacity.
-- [ ] Corrupt the final step record and schema version; assert population leaves
+- [x] Corrupt the final step record and schema version; assert population leaves
   a previously running target unchanged. Cover absent nested records, missing
   schema, unsupported versions, and inconsistent zero-frame/elapsed pairs.
-- [ ] Compare canonical record hashes after round-trip and step-by-step replay.
+- [x] Compare canonical record hashes after round-trip and step-by-step replay.
   Confirm changing one fractional unit, step, or high frame bits changes the
   recorded input. Hashing an unchanged record must remain stable across builds.
-- [ ] Verify zero allocations for warmed `Advance`, `SetStepDuration`, deadline,
+- [x] Verify zero allocations for warmed `Advance`, `SetStepDuration`, deadline,
   and comparison success paths; state transfer need not be allocation-free.
 
 **Suggested commit:** `feat: add recordable deterministic simulation clock`
@@ -682,7 +683,7 @@ begins; a separate task or branch is created only if requested.
 - [x] Owner review of this plan; Phase 0 and Phase 1 authorized on 2026-09-22.
 - [x] Phase 0: boundary regressions and baseline evidence.
 - [x] Phase 1: canonical wide values.
-- [ ] Phase 2: clock and explicit recording.
+- [x] Phase 2: clock and explicit recording.
 - [ ] Phase 3: FixedMathSharp bridge and source graph.
 - [ ] Phase 4: Gravitas adoption.
 - [ ] Phase 5: Trailblazer and adapter adoption.
@@ -932,3 +933,75 @@ serialization schema, Fixed64 conversion or consumer migration is implemented
 by this change. TRB-Issue-124 and GRV-Issue-076 remain open until their owning
 simulation regressions pass with those later changes. GRV-Issue-077 is a
 separate benchmark-tooling follow-up, not a blocker for the standalone values.
+
+### Phase 2 execution record
+
+Base commit: `c482da2` (owner-committed Phase 1). The `develop` checkout began
+clean. Phase 2 adds `Chronicler.Timing.ChronicleClock` and
+`Chronicler.RecordChronicleTime` only; no bridge or downstream runtime changes.
+The committed values already use `Chronicler.Timing`, so the clock follows that
+namespace and stale root-only guidance has been corrected without API aliases.
+
+Execution continues in the existing checkout, with the plan's established
+`artifacts/timing/phase2` ledger/log convention instead of the Bash task-brief
+scripts. Nothing is staged or committed by the executor. Keep evidence through
+owner review; earlier baseline captures remain intact.
+
+The fresh core baseline passes 161 tests. The unchanged shim package fixture
+stalled after a nested build; only this run's owned shim test process was
+terminated. The same binary then passes all four tests in 13 seconds with
+`MSBUILDDISABLENODEREUSE=1`, consistent with the prior Linux worker-reuse symptom.
+The interrupted baseline log is retained, not counted as a pass. All subsequent
+matrix commands use that environment; no library, fixture or timeout workaround
+was introduced, and this is not a claim of a complete runner root-cause fix.
+
+Clock tests first failed for the missing clock, then the recording tests failed
+for absent `IRecordable`/typed helper support. The focused tests pass in both
+configurations. The clock stages advance and population before committing;
+step changes preserve history, reset preserves step, and deadlines checked-add
+without scheduling. One private raw carrier serves the identical value schemas;
+typed overloads enforce timestamp bounds only after the transport's deep read.
+Both serializers and Phase 1 arithmetic remain unchanged.
+
+Tests exercise real JSON/MemoryPack round trips, wide frame/elapsed values,
+frame and timestamp exhaustion independently, missing/unsupported schemas,
+late step errors, zero-pair consistency, origin defaults, fractional endpoints,
+and step-by-step replay. The new public clock example is executed in a behavior
+test. The clock hash golden vector is
+`3afb9a9549ef8913ef16fb64eb7dec31` for frame 2, elapsed 0.75, step 0.25. It was
+independently encoded against the existing hash byte contract with explicit
+field names/order/types/defaults and carrier type name, not copied from a
+passing production hash. Tests separately vary high frame/seconds bits,
+fractional elapsed units and the step.
+
+Windows full solution tests pass **228 core + 4 shim** in Release and
+**161 core + 4 shim** in ReleaseLean. Introduced Phase 2 code has **61/61 lines,
+16/16 branches, 12/12 methods** in both configurations; combined timing code
+has **109/109, 36/36, 42/42**. The warmed 1,024-step lifecycle test allocates
+zero bytes and asserts frame/time, deadline sum and comparison outcomes.
+Coverage reports and complete logs are retained locally; no exclusions added.
+Linux/WSL independently built both target frameworks and passed the same full
+suite counts in Release and ReleaseLean, including the golden vector and all
+four shim tests. A fresh Windows Release build then passed with zero warnings
+and errors. `dotnet tool run docfx docs/api/docfx.json --warningsAsErrors`
+generated 44 HTML pages with zero warnings and errors. Logs are
+`full-Release.log`, `full-ReleaseLean.log`, `linux-Release.log`,
+`linux-ReleaseLean.log`, `final-build-Release.log` and `docfx.log`.
+
+Independent fresh-context correctness and Ponytail review approved the complete
+Phase 2 diff, including all four new source/test files and both transports'
+deep-struct behavior. No Critical, Important or Minor findings remain; no
+extra abstraction or simplification was recommended. Primary verification
+accepted the matrix, exact coverage, allocation and generated-site evidence.
+Existing uncovered Chronicler code remains unchanged. This is source validation,
+not isolated released-package consumer validation.
+
+The review deliberately leaves Fixed64 conversion to Phase 3, stale-work and
+containing-world lifecycle protection to Phases 4/5, and broader enclosing-graph
+transactionality to the host. These are existing ownership boundaries, not
+promises implemented by a standalone clock. Failed clock field loading is
+atomic; later host/deferred-link failures cannot roll back arbitrary world state.
+
+**Phase boundary:** Phase 2 is complete and uncommitted for owner review. Only
+Chronicler changed. Phase 3 (FixedMathSharp bridge/source dependency graph) is
+next; no downstream clock defect is claimed fixed and no release is authorized.

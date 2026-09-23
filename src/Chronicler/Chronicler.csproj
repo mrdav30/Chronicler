@@ -48,7 +48,7 @@
 	<!-- NuGet Packaging Metadata -->
 	<PropertyGroup>
 		<Authors>mrdav30</Authors>
-		<Description>Deterministic, transport-neutral state transfer into existing runtime object graphs, with exact simulation timestamps and durations for lockstep applications.</Description>
+		<Description>Deterministic, transport-neutral state transfer into existing runtime object graphs, with exact time values and a recordable simulation clock for lockstep applications.</Description>
 		<PackageTags>serialization;serializer;deterministic;lockstep;snapshot;restore;savegame;state-transfer;json;memorypack;gamedev;simulation;timing</PackageTags>
 		<PackageProjectUrl>https://github.com/mrdav30/Chronicler</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/mrdav30/Chronicler</RepositoryUrl>

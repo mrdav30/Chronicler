@@ -17,9 +17,9 @@ schema for JSON, MemoryPack, restore workflows, stable runtime links, and
 deterministic record hashes. Your host constructs the object graph; Chronicler
 transfers state into it without taking ownership of your runtime.
 
-It also provides exact, immutable simulation timestamps and signed durations
-with 64-bit whole seconds and 32 fractional bits, independent of any engine
-or math package.
+It also provides exact simulation timestamps and signed durations with 64-bit
+whole seconds and 32 fractional bits, plus an explicitly advanced, recordable
+clock. These timing primitives are independent of any engine or math package.
 
 ## Why Chronicler?
 

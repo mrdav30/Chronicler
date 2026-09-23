@@ -71,8 +71,8 @@ description: Guides and API reference for explicit deterministic state transfer 
   object ownership, defaults, link resolution, and package boundaries.
 - [Deterministic record hashes](guides/record-hashes.md) documents the replay
   and conformance hash contract.
-- [Simulation time values](guides/simulation-timing.md) explains wide timestamps,
-  signed intervals, exact binary fractions, and checked arithmetic.
+- [Simulation timing](guides/simulation-timing.md) explains wide timestamps,
+  signed intervals, explicit clock advancement, and transactional clock restore.
 
 ## Part of the LSF ecosystem
 

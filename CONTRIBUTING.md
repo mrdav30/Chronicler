@@ -2,7 +2,7 @@
 
 Thanks for helping improve Chronicler. Focused bug fixes, tests, documentation,
 and proposals that strengthen explicit deterministic state transfer and
-simulation time values are welcome.
+simulation timing are welcome.
 For a large or breaking change, open an issue first so the serialization
 contract and migration impact can be discussed before implementation.
 
@@ -36,7 +36,8 @@ dotnet tool run docfx docs/api/docfx.json --warningsAsErrors
 
 ## Pull Request Process
 
-1. Keep the change focused and preserve the public `Chronicler` namespace.
+1. Keep the change focused; recording APIs use `Chronicler`, and timing values
+   and the clock use `Chronicler.Timing`.
 2. Add or update tests for meaningful behavior changes. Exercise JSON and
    MemoryPack where transport parity is part of the contract.
    For time values, cover signed endpoints, fractional carry/borrow, exact

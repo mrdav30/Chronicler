@@ -1,17 +1,17 @@
 ---
-title: Simulation time values
-description: Represent long-lived simulation instants and exact signed intervals without floating point.
+title: Simulation timing
+description: Advance and restore exact simulation time without floating point or a wall clock.
 ---
 
-# Simulation time values
+# Simulation timing
 
 An instant tells you **when** something happened. A duration tells you **how
 much time** separates two instants. Keeping those concepts distinct avoids
 squeezing a long-running simulation's entire history into the numeric type
 used for one physics step.
 
-<xref:Chronicler.ChronicleTimestamp> is a nonnegative instant measured from a
-simulation origin. <xref:Chronicler.ChronicleDuration> is a signed interval.
+<xref:Chronicler.Timing.ChronicleTimestamp> is a nonnegative instant measured from a
+simulation origin. <xref:Chronicler.Timing.ChronicleDuration> is a signed interval.
 Both are immutable values available in the Standard and Lean packages, with
 no math-library or engine dependency.
 
@@ -41,7 +41,7 @@ This complete method measures a quarter second after 100 Julian years
 (365.25 days per year):
 
 ```csharp
-using Chronicler;
+using Chronicler.Timing;
 
 public static class TimingExample
 {
@@ -83,7 +83,86 @@ world/lifetime identifier. Compare or subtract timestamps only when the host
 knows they share an origin and simulation lifetime. Resetting a world does
 not make a timestamp retained from the old run meaningful in the new run.
 
-The value types do not implement `IRecordable` or supply a Fixed64 conversion
-API. Their in-memory layout is not a serialization format. Simulation-loop,
-recording, and numerical-conversion policies are separate from this value
-arithmetic contract.
+The value types remain readonly and do not implement `IRecordable`. Their
+in-memory layout is not a serialization format. Use the explicit recording
+helper below instead. No Fixed64 conversion API is provided by Chronicler.
+
+## Advance a clock explicitly
+
+<xref:Chronicler.Timing.ChronicleClock> starts at frame/time zero and advances
+only when its owner calls `Advance()`. Supply a positive step; there is no
+default frame rate. `FrameCount` is a signed `long`, and `ElapsedTime` accumulates
+each actual step. Changing `StepDuration` affects future advances, never history.
+
+This complete example changes from half-second to quarter-second steps, saves
+the clock, restores a host-created shell, and continues:
+
+```csharp
+using Chronicler;
+using Chronicler.Timing;
+
+public static class ClockExample
+{
+    public static ChronicleClock RestoreAndAdvance()
+    {
+        var clock = new ChronicleClock(new ChronicleDuration(0, 0x80000000));
+        clock.Advance();
+        clock.SetStepDuration(new ChronicleDuration(0, 0x40000000));
+        clock.Advance();
+
+        string snapshot = JsonRecordSerializer.Serialize(clock);
+        var restored = new ChronicleClock(new ChronicleDuration(1, 0));
+        JsonRecordSerializer.Populate(restored, snapshot);
+        restored.Advance();
+        return restored; // Frame 3, exactly 1 second elapsed, quarter-second step.
+    }
+}
+```
+
+`GetDeadlineFrame(offset)` checked-adds a nonnegative frame offset; zero selects
+the current frame. It does not schedule anything. Frame offsets count advances,
+not seconds, so step changes do not move an existing frame deadline.
+
+`Reset()` returns frame/time to zero while retaining the configured step.
+`Advance()` rejects an exhausted frame counter with `InvalidOperationException`
+or an unrepresentable timestamp with `OverflowException`, leaving all clock
+state unchanged. A deadline overflow also throws `OverflowException`.
+Zero/negative steps and negative deadline offsets throw
+`ArgumentOutOfRangeException`.
+
+The clock is not thread-safe and does not run your simulation. A reset or restore
+starts a new owner-controlled lifetime: quiesce the host, invalidate old waits
+and pending work, and coordinate other restored state. Clock transactionality
+does not roll back unrelated host code or exceptions later in a simulation step.
+
+## Record values and clock state
+
+Use <xref:Chronicler.RecordChronicleTime> inside your type's `RecordData` for
+either time value. This partial schema example assumes a `ChronicleDuration`
+field named `cooldown` and a `ChronicleTimestamp` field named `startedAt`:
+
+```csharp
+RecordChronicleTime.Look(chronicler, ref cooldown, "Cooldown");
+RecordChronicleTime.Look(chronicler, ref startedAt, "StartedAt");
+```
+
+Each value records `SchemaVersion` (int, version 1), `WholeSeconds` (long), and
+`FractionalSecond` (uint), in that order. Missing components default to zero;
+a missing nested record, missing schema, or unsupported version rejects.
+Negative durations are valid; negative timestamps reject. A failed helper call
+leaves its referenced value unchanged, not every field of the enclosing object.
+
+The clock records version 1, `FrameCount`, nested `ElapsedTime`, then nested
+`StepDuration`. Loading stages every field before applying any clock state.
+Frames must be nonnegative, the step positive, and frame/time must either both
+be zero or both positive. A missing frame defaults to zero; both nested schemas
+are required. The clock does **not** require elapsed time to equal frame count
+times the current step, because step sizes can change.
+
+JSON and MemoryPack follow this same schema; Lean uses JSON. Missing/unsupported
+schemas and inconsistent frame/time pairs throw `InvalidOperationException`;
+negative timestamps and nonpositive steps throw `ArgumentOutOfRangeException`.
+Malformed transport payloads can also raise their transport's parsing errors.
+Any failed clock population leaves frame, elapsed time, and step unchanged.
+<xref:Chronicler.ChronicleHashSerializer> hashes the ordered schema, including
+the full-width frame and fractions, without recording host identity.
