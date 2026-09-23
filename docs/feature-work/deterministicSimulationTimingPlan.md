@@ -6,7 +6,7 @@
 > delegated implementation. Track progress with the checkboxes below.
 
 **Date:** 2026-09-22  
-**Status:** Phases 0-3 complete; Phase 4 pending  
+**Status:** Phases 0-4 complete; Phase 5 pending  
 **Primary repository:** `F:\gamedevrepos\Chronicler`  
 **Related repositories:** `FixedMathSharp`, `Gravitas`, `Trailblazer`  
 **Origin:** Trailblazer `TRB-Issue-124` and the owner's request for a reusable,
@@ -21,8 +21,8 @@ pending-work invalidation, and coordinated restore policy.
 **Tech stack:** C# 11, `netstandard2.1` and `net8.0`, xUnit v3, Chronicler's
 existing JSON/MemoryPack record paths and Standard/Lean package families.  
 **Spec:** The [design contract](#design-contract) in this document is the design
-source of truth. The owner approved Phase 3 after committing Phase 2;
-Phases 4-6 remain pending.
+source of truth. The owner committed Phases 0-3 and approved Phase 4;
+Phases 5-6 remain pending.
 
 ## Why This Work Exists
 
@@ -31,13 +31,13 @@ Publication requires nonnegative, strictly increasing frames and rejects after
 the clock has already advanced. Its separate internal `ulong` LOS timeline does
 not solve that containing-frame failure.
 
-Gravitas also advances an `int` clock. Its collision history, grounding,
+At baseline, Gravitas also advanced an `int` clock. Its collision history, grounding,
 retained-partition lifecycle, coroutine waits, diagnostics, and replay hashes
-consume frame stamps. In particular, retained-partition retirement uses negative
-`EmptySinceFrame` values as an unset sentinel. This is source-inspected risk;
-the owning end-to-end regression must be captured before claiming a fix.
+consumed frame stamps. Retained-partition retirement treated negative
+`EmptySinceFrame` values as an unset sentinel. Phases 0 and 4 reproduced the
+real lifecycle failure and verified its migration to wide timing.
 
-Both libraries accumulate absolute seconds in `Fixed64`. Its Q32.32 range ends
+Both libraries originally accumulated absolute seconds in `Fixed64`. Its Q32.32 range ends
 after roughly 68 simulated years; saturating arithmetic can stop time advancing.
 Widening frame numbers while retaining that accumulator is not the solution.
 
@@ -235,7 +235,7 @@ not silently reset an entire host world; the host must quiesce it first.
 
 ### Fixed64 interop and seconds-based consumers
 
-Add `FixedMathChronicleTime` to the existing companion package. Its proposed
+Add `FixedChronicleTime` to the existing companion package. Its proposed
 static API is deliberately explicit:
 
 ```csharp
@@ -463,7 +463,7 @@ contract; no downstream dependency is needed.
 ### Phase 3 - FixedMathSharp bridge and coordinated source graph
 
 **Create in FixedMathSharp:**
-`src/FixedMathSharp.Chronicler/FixedMathChronicleTime.cs`,
+`src/FixedMathSharp.Chronicler/FixedChronicleTime.cs`,
 `tests/FixedMathSharp.Chronicler.Tests/FixedMathChronicleTimeTests.cs`.
 
 **Modify as needed for source validation:**
@@ -478,10 +478,10 @@ with the published 0.4.0 copy.
 - [x] Add exact conversion tests, including:
 
   ```csharp
-  var tiny = FixedMathChronicleTime.FromFixed64(Fixed64.FromRaw(-1));
+  var tiny = FixedChronicleTime.FromFixed64(Fixed64.FromRaw(-1));
   Assert.Equal(new ChronicleDuration(-1, uint.MaxValue), tiny);
-  Assert.Equal(-1L, FixedMathChronicleTime.ToFixed64(tiny).m_rawValue);
-  Assert.False(FixedMathChronicleTime.TryToFixed64(
+  Assert.Equal(-1L, FixedChronicleTime.ToFixed64(tiny).m_rawValue);
+  Assert.False(FixedChronicleTime.TryToFixed64(
       new ChronicleDuration((long)int.MaxValue + 1, 0), out var result));
   Assert.Equal(Fixed64.Zero, result);
   ```
@@ -518,32 +518,32 @@ the 2D/3D/mixed partition and collision services, `CollisionHandling`,
 `Runtime/GravitasWorldContextTests.cs`, `Support/Coroutines`, partition/contact
 tests in `Core`, and `Determinism` replay/conformance suites.
 
-- [ ] Make Phase 0 regressions red on the pre-migration implementation. Extend
+- [x] Make Phase 0 regressions red on the pre-migration implementation. Extend
   them for wide elapsed time, cached contact/grounding ages, mixed/2D paths,
   retained empty partitions, and diagnostics at the old boundary.
-- [ ] Replace duplicated authoritative counter/time state with ChronicleClock.
+- [x] Replace duplicated authoritative counter/time state with ChronicleClock.
   Keep Gravitas-specific visualization and frame-rate constraints local. Use
   `long` for absolute frame/phase stamps and wide timestamps for absolute time;
   keep step integration in Fixed64 and bounded sleep/retention durations bounded.
-- [ ] Replace public `TotalTime` with `ChronicleTimestamp ElapsedTime`; migrate
+- [x] Replace public `TotalTime` with `ChronicleTimestamp ElapsedTime`; migrate
   consumers instead of retaining a narrow alternate absolute-time property.
   Replace the historical-sounding frame conversion with the duration contract.
-- [ ] Migrate seconds waits to timestamp deadlines and frame waits to long
+- [x] Migrate seconds waits to timestamp deadlines and frame waits to long
   differences/deadlines. Test waits begun before a step-size change, zero waits,
   cancellation/disposal, and stale instructions after context reset. Repeated
   `KeepWaiting` reads must not advance a countdown or change behavior.
-- [ ] Preserve lifetime invalidation without serializing process-local identity.
+- [x] Preserve lifetime invalidation without serializing process-local identity.
   Check no mutation precedes clock exhaustion in the containing lifecycle.
-- [ ] Widen/version diagnostic and replay stamp fields, including any necessary
+- [x] Widen/version diagnostic and replay stamp fields, including any necessary
   late-simulation token change established by Phase 0. Verify consistent semantic
   replay, and document why old/new hash schemas intentionally differ.
-- [ ] Audit body records independently of replay hashing. In particular,
+- [x] Audit body records independently of replay hashing. In particular,
   `Core/3D/SolidBody.Serialization.cs` records `_lastGroundCheckFrame` as an int
   today. Version affected body-record shapes when widening stamps, with owning
   2D/3D serialization tests for values beyond int range, old-width payload
   rejection, transport parity, and no live mutation when the new timing/schema
   preflight rejects. This does not expand into rewriting unrelated body records.
-- [ ] Run focused Runtime/Coroutines/partition/determinism filters in both
+- [x] Run focused Runtime/Coroutines/partition/determinism filters in both
   configurations, then the full Gravitas matrix. Compare the existing benchmark
   baseline with identical workload and runtime; explain any measurable regression.
 
@@ -684,8 +684,8 @@ begins; a separate task or branch is created only if requested.
 - [x] Phase 0: boundary regressions and baseline evidence.
 - [x] Phase 1: canonical wide values.
 - [x] Phase 2: clock and explicit recording.
-- [ ] Phase 3: FixedMathSharp bridge and source graph.
-- [ ] Phase 4: Gravitas adoption.
+- [x] Phase 3: FixedMathSharp bridge and source graph.
+- [x] Phase 4: Gravitas adoption.
 - [ ] Phase 5: Trailblazer and adapter adoption.
 - [ ] Phase 6: documentation, full validation, review, and closeout.
 
@@ -1013,7 +1013,8 @@ repositories began clean on `develop`. Work stays in those owner-managed
 checkouts, without staging, committing or publishing. Evidence is retained in
 `artifacts/timing/phase3`; earlier phase baselines remain intact.
 
-`FixedMathChronicleTime` adds the four approved APIs to the existing companion.
+`FixedChronicleTime` adds the four approved APIs to the existing companion
+(the owner shortened its original `FixedMathChronicleTime` name after review).
 Widening splits Q32.32 into floor seconds and unsigned fraction; narrowing
 checks the full Fixed64 range before reconstructing raw bits. No timestamp
 conversion, saturation, reciprocal arithmetic or new dependency is introduced.
@@ -1102,3 +1103,146 @@ taking a math dependency. Phases 4/5 retain downstream lifecycle ownership;
 **Phase boundary:** Phase 3 is complete and uncommitted for owner review.
 Phase 4 is next: migrate Gravitas's owning clock and lifecycle consumers,
 then rerun its real boundary regressions and matched performance gates.
+
+### Phase 4 execution record - 2026-09-23
+
+Approved scope: finish evergreen/name cleanup, then migrate Gravitas. Existing
+`develop` checkouts began clean at Chronicler `739f521`, FixedMathSharp `f1f1c71`,
+Gravitas `7edc2f1`, and Trailblazer `e2a9edf`. No commits, staging, publishing or
+branch changes were requested. Evidence remains under `artifacts/timing/phase4`.
+The live bridge name is `FixedChronicleTime`; older test file/class names in
+Phase 3 commands remain accurate. Public guides no longer depend on temporary
+development availability. Release sequencing stays in this plan.
+
+**Implementation and contracts.** Gravitas composes `ChronicleClock` rather
+than duplicating authoritative time. `FrameCount` is `long`; `ElapsedTime`
+replaces `TotalTime` with `ChronicleTimestamp`. `GetFrameCountForDuration`
+replaces `GetFrameFromTime`, counting complete current steps by raw integer
+division. Frame rate, cached Fixed64 delta/reciprocal and visualization remain
+Gravitas-owned. There are no forwarding aliases.
+
+Absolute contact, grounding, partition, diagnostic and CCD phase stamps are
+wide throughout 2D/3D/mixed physics. Bounded sleep/retention/culling counts remain
+bounded. Frame/phase exhaustion and elapsed-time overflow reject before their
+containing lifecycle mutates. Negative unset grounding stamps are excluded
+before subtraction, including at `long.MaxValue`.
+
+Frame waits use checked long deadlines; seconds waits use wide timestamp
+deadlines. Rate changes affect subsequent steps, not the requested duration.
+Repeated reads are pure. Each wait retains a transient context-lifetime identity;
+reset starts a new identity, and old/disposed-context waits reject. Existing
+coroutine cancellation and disposal ownership is preserved. That identity is
+neither recorded nor hashed.
+
+The 3D body record now starts with `BodySchemaVersion = 1` and long
+`LastGroundCheckFrame`. Schema/negative-stamp validation precedes body mutation;
+old unversioned records reject on both transports. The 2D record never persisted
+its ground-check stamp, so its shape is unchanged and its cache is invalidated
+on load. This is not a general rewrite of body-load transactions or a world
+rewind API. Replay root version 2 hashes long frame/phase stamps and ordered
+whole/fractional timestamp components; affected nested sections also advance.
+Old/new replay hash schemas are intentionally incomparable.
+
+**RED evidence and strengthened acceptance.** The pre-migration boundary run
+had seven expected behavioral failures and two controls: retained partitions,
+saturated/premature seconds waits, wide duration counting and stale reset waits.
+Missing wide API tests failed compilation separately. JSON previously coerced
+the old narrow body record while MemoryPack failed at the field-width mismatch.
+The new semantic schema rejection is tested before mutation on both transports.
+The unset-grounding sentinel test also failed without the nonnegative guard.
+The initial setup was corrected because body initialization already probes;
+the test explicitly restores an unset stamp before exercising the simulation path.
+
+Acceptance includes 2D/3D/mixed retirement around the old boundary and near true
+exhaustion, ten-frame planar grounding-cache expiry, transport cache invalidation,
+zero/overflowing waits, reset/disposal, 100-year elapsed origins with rate changes,
+and zero warmed allocations for containing frames and concrete wait construction.
+Eight-step 2D/3D/mixed traces cross both narrow frame/phase boundaries, compare
+movement/rotation/velocity with normal-origin controls, require real planar/mixed
+contacts and a 3D CCD wall stop, and compare exact cache-inclusive replay hashes.
+
+The review exposed a pre-existing weak 2D restore test: collider ID 1 was its
+static wall, not its dynamic circle. Both transports failed a new dynamic-role
+assertion. Selecting ID 0 makes the existing restoration/16-step continuation
+exercise actual motion (`GRV-Issue-078`, fixed). `GRV-Issue-076` is resolved by
+the owning lifecycle regressions; benchmark-tooling `GRV-Issue-077` is unchanged.
+The old wrong-body case incidentally covered box-shape writing. A dedicated
+box-size/closest-point transport round trip now owns that useful behavior;
+coverage is not preserved by retaining the misleading restore test.
+
+**Performance and costs.** Fresh matched Windows in-process BenchmarkDotNet
+empty-world frame measurements were 63.79 ns before and 62.28 ns after (standard
+deviation 0.020 ns in both, 14/13 retained iterations, zero measured allocations).
+This establishes no regression in that clock-containing workload, not a populated
+physics throughput improvement. The existing out-of-process local-stack runner
+issue is not hidden by its exit code; inspect completed benchmark results.
+Widened stamp payloads add four bytes per former 32-bit field, before in-memory
+alignment. Elapsed hash payload grows from one 64-bit Fixed64 raw value to a
+64-bit whole and 32-bit fraction. Composition adds one ChronicleClock instance
+per context. Waits retain one lifetime reference; that identity allocates only
+at context creation/reset, never per frame or read.
+
+**Independent review.** A fresh correctness/Ponytail reviewer found no production
+defect and no justified extra abstraction or deletion. Two Important findings
+were addressed: the diagnostic-capture example's constructor now accepts long
+(actual snippet compile RED/GREEN), and replay tests gained the semantic controls
+above. Optional wording polish remains: the runtime guide's contextual statement
+that counters do not wrap refers to authoritative timing, not unrelated cumulative
+instrumentation counters. Main execution owns the final verification gates;
+the reviewer did not run them concurrently.
+
+**Validation record.** Windows SDK 10.0.302 / .NET 8.0.29 and independent Linux
+SDK 10.0.203 / .NET 8.0.26 rebuilds pass both `netstandard2.1` and `net8.0` library
+targets in both configurations. All tests below pass on **both** operating
+systems, without skipped cases:
+
+| Suite | Release | ReleaseLean |
+| --- | ---: | ---: |
+| Gravitas | 4,103 | 4,044 |
+| Trailblazer core | 3,187 | 3,096 |
+| Trailblazer.Gravitas adapter | 84 | 80 |
+
+Windows full coverage collections include exactly the `Gravitas` assembly and
+retain **100% line, branch and method coverage**, with no added exclusions:
+
+| Configuration | Lines covered/total | Branches covered/total | Methods covered/total |
+| --- | ---: | ---: | ---: |
+| Release | 44,308 / 44,308 | 13,046 / 13,046 | 4,543 / 4,543 |
+| ReleaseLean | 44,306 / 44,306 | 13,046 / 13,046 | 4,542 / 4,542 |
+
+The final reports are `verified-coverage-release/` and `verified-coverage-lean/`.
+Earlier `final-coverage-*` runs correctly exposed the single box-writing branch
+lost when the misleading static-body test was fixed; the explicit geometry
+round trip closes it in these final full-suite reports. No percentage rounding
+or report merging hides that gap. The 24 cache-inclusive wide-clock trace hashes
+(eight each for 2D, 3D and mixed) match across Windows/Linux and Standard/Lean.
+Trace logs are `windows-wide-replay.log`, `linux-wide-replay-*` and
+`restored-windows-wide-replay-*`.
+
+Reproduce with `UseLocalLsfStack=true`: build the owning `.slnx` in each
+configuration, run its tests with `--no-build`, and collect Gravitas coverage
+with `--collect:"XPlat Code Coverage" --settings
+tests/Gravitas.Tests/coverlet.runsettings`. Linux uses independent `-t:Rebuild`
+builds, not copied Windows assemblies. A WSL launcher quoting attempt failed
+before any build; `validate-linux.sh` records the successful invocation. Final
+Windows rebuilds restore the shared checkout's native outputs.
+
+DocFX `--warningsAsErrors` passes for Chronicler (44 pages), FixedMathSharp
+(55), and Gravitas (190); the actual diagnostic timeline-capture example also
+compiles. Contributor guidance now records the authoritative timing widths,
+bounded conversion and lifetime rules rather than leaving them only in this plan.
+
+One initial unchanged Release baseline run terminated natively with
+`0xC0000005` after 634 tests. Its exit code was nonzero despite a partial
+"Passed" footer. An unchanged diagnostic rerun passed all 4,062 baseline tests;
+no matching Application fault event or repeat reproduction was found. Keep
+`baseline-release.log` and `baseline-release-diagnostic.log`; this migration
+does not claim to diagnose or fix that one-off host failure.
+
+**Boundary:** Trailblazer runtime remains untouched. Its clock, motor timestamps,
+publication, records and adapter timing are Phase 5. Source-mode validation does
+not establish package release readiness; dependency floors and isolated real
+package consumers remain the release gate already recorded above.
+
+**Phase boundary:** Phase 4 is complete and uncommitted for owner review. Phase 5
+is the next implementation step; the overall timing plan remains active.
