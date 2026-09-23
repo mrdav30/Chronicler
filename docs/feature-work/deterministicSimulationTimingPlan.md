@@ -6,7 +6,7 @@
 > delegated implementation. Track progress with the checkboxes below.
 
 **Date:** 2026-09-22  
-**Status:** Phases 0-4 complete; Phase 5 pending  
+**Status:** Phases 0-5 complete; Phase 6 pending  
 **Primary repository:** `F:\gamedevrepos\Chronicler`  
 **Related repositories:** `FixedMathSharp`, `Gravitas`, `Trailblazer`  
 **Origin:** Trailblazer `TRB-Issue-124` and the owner's request for a reusable,
@@ -21,8 +21,8 @@ pending-work invalidation, and coordinated restore policy.
 **Tech stack:** C# 11, `netstandard2.1` and `net8.0`, xUnit v3, Chronicler's
 existing JSON/MemoryPack record paths and Standard/Lean package families.  
 **Spec:** The [design contract](#design-contract) in this document is the design
-source of truth. The owner committed Phases 0-3 and approved Phase 4;
-Phases 5-6 remain pending.
+source of truth. The owner committed Phases 0-4 and approved Phase 5;
+Phase 6 remains pending.
 
 ## Why This Work Exists
 
@@ -561,19 +561,19 @@ and `src/Trailblazer.Gravitas/GravitasNavigator3D.cs`.
 `Navigation/MovementGroups`, `Navigation/Steering`, `Navigation/Motor`,
 Navigator record tests, and `tests/Trailblazer.Gravitas.Tests`.
 
-- [ ] Reproduce pending publication across the old boundary through public
+- [x] Reproduce pending publication across the old boundary through public
   `context.Simulate`, not only the internal clock. Assert receipt status and
   exact long publication frames, including queued future work and rejection of
   late/nonmonotonic authoring.
-- [ ] Replace authoritative clock state with ChronicleClock and remove the
+- [x] Replace authoritative clock state with ChronicleClock and remove the
   separate internal unsigned timeline. Widen operations, receipts, group history,
   grants, acquisition attempts, committed-cell notifications, motor transactions,
   and adapter prepare/commit stamps together. Preserve volatile publication
   semantics when changing receipt fields to long.
-- [ ] Keep world-specific clock lifetime tokens and invalidation rules. Preserve
+- [x] Keep world-specific clock lifetime tokens and invalidation rules. Preserve
   FIFO/cohort scheduling, budgets, source-pin ownership, exactly-once result
   transfer, LOS phase fairness, and reset/cancellation behavior.
-- [ ] Replace `TotalTime` with wide `ElapsedTime`, and move absolute jump-start
+- [x] Replace `TotalTime` with wide `ElapsedTime`, and move absolute jump-start
   timestamps to the wide contract. Keep ordinary cooldown durations in Fixed64.
   Test identical jump-hold behavior at early and late world times. Inspect
   `NavMotor.Traversal`'s current `(JumpStartTime + ExtraJumpHeight) / speed`
@@ -581,18 +581,18 @@ Navigator record tests, and `tests/Trailblazer.Gravitas.Tests`.
   Capture any confirmed pre-existing units defect with an owning regression and
   tracker entry, then use an elapsed-duration comparison with defined zero-speed
   behavior. This is a correctness gate, not permission for unrelated motor work.
-- [ ] Version affected locomotion/Navigator records and preserve transactional
+- [x] Version affected locomotion/Navigator records and preserve transactional
   loading across JSON/MemoryPack. Old shapes reject; no epoch guessing or
   compatibility wrappers. Restore worlds before guided controllers as today.
-- [ ] Verify long-frame group expiry, exactly-once motor commit, expired guide
+- [x] Verify long-frame group expiry, exactly-once motor commit, expired guide
   validation grants, adoption/recovery, reset to the same numeric frame, and
   exhausted-clock rejection with pending work unchanged.
-- [ ] Run real Gravitas adapter prepare/resolve/commit across the old frame and
+- [x] Run real Gravitas adapter prepare/resolve/commit across the old frame and
   elapsed-time limits. Navigation and physics each advance once; do not share
   one mutable clock that both contexts advance. Verify step agreement and reset
   ownership without changing the existing all-prepare/one-resolve/all-commit
   barrier.
-- [ ] Run both core/adapter suites and existing guided-frame/publication
+- [x] Run both core/adapter suites and existing guided-frame/publication
   benchmarks. Preserve allocation gates and account for widened retained-state
   layouts rather than weakening memory ceilings or hiding a regression.
 
@@ -686,7 +686,7 @@ begins; a separate task or branch is created only if requested.
 - [x] Phase 2: clock and explicit recording.
 - [x] Phase 3: FixedMathSharp bridge and source graph.
 - [x] Phase 4: Gravitas adoption.
-- [ ] Phase 5: Trailblazer and adapter adoption.
+- [x] Phase 5: Trailblazer and adapter adoption.
 - [ ] Phase 6: documentation, full validation, review, and closeout.
 
 ### Phase 0 / 1 execution record - 2026-09-22
@@ -1246,3 +1246,164 @@ package consumers remain the release gate already recorded above.
 
 **Phase boundary:** Phase 4 is complete and uncommitted for owner review. Phase 5
 is the next implementation step; the overall timing plan remains active.
+
+### Phase 5 execution record - 2026-09-23
+
+**Scope and ownership.** The owner approved Trailblazer core and adapter adoption
+after committing Phase 4. Work uses the existing `develop` checkouts; starting
+commits are Trailblazer `e2a9edf`, Chronicler `11ad990`, Gravitas `4227cc7`, and
+FixedMathSharp `112e394`. This phase changes Trailblazer and this canonical plan
+only. Evidence is retained under Chronicler's ignored `artifacts/timing/phase5/`.
+
+Trailblazer now composes `ChronicleClock`: public `long FrameCount`, wide
+`ChronicleTimestamp ElapsedTime`, and
+`long GetFrameCountForDuration(Fixed64 duration)`. The latter counts complete
+represented current steps; it is not a historical timestamp lookup. The parallel
+unsigned timeline and retired narrow APIs are removed without aliases. The
+represented Fixed64 step and cached reciprocal remain controller inputs; rate
+changes preserve elapsed history, and reset retains the configured rate while
+replacing lifetime identity. Exhaustion rejects before fixed-frame publication,
+scheduled acquisition, or hooks mutate.
+
+Long stamps now flow through map/overlay/policy operations and volatile receipts,
+graph publication, movement-group history, validation grants, guide acquisition
+and adoption, committed-cell events, motor transactions, and adapter preparation.
+Bounded counts, frame rates, intervals, and budgets remain their existing types.
+The motor retains its owning clock lifetime with a pending frame; both core and
+adapter validate it before accepted pose, velocity, occupancy or events change.
+Reset to the same numeric frame cannot revive a stale transaction. This reuses
+the motor's existing ownership instead of adding another adapter clock/token or
+broader friend-assembly access.
+
+Held jumping compares a wide elapsed duration with `ExtraJumpHeight / jumpSpeed`,
+with defined zero-speed/zero-height handling and an inclusive end boundary.
+Neither the absolute timestamp nor an expired wide interval is narrowed to
+Fixed64. `JumpStartTime` is a required Chronicle timestamp record: jump schema 1
+and Navigator schema 9 reject retired/missing timing shapes before live mutation
+on JSON and MemoryPack. Ordinary cooldown durations remain Fixed64. Hosts still
+own world restoration and the meaning of a restored timestamp's time origin.
+
+**Regression evidence.** The unchanged Release baseline passes 3,187 core and
+84 adapter tests. Public boundary tests first failed for pending publication
+crossing `int.MaxValue`, elapsed-time saturation, and duration-to-frame saturation
+(three failures/one control). Isolated held-jump and same-frame reset tests failed
+three cases with one early-time control. Core/adapter stale-commit tests reproduced
+three partial-mutation failures before the preflight change. These defects are
+resolved as `TRB-Issue-124`, `153`, and `154` respectively.
+
+Acceptance now covers exact long publication receipts and future admission;
+late/nonmonotonic rejection; exhausted clocks leaving pending work unchanged;
+group expiry, fair validation turns and expired grants; scheduled cancellation,
+Flow recovery and moved-origin A* adoption; and reset to an identical numeric
+frame. Held-jump tests cover zero/10-second/100-year origins, future starts,
+expired wide intervals, zero speed/height, and a real active jump whose rate
+changes from 32 to 16 to 8 Hz across the exact quarter-second hold boundary.
+Two real Gravitas actors cross both old frame boundaries and the former Fixed64
+elapsed limit, compare exact accepted motion with early controls, and require
+exactly one navigation/physics advance and exactly-once commit. The adapter does
+not share, advance, synchronize, or repair either owning context's clock; hosts
+configure and step both through the existing barrier.
+
+A separate pre-existing defect is retained as **TRB-Issue-155**: the final allowed
+jump clears held input on its next frame because eligibility for another jump
+also controls continuation of the current jump. It reproduced at the unchanged
+baseline with the default single-jump configuration. Timing tests use a second
+available jump to isolate the units defect; they do not claim that this separate
+policy is fixed. Changing that policy is outside this phase's explicit boundary.
+
+**Memory accounting and review.** An x64 before/after layout probe measured
+receipt 48 -> 56 bytes, group member 120 -> 128, membership 48 -> 56, committed
+cell 72 -> 80, and motor 88 -> 104. The public map-commit value grows 32 -> 40,
+but its retained queue entry stays 80 bytes; other public operation values stay
+32. Map/remove/overlay/policy pending estimates now charge the additional eight
+bytes for each retained receipt, including exact/one-below capacity regressions.
+No ceilings are enlarged. Group/motor/cell state remains owner/count bounded.
+One ChronicleClock object is owned per context; advancement and warmed access
+do not allocate.
+
+A fresh independent correctness/Ponytail review found two Important gaps: the
+separate policy queue also needed the receipt delta, and held jumping needed an
+actual rate-change continuation test. Both were addressed and re-reviewed with
+24 focused tests passing; no findings remain open. The policy boundary first
+failed its two new admission/accounting assertions. The reviewer accepted the
+explicit deferral of the independent final-jump policy defect.
+
+**Matched performance evidence.** Existing Windows Release guided-frame cases
+use three launches, one warmup and three actual 64-frame blocks per launch
+(576 actual frames per case). The analyzer validates all child results and
+replays; all 45 candidate blocks, including warmup/diagnostic records, also match
+the corresponding baseline's 64 exact per-frame checksums. Actual frames report
+zero allocations, no GC overlap, and none exceeding the 31.25 ms frame budget.
+
+| Workload | Frame median before -> after | Observed P99 before -> after | 64-frame block median before -> after |
+| --- | ---: | ---: | ---: |
+| A* / 100 | 1.74345 -> 1.50045 ms | 4.66450 -> 4.63515 ms | 115.5977 -> 106.2024 ms |
+| Flow / 100 | 1.28525 -> 0.93835 ms | 5.955325 -> 5.214925 ms | 82.5463 -> 67.3394 ms |
+| Flow / 500 | 3.25535 -> 3.25445 ms | 15.652525 -> 15.41820 ms | 259.4751 -> 258.1731 ms |
+
+This is evidence against a regression in these containing workloads, not an
+isolated attribution of the smaller-agent gains to clock arithmetic. Candidate
+maximum frames are 4.9073, 5.4729 and 15.7929 ms respectively.
+
+The existing publication Monitoring jobs use three launches and 100 measured
+iterations each. For 1/16/128 maps, medians are 33.50/36.80/52.45 us before and
+31.80/35.00/52.15 us after; allocation reports remain 5.35/5.52/5.68 KB. Means
+are 35.785/39.151/59.435 us before and 34.523/38.802/62.061 us after. The noisy
+128-map mean rises while its median is unchanged (standard deviation 36.56 ->
+57.75 us); this does not establish a runtime regression or an improvement.
+The separate in-process ShortRun diagnostics are not mixed into those results.
+Actual generated runners and dependencies are frozen in `before-frozen/` and
+`after-frozen/`, each with a SHA-256 manifest, before cross-platform rebuilds.
+Logs, BenchmarkDotNet reports and guided analyzer summaries retain both captures.
+
+Reproduce the guided run with `UseLocalLsfStack=true` in the environment and
+the Release benchmark DLL's `navigation-guided-frame` command, filters
+`*Simulate64GuidedFrames(AgentCount: 100,*` and
+`*Simulate64GuidedFrames(AgentCount: 500,*FlowField*`, and
+`--launchCount 3 --warmupCount 1 --iterationCount 3 --keepFiles --exporters json`.
+Use `AnalyzeGuidedFrames.ps1` for the log, not BenchmarkDotNet's whole-operation
+mean as a per-frame number. Publication uses `navigation-graph-lifecycle
+--filter '*PublishOnePhysicalCellChange*' --keepFiles --exporters json` with the
+existing harness settings.
+
+**Validation record.** Windows SDK 10.0.302 / .NET 8.0.29 and independent Linux
+SDK 10.0.203 / .NET 8.0.26 rebuilds pass both `netstandard2.1` and `net8.0` library
+targets, with zero build warnings/errors in both configurations. All tests below
+pass on both operating systems with no skipped cases:
+
+| Suite | Release | ReleaseLean |
+| --- | ---: | ---: |
+| Trailblazer core | 3,244 | 3,145 |
+| Trailblazer.Gravitas adapter | 88 | 84 |
+
+Separate Windows coverage collections use each test project's own runsettings;
+the combined reports contain **both** expected assemblies. Release and
+ReleaseLean each retain these exact 100% counts, including fully covered methods:
+
+| Assembly | Lines covered/total | Branches covered/total | Fully covered methods/total |
+| --- | ---: | ---: | ---: |
+| Trailblazer | 32,282 / 32,282 | 13,262 / 13,262 | 3,177 / 3,177 |
+| Trailblazer.Gravitas | 193 / 193 | 30 / 30 | 13 / 13 |
+| Combined | 32,475 / 32,475 | 13,292 / 13,292 | 3,190 / 3,190 |
+
+No exclusions were added. `verified-windows-*` logs and `coverage-release/` and
+`coverage-lean/` reports retain the final collections. Linux uses actual
+`-t:Rebuild -m:1 -p:UseLocalLsfStack=true` builds, followed by full `.slnx` tests
+with `--no-build`; it does not execute copied Windows assemblies. Its launcher
+requires a login shell for the installed SDK; the initial bare-shell invocation
+failed before building because `dotnet` was not on PATH. The successful command
+is `wsl.exe bash -lc 'bash /mnt/f/gamedevrepos/Chronicler/artifacts/timing/phase5/validate-linux.sh'`.
+
+Final native Windows rebuilds restore both configurations' shared-checkout
+outputs, then repeat both full suites with the same passing counts. Trailblazer
+DocFX `--warningsAsErrors` passes (134 HTML files, zero warnings/errors).
+Documentation/contributor cleanup keeps README, Overview, Gravity, Pathing,
+MapPublication, Gravitas, Serialization, migration guidance, API landing content,
+and adapter ownership aligned. Evergreen pages do not link to this feature plan.
+Source-mode executable hosts now explicitly reference FixedMathSharp.Chronicler
+because their transitive project references are disabled; package floors are
+unchanged, not silently inferred from fixture version overrides.
+
+**Phase boundary:** Phase 5 is complete and uncommitted for owner review. Phase 6
+is next for cross-stack documentation, full validation and package/release gates;
+this source-stack result does not establish release readiness.
