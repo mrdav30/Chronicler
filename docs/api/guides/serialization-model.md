@@ -137,9 +137,26 @@ is the intended contract.
 
 <xref:Chronicler.Serialization.SerializationPayloadEditor> can remove or replace entries in a
 serialized payload. It is useful for compatibility tests and controlled schema
-migrations. Its common overloads operate on JSON in Lean builds and default to
-MemoryPack in the standard build, so prefer the format-specific methods when
-call-site clarity matters.
+migrations. Use the format-specific methods to keep the payload type explicit:
+
+| Format | Payload type | Set a value | Remove an entry |
+| --- | --- | --- | --- |
+| JSON (standard and Lean) | `string` | `SetJsonValue` | `RemoveJsonProperty` |
+| MemoryPack (standard only) | `byte[]` | `SetMemoryPackValue` | `RemoveMemoryPackEntry` |
+
+Serialize and populate through the corresponding record serializer:
+
+```csharp
+string json = JsonRecordSerializer.Serialize(record, writeIndented: true);
+json = SerializationPayloadEditor.SetJsonValue(json, 42, "state", "Count");
+json = SerializationPayloadEditor.RemoveJsonProperty(json, "state", "Enabled");
+JsonRecordSerializer.Populate(target, json);
+```
+
+Paths and replacement values must match the recorded schema. The editor
+serializes replacement values directly with the selected transport; it does not
+invoke `RecordData` to construct a replacement deep record. It parses the payload
+representation without populating a recordable object graph.
 
 ## Host integration lifecycle
 

@@ -2,8 +2,9 @@
 
 ## Migrating To v1.0.0
 
-Chronicler v1.0.0 groups transports and hash APIs into focused namespaces. Update
-imports or fully qualified names for the moved types, then rebuild consuming
+Chronicler v1.0.0 groups transports and hash APIs into focused namespaces and
+removes the payload editor's untyped convenience methods. Update imports,
+fully qualified names, and payload-editor calls, then rebuild consuming
 libraries and applications together. A namespace change changes a CLR type's
 identity; an assembly compiled against the previous name must be rebuilt.
 
@@ -16,6 +17,8 @@ identity; an assembly compiled against the previous name must be rebuilt.
 - Add `using Chronicler.Hashing;` where you use hash values, writers, or record
   traversal, including downstream hash writer extensions.
 - Update fully qualified names and stored reflection names for moved types.
+- Replace the payload editor's common methods with the explicit JSON or
+  MemoryPack APIs described below.
 - Rebuild consumers together; the old root type names have no compatibility
   wrappers.
 - Re-run save/load and replay/conformance tests. Existing hash vectors should
@@ -52,8 +55,48 @@ For example, a file that previously imported only `Chronicler` and called
 returning hash types need the new `Chronicler.Hashing` identities as well.
 Update any explicitly stored reflection type names for moved types.
 
-The old root names have no compatibility wrappers. Method names and behavior
-are unchanged; this migration does not redesign the payload-editor API.
+The old root names have no compatibility wrappers. The namespace moves preserve
+method names and behavior; the payload-editor API change is described separately
+below.
+
+### Explicit Payload Editing
+
+`SerializationPayloadEditor` no longer exposes `SerializeRecord`,
+`PopulateRecord`, `RemovePayloadEntry`, or `SetPayloadValue`. These methods
+accepted or returned `object`; their default transport and signatures differed
+between standard and Lean builds. Replace them with typed calls:
+
+| Removed method | JSON replacement | MemoryPack replacement (standard only) |
+| --- | --- | --- |
+| `SerializeRecord` | `JsonRecordSerializer.Serialize` | `MemoryPackRecordSerializer.Serialize` |
+| `PopulateRecord` | `JsonRecordSerializer.Populate` | `MemoryPackRecordSerializer.Populate` |
+| `RemovePayloadEntry` | `SerializationPayloadEditor.RemoveJsonProperty` | `SerializationPayloadEditor.RemoveMemoryPackEntry` |
+| `SetPayloadValue` | `SerializationPayloadEditor.SetJsonValue` | `SerializationPayloadEditor.SetMemoryPackValue` |
+
+JSON payloads remain `string`; MemoryPack payloads remain `byte[]`. Remove the
+`useMemoryPack` argument and select the corresponding method instead. A previous
+standard call that omitted that argument used MemoryPack; the Lean equivalent
+used JSON. Pass `writeIndented: true` to `JsonRecordSerializer.Serialize` to
+preserve the old wrapper's indented JSON output.
+
+For example, this JSON workflow works unchanged in both packages:
+
+```csharp
+string json = JsonRecordSerializer.Serialize(record, writeIndented: true);
+json = SerializationPayloadEditor.SetJsonValue(json, 42, "state", "Count");
+json = SerializationPayloadEditor.RemoveJsonProperty(json, "state", "Enabled");
+JsonRecordSerializer.Populate(target, json);
+```
+
+The format-specific editor methods retain their existing behavior. Paths and
+replacement values must match the recorded schema. A replacement value is
+serialized directly by the selected transport; the editor does not invoke
+`RecordData` to construct a deep record. Serializer calls can accept a
+`ChronicleContext` when the record graph needs link services.
+
+This API removal does not change payload encoding or the record-hash algorithm.
+Existing payloads need no conversion, and unchanged recorded graphs retain their
+hashes.
 
 ### Shared Contracts And Packages
 
