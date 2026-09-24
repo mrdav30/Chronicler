@@ -5,7 +5,7 @@ using System.IO;
 using System.Text;
 using System.Text.Json;
 
-namespace Chronicler;
+namespace Chronicler.Serialization;
 
 /// <summary>
 /// Serializes <see cref="IRecordable"/> state graphs to and from JSON through the chronicler API.

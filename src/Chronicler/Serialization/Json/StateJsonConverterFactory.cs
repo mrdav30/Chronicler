@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Chronicler;
+namespace Chronicler.Serialization;
 
 /// <summary>
 /// Creates JSON converters for types that explicitly implement <see cref="IStateBacked{TState}"/>.

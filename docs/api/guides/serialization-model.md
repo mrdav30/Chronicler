@@ -9,6 +9,9 @@ Chronicler separates state by ownership. That distinction keeps schemas explicit
 and prevents a restore pass from quietly taking control of a runtime's object
 lifecycle.
 
+The examples use `Chronicler` for recording contracts and helpers, and
+`Chronicler.Serialization` for serializers, converters, and payload editing.
+
 ## One schema, ordered by code
 
 Every recordable type implements
@@ -99,8 +102,8 @@ loaded and throws if any remain unresolved.
 
 ## Transport behavior
 
-<xref:Chronicler.JsonRecordSerializer> and, in the standard package,
-<xref:Chronicler.MemoryPackRecordSerializer> implement the same
+<xref:Chronicler.Serialization.JsonRecordSerializer> and, in the standard package,
+<xref:Chronicler.Serialization.MemoryPackRecordSerializer> implement the same
 <xref:Chronicler.IChronicler> contract. They both:
 
 - call the type-owned schema directly;
@@ -116,7 +119,7 @@ is the state behavior expressed by `RecordData(...)`.
 
 <xref:Chronicler.IStateBacked`1> covers a separate System.Text.Json integration
 for helper objects that expose one canonical state value. Register
-<xref:Chronicler.StateJsonConverterFactory> when each record type implements one
+<xref:Chronicler.Serialization.StateJsonConverterFactory> when each record type implements one
 `IStateBacked<TState>` contract and has a public constructor accepting that
 exact state type:
 
@@ -132,11 +135,19 @@ is the intended contract.
 
 ## Payload editing
 
-<xref:Chronicler.SerializationPayloadEditor> can remove or replace entries in a
+<xref:Chronicler.Serialization.SerializationPayloadEditor> can remove or replace entries in a
 serialized payload. It is useful for compatibility tests and controlled schema
 migrations. Its common overloads operate on JSON in Lean builds and default to
 MemoryPack in the standard build, so prefer the format-specific methods when
 call-site clarity matters.
+
+## Host integration lifecycle
+
+<xref:Chronicler.DefaultSaver> provides `Save`, `EarlyApply`, `Apply`, and
+`LateApply` hooks for host integrations. For example, an engine editor adapter
+can use them to transfer settings and configuration between editor-owned data
+and a library. The host decides when to invoke each phase; Chronicler does not
+depend on an engine or automatically run the lifecycle during serialization.
 
 ## Package boundaries
 

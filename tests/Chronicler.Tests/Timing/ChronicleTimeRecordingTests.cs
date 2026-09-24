@@ -1,3 +1,5 @@
+using Chronicler.Serialization;
+using Chronicler.Hashing;
 using System;
 using System.Collections.Generic;
 using Chronicler.Timing;

@@ -1,3 +1,4 @@
+using Chronicler.Hashing;
 using FluentAssertions;
 using System;
 using System.Collections.Generic;

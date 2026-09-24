@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Chronicler;
+namespace Chronicler.Serialization;
 
 internal sealed class OrderedStringMap<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 {

@@ -60,10 +60,12 @@ stable unless you intend to change the serialized contract.
 
 ## 3. Save and restore JSON
 
-<xref:Chronicler.JsonRecordSerializer.Serialize(Chronicler.IRecordable,System.Boolean)>
+<xref:Chronicler.Serialization.JsonRecordSerializer.Serialize(Chronicler.IRecordable,System.Boolean)>
 returns a JSON string. `Populate(...)` applies that state to an existing object:
 
 ```csharp
+using Chronicler.Serialization;
+
 PlayerSnapshot source = new()
 {
     Health = 72,
@@ -83,7 +85,7 @@ object graph factory.
 
 ## 4. Choose another transport when needed
 
-The standard package exposes <xref:Chronicler.MemoryPackRecordSerializer> over
+The standard package exposes <xref:Chronicler.Serialization.MemoryPackRecordSerializer> over
 the same `RecordData(...)` schema:
 
 ```csharp
@@ -117,4 +119,8 @@ whatever happened to be in the target object.
   conformance signals.
 - Read [Simulation timing](simulation-timing.md) for exact timestamps, durations,
   frame deadlines, and explicit clock advancement and restore.
-- Browse the <xref:Chronicler> API reference for every public type.
+- Read the [migration guide](https://github.com/mrdav30/Chronicler/blob/main/docs/MIGRATION.md) when upgrading an existing
+  consumer.
+- Browse the <xref:Chronicler> recording contracts, <xref:Chronicler.Serialization>
+  transports, <xref:Chronicler.Hashing> hash APIs, and <xref:Chronicler.Timing>
+  timing APIs.

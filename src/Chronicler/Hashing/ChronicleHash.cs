@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-namespace Chronicler;
+namespace Chronicler.Hashing;
 
 /// <summary>
 /// Fixed-width deterministic hash value produced by a Chronicler record-hash pass.

@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Chronicler;
+namespace Chronicler.Serialization;
 
 /// <summary>
 /// Serializes <see cref="IRecordable"/> state graphs to and from MemoryPack through the chronicler API.

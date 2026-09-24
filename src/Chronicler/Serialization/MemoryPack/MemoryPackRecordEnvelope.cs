@@ -2,7 +2,7 @@ using MemoryPack;
 using System;
 using System.Collections.Generic;
 
-namespace Chronicler;
+namespace Chronicler.Serialization;
 
 /// <summary>
 /// Stores named field payloads for the MemoryPack chronicler transport.

@@ -109,6 +109,7 @@ the clock, restores a host-created shell, and continues:
 
 ```csharp
 using Chronicler;
+using Chronicler.Serialization;
 using Chronicler.Timing;
 
 public static class ClockExample
@@ -200,5 +201,5 @@ schemas and inconsistent frame/time pairs throw `InvalidOperationException`;
 negative timestamps and nonpositive steps throw `ArgumentOutOfRangeException`.
 Malformed transport payloads can also raise their transport's parsing errors.
 Any failed clock population leaves frame, elapsed time, and step unchanged.
-<xref:Chronicler.ChronicleHashSerializer> hashes the ordered schema, including
+<xref:Chronicler.Hashing.ChronicleHashSerializer> hashes the ordered schema, including
 the full-width frame and fractions, without recording host identity.

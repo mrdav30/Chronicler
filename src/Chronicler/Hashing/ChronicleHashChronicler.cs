@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace Chronicler;
+namespace Chronicler.Hashing;
 
 internal sealed class ChronicleHashChronicler : IChronicler
 {

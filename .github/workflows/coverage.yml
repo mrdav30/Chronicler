@@ -70,6 +70,8 @@ jobs:
           dotnet tool run docfx docs/api/docfx.json --warningsAsErrors
           test -f docs/api/obj/_site/index.html
           test -f docs/api/obj/_site/api/Chronicler.html
+          test -f docs/api/obj/_site/api/Chronicler.Serialization.html
+          test -f docs/api/obj/_site/api/Chronicler.Hashing.html
           test -f docs/api/obj/_site/api/MemoryPack.html
           test -f docs/api/obj/_site/guides/getting-started.html
           test -f docs/api/obj/_site/guides/serialization-model.html
@@ -146,6 +148,8 @@ jobs:
           cp -a artifacts/coverage-report/. artifacts/pages/coverage/
           test -f artifacts/pages/index.html
           test -f artifacts/pages/api/Chronicler.html
+          test -f artifacts/pages/api/Chronicler.Serialization.html
+          test -f artifacts/pages/api/Chronicler.Hashing.html
           test -f artifacts/pages/api/MemoryPack.html
           test -f artifacts/pages/guides/getting-started.html
           test -f artifacts/pages/assets/icon_128x128.png

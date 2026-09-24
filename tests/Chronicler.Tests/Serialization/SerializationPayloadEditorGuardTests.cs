@@ -1,3 +1,4 @@
+using Chronicler.Serialization;
 using FluentAssertions;
 using Xunit;
 

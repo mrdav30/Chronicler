@@ -25,8 +25,9 @@ description: Guides and API reference for explicit deterministic state transfer 
     <code>RecordData(...)</code>.</p>
   </div>
   <div class="chr-card">
-    <h3><a href="xref:Chronicler.JsonRecordSerializer">Choose a transport</a></h3>
-    <p>Use built-in JSON everywhere, with built-in MemoryPack available in the
+    <h3><a href="xref:Chronicler.Serialization">Choose a transport</a></h3>
+    <p>Use built-in <a href="xref:Chronicler.Serialization.JsonRecordSerializer">JSON</a>
+    everywhere, with built-in <a href="xref:Chronicler.Serialization.MemoryPackRecordSerializer">MemoryPack</a> available in the
     standard package.</p>
   </div>
   <div class="chr-card">
@@ -45,7 +46,7 @@ description: Guides and API reference for explicit deterministic state transfer 
     of serializing them inline.</p>
   </div>
   <div class="chr-card">
-    <h3><a href="xref:Chronicler.ChronicleHashSerializer">Compare recorded state</a></h3>
+    <h3><a href="xref:Chronicler.Hashing.ChronicleHashSerializer">Compare recorded state</a></h3>
     <p>Build deterministic replay and conformance signals directly from the
     recording schema.</p>
   </div>
@@ -89,6 +90,8 @@ tools throughout the Lockstep Simulation Framework ecosystem:
 
 ## Resources
 
+- [Migration guide](https://github.com/mrdav30/Chronicler/blob/main/docs/MIGRATION.md)
+  covers upgrade steps and compatibility changes.
 - [Source, issues, and releases](https://github.com/mrdav30/Chronicler)
 - [NuGet packages](https://www.nuget.org/packages/Chronicler.Core)
 - [Core test-suite coverage](https://mrdav30.github.io/Chronicler/coverage/)

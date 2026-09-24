@@ -1,3 +1,4 @@
+using Chronicler.Serialization;
 #if !CHRONICLER_DISABLE_MEMORYPACK
 using FluentAssertions;
 using System;
@@ -12,7 +13,7 @@ public sealed class MemoryPackEnvelopeReflectionTests
     [Fact]
     public void EnvelopeMethods_ShouldHandleMissingEntryTable()
     {
-        Type envelopeType = GetChroniclerType("Chronicler.MemoryPackRecordEnvelope");
+        Type envelopeType = GetChroniclerType("Chronicler.Serialization.MemoryPackRecordEnvelope");
         object envelope = Activator.CreateInstance(
             envelopeType,
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
@@ -51,8 +52,8 @@ public sealed class MemoryPackEnvelopeReflectionTests
     [Fact]
     public void EntryTableState_ShouldRoundTripEmptyStateThroughSetter()
     {
-        Type tableType = GetChroniclerType("Chronicler.MemoryPackRecordEntryTable");
-        Type stateType = GetChroniclerType("Chronicler.MemoryPackRecordEntryTableState");
+        Type tableType = GetChroniclerType("Chronicler.Serialization.MemoryPackRecordEntryTable");
+        Type stateType = GetChroniclerType("Chronicler.Serialization.MemoryPackRecordEntryTableState");
 
         object nullState = Activator.CreateInstance(
             stateType,
@@ -77,7 +78,7 @@ public sealed class MemoryPackEnvelopeReflectionTests
     [Fact]
     public void OrderedStringMap_ShouldRejectNullKeysAndSupportNonGenericEnumeration()
     {
-        Type mapType = GetChroniclerType("Chronicler.OrderedStringMap`1")
+        Type mapType = GetChroniclerType("Chronicler.Serialization.OrderedStringMap`1")
             .MakeGenericType(typeof(byte[]));
 
         object map = Activator.CreateInstance(

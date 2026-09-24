@@ -2,7 +2,7 @@ using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Chronicler;
+namespace Chronicler.Serialization;
 
 /// <summary>
 /// Serializes and deserializes an object through its canonical state value.

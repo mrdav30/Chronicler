@@ -5,7 +5,7 @@ using System;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace Chronicler;
+namespace Chronicler.Serialization;
 
 /// <summary>
 /// Provides methods for editing serialized payloads without fully deserializing them.

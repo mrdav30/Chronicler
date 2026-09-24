@@ -1,6 +1,6 @@
 using System;
 
-namespace Chronicler;
+namespace Chronicler.Hashing;
 
 /// <summary>
 /// Computes deterministic record hashes by traversing <see cref="IRecordable.RecordData(IChronicler)"/>.

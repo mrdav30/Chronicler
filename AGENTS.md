@@ -28,10 +28,12 @@ explicit contracts over convenience features.
 - Nullable reference types: enabled
 - Release symbols: portable PDBs
 
-Recording APIs currently use `Chronicler`; timing values and the clock use
-`Chronicler.Timing`. Suggest focused namespace changes when they clarify public
-ownership, explaining migration and record-hash implications. Avoid namespace
-sprawl or unrelated restructuring.
+Recording contracts, helpers, context, links, and host lifecycle hooks use
+`Chronicler`. Transports, converters, and payload editing use
+`Chronicler.Serialization`; record-hash APIs use `Chronicler.Hashing`; timing
+values and the clock use `Chronicler.Timing`. Keep these ownership boundaries
+focused. Explain migration and record-hash implications when proposing further
+namespace changes; avoid namespace sprawl or unrelated restructuring.
 
 ## Start Here
 
@@ -131,27 +133,34 @@ Keep the distinction clear:
 
 ## Repository Layout
 
-- `src/Chronicler/Abstractions` Core interfaces such as `IRecordable` and
-  `IChronicler`.
-- `src/Chronicler/Context` Session context and shared state for a serialization
-  pass.
-- `src/Chronicler/Links` Stable link recording, resolution, and registry
-  support.
-- `src/Chronicler/Recording` High-level recording helpers and serialization mode
-  concepts.
+- `src/Chronicler` Foundational `IRecordable`, `IChronicler`, and `IStateBacked`
+  interfaces alongside the project file.
+- `src/Chronicler/Recording` Recording helpers, session context, serialization
+  mode, and `DefaultSaver` host lifecycle hooks. `DefaultSaver` supports explicit
+  settings/configuration integration with host editors and game engines without
+  taking an engine dependency.
+- `src/Chronicler/Recording/Links` Stable link recording, resolution, and registry
+  support. These types retain the root `Chronicler` namespace.
+- `src/Chronicler/Hashing` Deterministic hash values, primitive writing, and the
+  recording backend, in `Chronicler.Hashing`.
 - `src/Chronicler/Timing` Immutable signed durations, nonnegative timestamps,
   and a host-advanced clock. Keep arithmetic dependency-free and compatible
   with both target frameworks; check the final result after carry/borrow.
   Advance and clock population validate before mutation. `RecordChronicleTime`
   in Recording validates carriers after deep loading, not during the transports'
   empty-reader initialization. Hosts own reset/restore lifetime invalidation.
-- `src/Chronicler/Serialization` Shared serialization infrastructure.
-- `src/Chronicler/Serialization/Json` JSON transport implementation.
-- `src/Chronicler/Serialization/MemoryPack` MemoryPack transport implementation.
+- `src/Chronicler/Serialization` Payload editing and shared ordered-map
+  infrastructure, also used internally by link registration.
+- `src/Chronicler/Serialization/Json` JSON transport and state-backed converters.
+- `src/Chronicler/Serialization/MemoryPack` MemoryPack transport and envelope.
+  All three folders use `Chronicler.Serialization`; transport folders do not
+  create additional public namespaces.
 - `src/Chronicler.MemoryPackShim` Public MemoryPack compatibility attributes for
   annotated Lean assemblies. It is not a transport or serializer.
 - `tests/Chronicler.Tests` Transport-parity and behavior-focused tests grouped
-  by feature area.
+  by Recording (including Links), Serialization, Hashing, and Timing, with
+  shared test infrastructure under Support. Preserve record fixture type names
+  and namespaces when moving tests; those identities affect hash vectors.
 - `tests/Chronicler.MemoryPackShim.Tests` Package-boundary and compatibility
   tests for the shim.
 - `docs/api` DocFX configuration, branded landing page, conceptual guides,

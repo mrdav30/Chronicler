@@ -49,6 +49,7 @@ and MemoryPack transports.
 
 ```csharp
 using Chronicler;
+using Chronicler.Serialization;
 
 PlayerSnapshot source = new() { Health = 72 };
 string json = JsonRecordSerializer.Serialize(source, writeIndented: true);
@@ -83,6 +84,12 @@ The same `RecordData(...)` implementation works with
 `MemoryPackRecordSerializer` in the standard package.
 `restored.Health` is now `72`; its existing `Weapon` keeps the declared ammo
 default of `30`.
+
+Recording contracts and helpers live in `Chronicler`. Use
+`Chronicler.Serialization` for transports and converters, `Chronicler.Hashing`
+for deterministic record hashes, and `Chronicler.Timing` for time values and
+the clock. See the [migration guide](https://github.com/mrdav30/Chronicler/blob/main/docs/MIGRATION.md)
+when upgrading existing code.
 
 ## Choose a package
 
