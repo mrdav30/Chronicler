@@ -27,4 +27,8 @@
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
 	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\Chronicler.MemoryPackShim\Chronicler.MemoryPackShim.csproj" Aliases="Shim" />
+	</ItemGroup>
 </Project>

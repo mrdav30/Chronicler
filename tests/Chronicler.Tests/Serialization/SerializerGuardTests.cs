@@ -7,6 +7,16 @@ namespace Chronicler.Tests;
 
 public class SerializerGuardTests
 {
+#if CHRONICLER_DISABLE_MEMORYPACK
+    [Fact]
+    public void LeanAssembly_ShouldOmitMemoryPackTransportTypes()
+    {
+        typeof(JsonRecordSerializer).Assembly.GetTypes().Should().NotContain(type =>
+            type.Namespace == "Chronicler.Serialization"
+            && type.Name.StartsWith("MemoryPackRecord", StringComparison.Ordinal));
+    }
+#endif
+
     [Fact]
     public void JsonSerialize_ShouldThrow_WhenTargetIsNull()
     {
@@ -50,6 +60,18 @@ public class SerializerGuardTests
     }
 
 #if !CHRONICLER_DISABLE_MEMORYPACK
+    [Fact]
+    public void MemoryPackPopulate_ShouldApplyDefaults_WhenEnvelopeIsNull()
+    {
+        // MemoryPack's null object header is a valid payload, distinct from no bytes.
+        byte[] payload = { 0xff };
+        var target = new SimpleRecord { Count = 99 };
+
+        MemoryPackRecordSerializer.Populate(target, payload);
+
+        target.Count.Should().Be(7);
+    }
+
     [Fact]
     public void MemoryPackSerialize_ShouldThrow_WhenTargetIsNull()
     {

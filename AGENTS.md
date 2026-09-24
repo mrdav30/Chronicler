@@ -229,7 +229,7 @@ dotnet build Chronicler.slnx -c Release
 dotnet test tests/Chronicler.Tests/Chronicler.Tests.csproj -c Release --no-build
 dotnet build Chronicler.slnx -c ReleaseLean
 dotnet test tests/Chronicler.Tests/Chronicler.Tests.csproj -c ReleaseLean --no-build
-dotnet test tests/Chronicler.Tests/Chronicler.Tests.csproj -c Release --collect:"XPlat Code Coverage" --settings tests/Chronicler.Tests/coverlet.runsettings
+dotnet test Chronicler.slnx -c Release --collect:"XPlat Code Coverage" --settings tests/Chronicler.Tests/coverlet.runsettings
 dotnet tool restore
 dotnet tool run docfx docs/api/docfx.json --warningsAsErrors
 ```

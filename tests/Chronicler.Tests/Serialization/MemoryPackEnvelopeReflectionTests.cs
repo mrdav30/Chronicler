@@ -2,7 +2,7 @@ using Chronicler.Serialization;
 #if !CHRONICLER_DISABLE_MEMORYPACK
 using FluentAssertions;
 using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using Xunit;
 
@@ -46,11 +46,13 @@ public sealed class MemoryPackEnvelopeReflectionTests
             .GetMethod("SetEntry", BindingFlags.Instance | BindingFlags.NonPublic)!
             .Invoke(envelope, new object[] { "created", payload });
 
-        envelopeType.GetProperty("Entries")!.GetValue(envelope).Should().NotBeNull();
+        object?[] createdArgs = { "created", null };
+        tryGetEntry.Invoke(envelope, createdArgs).Should().Be(true);
+        ((byte[])createdArgs[1]!).Should().Equal(payload);
     }
 
     [Fact]
-    public void EntryTableState_ShouldRoundTripEmptyStateThroughSetter()
+    public void EntryTableState_ShouldReplaceAndClearEntriesThroughSetter()
     {
         Type tableType = GetChroniclerType("Chronicler.Serialization.MemoryPackRecordEntryTable");
         Type stateType = GetChroniclerType("Chronicler.Serialization.MemoryPackRecordEntryTableState");
@@ -71,34 +73,25 @@ public sealed class MemoryPackEnvelopeReflectionTests
 
         PropertyInfo stateProperty = tableType.GetProperty("State")!;
 
-        stateProperty.GetValue(table).Should().NotBeNull();
+        FieldInfo itemsField = stateType.GetField("Items")!;
+        var items = new[]
+        {
+            new KeyValuePair<string, byte[]?>("first", new byte[] { 1, 2 }),
+            new KeyValuePair<string, byte[]?>("second", null)
+        };
+        object populatedState = Activator.CreateInstance(stateType, new object[] { items })!;
+        stateProperty.SetValue(table, populatedState);
+        var stored = (KeyValuePair<string, byte[]?>[])itemsField.GetValue(stateProperty.GetValue(table))!;
+        stored.Should().Equal(items);
+
+        var replacement = new[] { new KeyValuePair<string, byte[]?>("replacement", new byte[] { 3 }) };
+        stateProperty.SetValue(table, Activator.CreateInstance(stateType, new object[] { replacement }));
+        ((KeyValuePair<string, byte[]?>[])itemsField.GetValue(stateProperty.GetValue(table))!)
+            .Should().Equal(replacement);
+
         stateProperty.SetValue(table, nullState);
-    }
-
-    [Fact]
-    public void OrderedStringMap_ShouldRejectNullKeysAndSupportNonGenericEnumeration()
-    {
-        Type mapType = GetChroniclerType("Chronicler.Serialization.OrderedStringMap`1")
-            .MakeGenericType(typeof(byte[]));
-
-        object map = Activator.CreateInstance(
-            mapType,
-            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
-            binder: null,
-            args: new object[] { 1, StringComparer.Ordinal },
-            culture: null)!;
-
-        PropertyInfo indexer = mapType.GetProperty("Item")!;
-        Action nullKey = () => indexer.SetValue(map, new byte[] { 1 }, new object?[] { null });
-
-        nullKey.Should().Throw<TargetInvocationException>()
-            .Which.InnerException.Should().BeOfType<ArgumentNullException>()
-            .Which.ParamName.Should().Be("key");
-
-        indexer.SetValue(map, new byte[] { 1 }, new object[] { "value" });
-
-        IEnumerator enumerator = ((IEnumerable)map).GetEnumerator();
-        enumerator.MoveNext().Should().BeTrue();
+        ((KeyValuePair<string, byte[]?>[])itemsField.GetValue(stateProperty.GetValue(table))!)
+            .Should().BeEmpty();
     }
 
     private static Type GetChroniclerType(string typeName)

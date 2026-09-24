@@ -86,7 +86,7 @@ public static class JsonRecordSerializer
         public JsonRecordWriter(JsonSerializerOptions options, ChronicleContext context)
         {
             _options = options;
-            Context = context ?? throw new ArgumentNullException(nameof(context));
+            Context = context;
         }
 
         public ChronicleContext Context { get; }
@@ -182,7 +182,7 @@ public static class JsonRecordSerializer
             _document = JsonDocument.Parse(json);
             _root = _document.RootElement;
             _options = options;
-            Context = context ?? throw new ArgumentNullException(nameof(context));
+            Context = context;
         }
 
         public ChronicleContext Context { get; }

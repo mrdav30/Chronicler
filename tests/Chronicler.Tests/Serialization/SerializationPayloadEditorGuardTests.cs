@@ -49,6 +49,20 @@ public class SerializationPayloadEditorGuardTests
 #if !CHRONICLER_DISABLE_MEMORYPACK
 
     [Fact]
+    public void MemoryPackEditing_ShouldTreatNullEnvelopeAsEmpty()
+    {
+        byte[] nullEnvelope = { 0xff };
+        byte[] unchanged = SerializationPayloadEditor.RemoveMemoryPackEntry(nullEnvelope, "value");
+        var target = new SimpleRecord { Count = 99 };
+        MemoryPackRecordSerializer.Populate(target, unchanged);
+        target.Count.Should().Be(7);
+
+        byte[] updated = SerializationPayloadEditor.SetMemoryPackValue(nullEnvelope, 42, "value");
+        MemoryPackRecordSerializer.Populate(target, updated);
+        target.Count.Should().Be(42);
+    }
+
+    [Fact]
     public void RemoveMemoryPackEntry_ShouldThrow_WhenPathIsMissing()
     {
         byte[] payload = MemoryPackRecordSerializer.Serialize(new SimpleRecord());

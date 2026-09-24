@@ -99,11 +99,11 @@ internal sealed class ChronicleHashChronicler : IChronicler
     public void LookValue<T>(ref T value, string name, T? defaultValue = default)
     {
         WriteFieldHeader(name, FieldKind.Value, typeof(T));
-        WriteLeafKind(typeof(T), name);
-        WriteLeafValue(ref value, name);
+        LeafKind kind = WriteLeafKind(typeof(T), name);
+        WriteLeafValue(ref value, kind);
 
         T declaredDefault = defaultValue!;
-        WriteLeafValue(ref declaredDefault, name);
+        WriteLeafValue(ref declaredDefault, kind);
     }
 
     public void LookDeep<T>(ref T value, string name)
@@ -214,13 +214,15 @@ internal sealed class ChronicleHashChronicler : IChronicler
         _writer.WriteString(GetStableTypeName(declaredType));
     }
 
-    private void WriteLeafKind(Type declaredType, string name)
+    private LeafKind WriteLeafKind(Type declaredType, string name)
     {
         LeafKind kind = GetLeafKind(declaredType, name);
         _writer.WriteByte((byte)kind);
 
         if (kind == LeafKind.Enum)
             _writer.WriteString(GetStableTypeName(Enum.GetUnderlyingType(declaredType)));
+
+        return kind;
     }
 
     private static LeafKind GetLeafKind(Type declaredType, string name)
@@ -234,10 +236,8 @@ internal sealed class ChronicleHashChronicler : IChronicler
         throw new NotSupportedException($"Unsupported record-hash leaf value '{name}' of type {GetStableTypeName(declaredType)}.");
     }
 
-    private void WriteLeafValue<T>(ref T value, string name)
+    private void WriteLeafValue<T>(ref T value, LeafKind kind)
     {
-        Type declaredType = typeof(T);
-        LeafKind kind = GetLeafKind(declaredType, name);
         if (kind == LeafKind.String)
         {
             _writer.WriteString(value as string);
@@ -246,87 +246,42 @@ internal sealed class ChronicleHashChronicler : IChronicler
 
         _writer.WriteBool(true);
 
-        _ = kind switch
+        switch (kind)
         {
-            LeafKind.Bool => WriteBool(ref value),
-            LeafKind.Byte => WriteByte(ref value),
-            LeafKind.SByte => WriteSByte(ref value),
-            LeafKind.Int16 => WriteInt16(ref value),
-            LeafKind.UInt16 => WriteUInt16(ref value),
-            LeafKind.Int32 => WriteInt32(ref value),
-            LeafKind.UInt32 => WriteUInt32(ref value),
-            LeafKind.Int64 => WriteInt64(ref value),
-            LeafKind.UInt64 => WriteUInt64(ref value),
-            LeafKind.Char => WriteChar(ref value),
-            LeafKind.Enum => WriteEnum(ref value),
-            _ => throw new NotSupportedException(
-                $"Unsupported record-hash leaf value '{name}' of type {GetStableTypeName(declaredType)}.")
-        };
-
-        byte WriteBool(ref T leaf)
-        {
-            _writer.WriteBool(Unsafe.As<T, bool>(ref leaf));
-            return 0;
-        }
-
-        byte WriteByte(ref T leaf)
-        {
-            _writer.WriteByte(Unsafe.As<T, byte>(ref leaf));
-            return 0;
-        }
-
-        byte WriteSByte(ref T leaf)
-        {
-            _writer.WriteSByte(Unsafe.As<T, sbyte>(ref leaf));
-            return 0;
-        }
-
-        byte WriteInt16(ref T leaf)
-        {
-            _writer.WriteInt16(Unsafe.As<T, short>(ref leaf));
-            return 0;
-        }
-
-        byte WriteUInt16(ref T leaf)
-        {
-            _writer.WriteUInt16(Unsafe.As<T, ushort>(ref leaf));
-            return 0;
-        }
-
-        byte WriteInt32(ref T leaf)
-        {
-            _writer.WriteInt32(Unsafe.As<T, int>(ref leaf));
-            return 0;
-        }
-
-        byte WriteUInt32(ref T leaf)
-        {
-            _writer.WriteUInt32(Unsafe.As<T, uint>(ref leaf));
-            return 0;
-        }
-
-        byte WriteInt64(ref T leaf)
-        {
-            _writer.WriteInt64(Unsafe.As<T, long>(ref leaf));
-            return 0;
-        }
-
-        byte WriteUInt64(ref T leaf)
-        {
-            _writer.WriteUInt64(Unsafe.As<T, ulong>(ref leaf));
-            return 0;
-        }
-
-        byte WriteChar(ref T leaf)
-        {
-            _writer.WriteChar(Unsafe.As<T, char>(ref leaf));
-            return 0;
-        }
-
-        byte WriteEnum(ref T leaf)
-        {
-            WriteEnumValue(ref leaf);
-            return 0;
+            case LeafKind.Bool:
+                _writer.WriteBool(Unsafe.As<T, bool>(ref value));
+                break;
+            case LeafKind.Byte:
+                _writer.WriteByte(Unsafe.As<T, byte>(ref value));
+                break;
+            case LeafKind.SByte:
+                _writer.WriteSByte(Unsafe.As<T, sbyte>(ref value));
+                break;
+            case LeafKind.Int16:
+                _writer.WriteInt16(Unsafe.As<T, short>(ref value));
+                break;
+            case LeafKind.UInt16:
+                _writer.WriteUInt16(Unsafe.As<T, ushort>(ref value));
+                break;
+            case LeafKind.Int32:
+                _writer.WriteInt32(Unsafe.As<T, int>(ref value));
+                break;
+            case LeafKind.UInt32:
+                _writer.WriteUInt32(Unsafe.As<T, uint>(ref value));
+                break;
+            case LeafKind.Int64:
+                _writer.WriteInt64(Unsafe.As<T, long>(ref value));
+                break;
+            case LeafKind.UInt64:
+                _writer.WriteUInt64(Unsafe.As<T, ulong>(ref value));
+                break;
+            case LeafKind.Char:
+                _writer.WriteChar(Unsafe.As<T, char>(ref value));
+                break;
+            default:
+                // GetLeafKind validates the type; Enum is the only remaining kind.
+                WriteEnumValue(ref value);
+                break;
         }
     }
 
@@ -371,11 +326,9 @@ internal sealed class ChronicleHashChronicler : IChronicler
         if (type.IsArray)
             return BuildStableArrayTypeName(type);
 
-        if (type.IsGenericParameter)
-            return type.Name;
-
         if (!type.IsGenericType)
-            return type.FullName ?? type.Name;
+            // Runtime records and typeof(T) supply closed types, never generic parameters.
+            return type.FullName!;
 
         return BuildStableGenericTypeName(type);
     }
@@ -394,7 +347,7 @@ internal sealed class ChronicleHashChronicler : IChronicler
     private static string BuildStableGenericTypeName(Type type)
     {
         Type genericTypeDefinition = type.GetGenericTypeDefinition();
-        string baseName = genericTypeDefinition.FullName ?? genericTypeDefinition.Name;
+        string baseName = genericTypeDefinition.FullName!;
         Type[] arguments = type.GetGenericArguments();
 
         var builder = new StringBuilder(baseName.Length + (arguments.Length * 16) + 2);

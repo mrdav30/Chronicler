@@ -167,6 +167,16 @@ public sealed class ChronicleHashSerializerTests
         var second = new LinkRecord(secondResource);
 
         ChronicleHashSerializer.Compute(second, context).Should().NotBe(ChronicleHashSerializer.Compute(first, context));
+
+        context.Links.RegisterInstance("first", firstResource, slot: "secondary");
+        ChronicleHashSerializer.Compute(new LinkRecord(firstResource, "secondary"), context)
+            .Should().NotBe(ChronicleHashSerializer.Compute(first, context));
+
+        var restoredResource = new LinkResource();
+        var restoredContext = new ChronicleContext();
+        restoredContext.Links.RegisterInstance("first", restoredResource, slot: "primary");
+        ChronicleHashSerializer.Compute(new LinkRecord(restoredResource), restoredContext)
+            .Should().Be(ChronicleHashSerializer.Compute(first, context));
     }
 
     [Fact]
@@ -273,7 +283,38 @@ public sealed class ChronicleHashSerializerTests
         ChronicleHash hash = ChronicleHashSerializer.Compute(record);
 
         record.InnerHash.Should().Be(ChronicleHashSerializer.Compute(new GoldenRecord { Count = 5, Alias = "inner" }));
-        hash.Should().NotBe(default(ChronicleHash));
+
+        var expected = new ChronicleHashWriter();
+        expected.WriteSection("chronicler.hash", 1);
+        expected.WriteSection("chronicler.record", 1);
+        expected.WriteString("Chronicler.Tests.ChronicleHashSerializerTests+ReentrantHashRecord");
+        WriteExpectedInt32Field(ref expected, "value", 7, 7);
+        expected.WriteSection("chronicler.record.end", 1);
+        hash.Should().Be(expected.ToHash());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Compute_ShouldReleaseContextAfterRecordDataCompletesOrThrows(bool throwDuringRecording)
+    {
+        var context = new ChronicleContext();
+        var record = new ContextCaptureRecord(throwDuringRecording);
+
+        Action compute = () => ChronicleHashSerializer.Compute(record, context);
+        if (throwDuringRecording)
+            compute.Should().Throw<InvalidOperationException>().WithMessage("RecordData failed.");
+        else
+            compute.Should().NotThrow();
+
+        record.ActiveContext.Should().BeSameAs(context);
+        record.Chronicler.Should().NotBeNull();
+        Action readExpiredContext = () => _ = record.Chronicler!.Context;
+        readExpiredContext.Should().Throw<InvalidOperationException>()
+            .WithMessage("Record hash chronicler context is not active.");
+
+        ChronicleHashSerializer.Compute(new GoldenRecord { Count = 42, Alias = "mage" }, new ChronicleContext())
+            .ToString().Should().Be("a4736ffd6ca10cef8f69b781360bd39f");
     }
 
     [Fact]
@@ -286,12 +327,16 @@ public sealed class ChronicleHashSerializerTests
         ChronicleHashSerializer.Contribute(record, ref first);
         first.WriteInt32(9);
 
-        var second = new ChronicleHashWriter();
-        second.WriteSection("domain", 1);
-        ChronicleHashSerializer.Contribute(record, ref second);
-        second.WriteInt32(9);
+        var expected = new ChronicleHashWriter();
+        expected.WriteSection("domain", 1);
+        expected.WriteSection("chronicler.record", 1);
+        expected.WriteString("Chronicler.Tests.ChronicleHashSerializerTests+OrderedRecord");
+        WriteExpectedInt32Field(ref expected, "first", 1, 1);
+        WriteExpectedInt32Field(ref expected, "second", 2, 2);
+        expected.WriteSection("chronicler.record.end", 1);
+        expected.WriteInt32(9);
 
-        second.ToHash().Should().Be(first.ToHash());
+        first.ToHash().Should().Be(expected.ToHash());
     }
 
     [Fact]
@@ -380,6 +425,39 @@ public sealed class ChronicleHashSerializerTests
         context.Links.RegisterInstance("first", firstResource, slot: "primary");
         context.Links.RegisterInstance("second", secondResource, slot: "primary");
         return context;
+    }
+
+    private static void WriteExpectedInt32Field(ref ChronicleHashWriter writer, string name, int value, int declaredDefault)
+    {
+        writer.WriteString(name);
+        writer.WriteByte(1); // Value field.
+        writer.WriteString("System.Int32");
+        writer.WriteByte(6); // Int32 leaf.
+        writer.WriteBool(true);
+        writer.WriteInt32(value);
+        writer.WriteBool(true);
+        writer.WriteInt32(declaredDefault);
+    }
+
+    private sealed class ContextCaptureRecord : IRecordable
+    {
+        private readonly bool _throwDuringRecording;
+
+        public ContextCaptureRecord(bool throwDuringRecording)
+        {
+            _throwDuringRecording = throwDuringRecording;
+        }
+
+        public IChronicler? Chronicler { get; private set; }
+        public ChronicleContext? ActiveContext { get; private set; }
+
+        public void RecordData(IChronicler chronicler)
+        {
+            Chronicler = chronicler;
+            ActiveContext = chronicler.Context;
+            if (_throwDuringRecording)
+                throw new InvalidOperationException("RecordData failed.");
+        }
     }
 
     private sealed class RecordGraph : IRecordable
@@ -516,15 +594,17 @@ public sealed class ChronicleHashSerializerTests
     private sealed class LinkRecord : IRecordable
     {
         private LinkResource? _resource;
+        private readonly string _slot;
 
-        public LinkRecord(LinkResource resource)
+        public LinkRecord(LinkResource resource, string slot = "primary")
         {
             _resource = resource;
+            _slot = slot;
         }
 
         public void RecordData(IChronicler chronicler)
         {
-            RecordLinks.Look(chronicler, ref _resource, "resource", slot: "primary");
+            RecordLinks.Look(chronicler, ref _resource, "resource", slot: _slot);
         }
     }
 

@@ -8,6 +8,34 @@ public class RecordLinkEdgeCaseTests
 {
     [Theory]
     [MemberData(nameof(SerializationTransportData.All), MemberType = typeof(SerializationTransportData))]
+    public void Populate_ShouldInvokeImmediateAssignmentCallback_WithResolvedInstance(SerializationTransport transport)
+    {
+        var sourceResource = new LinkResource("source");
+        var source = new ImmediateCallbackRecord { Resource = sourceResource };
+        object payload = SerializationTestHarness.Serialize(source, transport, CreateContext(sourceResource));
+        var resolved = new LinkResource("resolved");
+        var target = new ImmediateCallbackRecord();
+
+        SerializationTestHarness.Populate(target, payload, transport, CreateContext(resolved));
+
+        target.Resource.Should().BeSameAs(resolved);
+        target.AssignedResource.Should().BeSameAs(resolved);
+    }
+
+    [Theory]
+    [MemberData(nameof(SerializationTransportData.All), MemberType = typeof(SerializationTransportData))]
+    public void Serialize_ShouldIdentifySlot_WhenStableLinkIdIsMissing(SerializationTransport transport)
+    {
+        var source = new ImmediateCallbackRecord { Resource = new LinkResource("unregistered"), Slot = "equipment" };
+
+        Action act = () => SerializationTestHarness.Serialize(source, transport);
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*Unable to save link 'resource'*in slot 'equipment'*");
+    }
+
+    [Theory]
+    [MemberData(nameof(SerializationTransportData.All), MemberType = typeof(SerializationTransportData))]
     public void Populate_ShouldClearImmediateLink_WhenEntryIsMissing(SerializationTransport transport)
     {
         var resource = new LinkResource("source");
@@ -142,6 +170,19 @@ public class RecordLinkEdgeCaseTests
 
             if (chronicler.Mode == SerializationMode.Loading)
                 Resource = resource;
+        }
+    }
+
+    private sealed class ImmediateCallbackRecord : IRecordable
+    {
+        public LinkResource? Resource;
+        public LinkResource? AssignedResource;
+        public string? Slot;
+
+        public void RecordData(IChronicler chronicler)
+        {
+            chronicler.LookLink(ref Resource, "resource", Slot,
+                assignLoadedValue: resolved => AssignedResource = resolved);
         }
     }
 

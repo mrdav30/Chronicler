@@ -1,3 +1,5 @@
+extern alias Shim;
+
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -6,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using Xunit;
+using ShimMemoryPack = Shim::MemoryPack;
 
 namespace Chronicler.MemoryPackShim.Tests;
 
@@ -27,9 +30,6 @@ public sealed class MemoryPackShimPackageTests
     [Fact]
     public void PublicContract_MatchesMemoryPackCoreAttributes()
     {
-        using TestWorkspace workspace = TestWorkspace.Create();
-        PackShim(workspace);
-
         Assembly shimAssembly = LoadShimAssembly();
         Assembly memoryPackAssembly = typeof(MemoryPack.MemoryPackableAttribute).Assembly;
 
@@ -62,8 +62,71 @@ public sealed class MemoryPackShimPackageTests
             Assert.Equal(expectedUsage.AllowMultiple, actualUsage.AllowMultiple);
             Assert.Equal(expectedUsage.Inherited, actualUsage.Inherited);
         }
+    }
 
-        AssertMemoryPackableDefaultsMatch(memoryPackAssembly, shimAssembly);
+    [Theory]
+    [InlineData(ShimMemoryPack.GenerateType.Object, ShimMemoryPack.SerializeLayout.Sequential)]
+    [InlineData(ShimMemoryPack.GenerateType.VersionTolerant, ShimMemoryPack.SerializeLayout.Explicit)]
+    [InlineData(ShimMemoryPack.GenerateType.CircularReference, ShimMemoryPack.SerializeLayout.Explicit)]
+    [InlineData(ShimMemoryPack.GenerateType.Collection, ShimMemoryPack.SerializeLayout.Sequential)]
+    [InlineData(ShimMemoryPack.GenerateType.NoGenerate, ShimMemoryPack.SerializeLayout.Sequential)]
+    public void MemoryPackable_GenerationModeSelectsCompatibleDefaultLayout(
+        ShimMemoryPack.GenerateType generateType,
+        ShimMemoryPack.SerializeLayout expectedLayout)
+    {
+        var actual = new ShimMemoryPack.MemoryPackableAttribute(generateType);
+        var expected = new MemoryPack.MemoryPackableAttribute((MemoryPack.GenerateType)generateType);
+
+        Assert.Equal(generateType, actual.GenerateType);
+        Assert.Equal(expectedLayout, actual.SerializeLayout);
+        Assert.Equal((int)expected.GenerateType, (int)actual.GenerateType);
+        Assert.Equal((int)expected.SerializeLayout, (int)actual.SerializeLayout);
+    }
+
+    [Theory]
+    [InlineData(ShimMemoryPack.SerializeLayout.Sequential)]
+    [InlineData(ShimMemoryPack.SerializeLayout.Explicit)]
+    public void MemoryPackable_LayoutOnlyUsesObjectGeneration(ShimMemoryPack.SerializeLayout layout)
+    {
+        var actual = new ShimMemoryPack.MemoryPackableAttribute(layout);
+        var expected = new MemoryPack.MemoryPackableAttribute((MemoryPack.SerializeLayout)layout);
+
+        Assert.Equal(ShimMemoryPack.GenerateType.Object, actual.GenerateType);
+        Assert.Equal(layout, actual.SerializeLayout);
+        Assert.Equal((int)expected.GenerateType, (int)actual.GenerateType);
+        Assert.Equal((int)expected.SerializeLayout, (int)actual.SerializeLayout);
+    }
+
+    [Theory]
+    [InlineData(ShimMemoryPack.GenerateType.Object, ShimMemoryPack.SerializeLayout.Explicit)]
+    [InlineData(ShimMemoryPack.GenerateType.VersionTolerant, ShimMemoryPack.SerializeLayout.Sequential)]
+    public void MemoryPackable_ExplicitLayoutOverridesGenerationDefault(
+        ShimMemoryPack.GenerateType generateType,
+        ShimMemoryPack.SerializeLayout layout)
+    {
+        var actual = new ShimMemoryPack.MemoryPackableAttribute(generateType, layout);
+        var expected = new MemoryPack.MemoryPackableAttribute(
+            (MemoryPack.GenerateType)generateType,
+            (MemoryPack.SerializeLayout)layout);
+
+        Assert.Equal(generateType, actual.GenerateType);
+        Assert.Equal(layout, actual.SerializeLayout);
+        Assert.Equal((int)expected.GenerateType, (int)actual.GenerateType);
+        Assert.Equal((int)expected.SerializeLayout, (int)actual.SerializeLayout);
+    }
+
+    [Theory]
+    [InlineData(int.MinValue)]
+    [InlineData(0)]
+    [InlineData(17)]
+    [InlineData(int.MaxValue)]
+    public void MemoryPackOrder_PreservesDeclaredOrder(int order)
+    {
+        var actual = new ShimMemoryPack.MemoryPackOrderAttribute(order);
+        var expected = new MemoryPack.MemoryPackOrderAttribute(order);
+
+        Assert.Equal(order, actual.Order);
+        Assert.Equal(expected.Order, actual.Order);
     }
 
     [Fact]
@@ -300,15 +363,7 @@ public sealed class MemoryPackShimPackageTests
 
     private static Assembly LoadShimAssembly()
     {
-        string assemblyPath = Path.Combine(
-            RepositoryRoot,
-            "src",
-            "Chronicler.MemoryPackShim",
-            "bin",
-            "Release",
-            "net8.0",
-            "Chronicler.MemoryPackShim.dll");
-        return Assembly.LoadFile(assemblyPath);
+        return typeof(ShimMemoryPack.MemoryPackableAttribute).Assembly;
     }
 
     private static string[] GetConstructorSignatures(Type type)
@@ -329,25 +384,6 @@ public sealed class MemoryPackShimPackageTests
                 $"{property.PropertyType.FullName}:{property.Name}:{property.CanRead}:{property.CanWrite}")
             .OrderBy(signature => signature)
             .ToArray();
-    }
-
-    private static void AssertMemoryPackableDefaultsMatch(Assembly expectedAssembly, Assembly actualAssembly)
-    {
-        foreach (string name in Enum.GetNames(expectedAssembly.GetType("MemoryPack.GenerateType", true)!))
-        {
-            object expectedMode = Enum.Parse(expectedAssembly.GetType("MemoryPack.GenerateType", true)!, name);
-            object actualMode = Enum.Parse(actualAssembly.GetType("MemoryPack.GenerateType", true)!, name);
-            object expected = Activator.CreateInstance(
-                expectedAssembly.GetType("MemoryPack.MemoryPackableAttribute", true)!,
-                expectedMode)!;
-            object actual = Activator.CreateInstance(
-                actualAssembly.GetType("MemoryPack.MemoryPackableAttribute", true)!,
-                actualMode)!;
-
-            Assert.Equal(
-                expected.GetType().GetProperty("SerializeLayout")!.GetValue(expected)!.ToString(),
-                actual.GetType().GetProperty("SerializeLayout")!.GetValue(actual)!.ToString());
-        }
     }
 
     private static string ReadAssetsFile(string projectDirectory)

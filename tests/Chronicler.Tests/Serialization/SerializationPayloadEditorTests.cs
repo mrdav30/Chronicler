@@ -12,6 +12,10 @@ public class SerializationPayloadEditorTests
     [InlineData(false)]
     [InlineData(true)]
     public void WrapperMethods_ShouldRoundTripAndEditPayloadUsingSelectedTransport(bool useMemoryPack)
+#else
+    [Fact]
+    public void WrapperMethods_ShouldRoundTripAndEditJsonPayload()
+#endif
     {
         var source = new PayloadRoot
         {
@@ -22,17 +26,26 @@ public class SerializationPayloadEditorTests
             }
         };
 
+#if !CHRONICLER_DISABLE_MEMORYPACK
         object payload = SerializationPayloadEditor.SerializeRecord(source, useMemoryPack);
         payload = SerializationPayloadEditor.SetPayloadValue(payload, 42, useMemoryPack, "state", nameof(PayloadState.Count));
         payload = SerializationPayloadEditor.RemovePayloadEntry(payload, useMemoryPack, "state", nameof(PayloadState.Enabled));
+#else
+        object payload = SerializationPayloadEditor.SerializeRecord(source);
+        payload = SerializationPayloadEditor.SetPayloadValue(payload, 42, "state", nameof(PayloadState.Count));
+        payload = SerializationPayloadEditor.RemovePayloadEntry(payload, "state", nameof(PayloadState.Enabled));
+#endif
 
         var target = new PayloadRoot();
+#if !CHRONICLER_DISABLE_MEMORYPACK
         SerializationPayloadEditor.PopulateRecord(target, payload, useMemoryPack);
+#else
+        SerializationPayloadEditor.PopulateRecord(target, payload);
+#endif
 
         target.State.Count.Should().Be(42);
         target.State.Enabled.Should().BeTrue();
     }
-#endif
 
     [Theory]
     [MemberData(nameof(SerializationTransportData.All), MemberType = typeof(SerializationTransportData))]

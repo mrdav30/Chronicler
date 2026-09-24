@@ -81,7 +81,7 @@ public static class MemoryPackRecordSerializer
 
         public MemoryPackRecordWriter(ChronicleContext context)
         {
-            Context = context ?? throw new ArgumentNullException(nameof(context));
+            Context = context;
         }
 
         public ChronicleContext Context { get; }
@@ -158,8 +158,10 @@ public static class MemoryPackRecordSerializer
         public MemoryPackRecordReader(ReadOnlySpan<byte> data, ChronicleContext context)
         {
             MemoryPackRecordEnvelope? envelope = MemoryPackSerializer.Deserialize<MemoryPackRecordEnvelope>(data);
-            _entries = envelope?.ToEntryMap() ?? new OrderedStringMap<byte[]?>(8, StringComparer.Ordinal);
-            Context = context ?? throw new ArgumentNullException(nameof(context));
+            _entries = envelope == null
+                ? new OrderedStringMap<byte[]?>(8, StringComparer.Ordinal)
+                : envelope.ToEntryMap();
+            Context = context;
         }
 
         public ChronicleContext Context { get; }

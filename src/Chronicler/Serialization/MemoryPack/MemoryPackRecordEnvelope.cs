@@ -1,3 +1,4 @@
+#if !CHRONICLER_DISABLE_MEMORYPACK
 using MemoryPack;
 using System;
 using System.Collections.Generic;
@@ -66,7 +67,7 @@ internal sealed partial class MemoryPackRecordEntryTable
 
     internal MemoryPackRecordEntryTable(OrderedStringMap<byte[]?> entries)
     {
-        _entries = entries ?? throw new ArgumentNullException(nameof(entries));
+        _entries = entries;
     }
 
     [MemoryPackConstructor]
@@ -154,3 +155,4 @@ internal readonly partial struct MemoryPackRecordEntryTableState
         Items = items;
     }
 }
+#endif
