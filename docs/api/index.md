@@ -1,6 +1,6 @@
 ---
 title: Chronicler documentation
-description: Guides and API reference for explicit deterministic state transfer in .NET.
+description: Guides and API reference for explicit deterministic state transfer and simulation timing in .NET.
 ---
 
 <div class="chr-hero">
@@ -8,7 +8,8 @@ description: Guides and API reference for explicit deterministic state transfer 
   <h1>Record state on your terms.</h1>
   <p>Chronicler gives each type one visible schema for JSON, MemoryPack,
   restoring existing runtime objects, stable links, and deterministic replay
-  signals.</p>
+  signals. Exact time values and a host-advanced clock keep long-running
+  simulations on an explicit timeline.</p>
   <div class="chr-actions">
     <a href="guides/getting-started.md">Get started</a>
     <a href="xref:Chronicler">Browse the API</a>
@@ -56,6 +57,8 @@ description: Guides and API reference for explicit deterministic state transfer 
 </div>
 
 ## Package family
+
+Both Core variants include the same dependency-free simulation timing APIs.
 
 | Package                     | Includes                                                                     |
 | --------------------------- | ---------------------------------------------------------------------------- |

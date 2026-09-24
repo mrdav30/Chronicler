@@ -133,6 +133,21 @@ public static class ClockExample
 the current frame. It does not schedule anything. Frame offsets count advances,
 not seconds, so step changes do not move an existing frame deadline.
 
+This fragment is the body of a method; the deadline is reached after two
+advances even though those advances use different step sizes:
+
+```csharp
+var clock = new ChronicleClock(new ChronicleDuration(0, 0x80000000));
+long due = clock.GetDeadlineFrame(2);
+clock.Advance(); // Frame 1: not due yet; 0.5 seconds elapsed.
+clock.SetStepDuration(new ChronicleDuration(0, 0x40000000));
+clock.Advance(); // Frame 2: due; 0.75 seconds elapsed.
+bool isDue = clock.FrameCount >= due;
+```
+
+Use an elapsed timestamp deadline instead when the requirement is a number of
+seconds rather than a number of advances. Neither form schedules work itself.
+
 `Reset()` returns frame/time to zero while retaining the configured step.
 `Advance()` rejects an exhausted frame counter with `InvalidOperationException`
 or an unrepresentable timestamp with `OverflowException`, leaving all clock
@@ -144,6 +159,17 @@ The clock is not thread-safe and does not run your simulation. A reset or restor
 starts a new owner-controlled lifetime: quiesce the host, invalidate old waits
 and pending work, and coordinate other restored state. Clock transactionality
 does not roll back unrelated host code or exceptions later in a simulation step.
+
+For a coordinated restore, stop advancement first, discard old pending work,
+restore the clock and the state that belongs to its origin, then resume ordered
+input. Restoring only the clock is not a rollback of the world. A context that
+owns a clock may deliberately expose no live-clock population API; use that
+context's supported lifecycle instead of reaching into its private clock.
+
+Gravitas and Trailblazer each own their clock. A host using both advances each
+context once per gameplay step with matching durations; the navigation adapter
+does not add another advance, synchronize rates, or repair a missed step. The
+standalone `ChronicleClock` example above does not replace either context's loop.
 
 ## Record values and clock state
 

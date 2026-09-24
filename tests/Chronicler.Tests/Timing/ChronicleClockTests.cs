@@ -7,14 +7,17 @@ namespace Chronicler.Tests;
 public sealed class ChronicleClockTests
 {
     [Fact]
-    public void StepChangeAffectsOnlySubsequentAdvances()
+    public void StepChangePreservesHistoryAndAnExistingFrameDeadline()
     {
         var clock = new ChronicleClock(new ChronicleDuration(0, 0x80000000));
+        long due = clock.GetDeadlineFrame(2);
         clock.Advance();
+        Assert.False(clock.FrameCount >= due);
         clock.SetStepDuration(new ChronicleDuration(0, 0x40000000));
         Assert.Equal(1L, clock.FrameCount);
         Assert.Equal(new ChronicleTimestamp(0, 0x80000000), clock.ElapsedTime);
         clock.Advance();
+        Assert.True(clock.FrameCount >= due);
         Assert.Equal(2L, clock.FrameCount);
         Assert.Equal(new ChronicleTimestamp(0, 0xC0000000), clock.ElapsedTime);
     }

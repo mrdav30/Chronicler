@@ -115,4 +115,6 @@ whatever happened to be in the target object.
   ownership, stable IDs, deferred links, and state-backed JSON helpers.
 - Read [Deterministic record hashes](record-hashes.md) for replay and
   conformance signals.
+- Read [Simulation timing](simulation-timing.md) for exact timestamps, durations,
+  frame deadlines, and explicit clock advancement and restore.
 - Browse the <xref:Chronicler> API reference for every public type.

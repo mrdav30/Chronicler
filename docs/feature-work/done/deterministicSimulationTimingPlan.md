@@ -6,7 +6,7 @@
 > delegated implementation. Track progress with the checkboxes below.
 
 **Date:** 2026-09-22  
-**Status:** Phases 0-5 complete; Phase 6 pending  
+**Status:** Complete — Phases 0-6 verified; public release remains owner-controlled  
 **Primary repository:** `F:\gamedevrepos\Chronicler`  
 **Related repositories:** `FixedMathSharp`, `Gravitas`, `Trailblazer`  
 **Origin:** Trailblazer `TRB-Issue-124` and the owner's request for a reusable,
@@ -21,8 +21,8 @@ pending-work invalidation, and coordinated restore policy.
 **Tech stack:** C# 11, `netstandard2.1` and `net8.0`, xUnit v3, Chronicler's
 existing JSON/MemoryPack record paths and Standard/Lean package families.  
 **Spec:** The [design contract](#design-contract) in this document is the design
-source of truth. The owner committed Phases 0-4 and approved Phase 5;
-Phase 6 remains pending.
+source of truth. The owner reviewed and committed Phases 0-5;
+Phase 6 cleanup and final validation are complete below.
 
 ## Why This Work Exists
 
@@ -131,7 +131,7 @@ and documentation when the feature actually ships, not as if it exists today.
 | Host | Input order, advancing each context once per step, coordinated pause/reset/restore and replay |
 
 Reuse the dependency pattern of the completed
-[record-hash plan](done/2026-06-26-deterministic-record-hash-framework-plan.md).
+[record-hash plan](2026-06-26-deterministic-record-hash-framework-plan.md).
 The timing code must not pull that companion package back into Chronicler.
 
 ### Values: timestamps are not durations
@@ -464,7 +464,7 @@ contract; no downstream dependency is needed.
 
 **Create in FixedMathSharp:**
 `src/FixedMathSharp.Chronicler/FixedChronicleTime.cs`,
-`tests/FixedMathSharp.Chronicler.Tests/FixedMathChronicleTimeTests.cs`.
+`tests/FixedMathSharp.Chronicler.Tests/FixedChronicleTimeTests.cs`.
 
 **Modify as needed for source validation:**
 `src/FixedMathSharp.Chronicler/FixedMathSharp.Chronicler.csproj`,
@@ -492,7 +492,7 @@ with the published 0.4.0 copy.
 - [x] Implement the explicit bridge without changing Fixed64 saturation or
   conversion semantics elsewhere. Run
   `dotnet test tests/FixedMathSharp.Chronicler.Tests/FixedMathSharp.Chronicler.Tests.csproj
-  -c Release -p:UseLocalLsfStack=true --filter FullyQualifiedName~FixedMathChronicleTimeTests`
+  -c Release -p:UseLocalLsfStack=true --filter FullyQualifiedName~FixedChronicleTimeTests`
   and repeat for ReleaseLean.
 - [x] Prove the 100-year timestamp difference example narrows exactly to 0.25
   seconds while attempting to narrow a 100-year duration fails explicitly.
@@ -614,10 +614,10 @@ host-integration, serialization, diagnostics, and migration guidance; Trailblaze
 Overview, Pathing, MapPublication, Serialization, Gravitas, migration guidance,
 and affected XML comments. Keep evergreen docs free of feature-plan links.
 
-- [ ] Compile documentation examples in behavior tests. Demonstrate a wide
+- [x] Compile documentation examples in behavior tests. Demonstrate a wide
   timestamp, bounded duration conversion, frame deadline, and rate change without
   a standalone sample project. Include owner-driven reset/restore rules.
-- [ ] Build `Chronicler.slnx` and run all tests in Release and ReleaseLean,
+- [x] Build `Chronicler.slnx` and run all tests in Release and ReleaseLean,
   including shim tests. Collect coverage in each configuration:
 
   ```powershell
@@ -632,26 +632,26 @@ and affected XML comments. Keep evergreen docs free of feature-plan links.
   dotnet tool run docfx docs/api/docfx.json --warningsAsErrors
   ```
 
-- [ ] Build both library target frameworks and run the full affected downstream
+- [x] Build both library target frameworks and run the full affected downstream
   matrices with `UseLocalLsfStack=true` in Release and ReleaseLean. Validate
   Windows and Linux; distinguish independent builds from executing copied DLLs.
-- [ ] Require 100% reachable line/branch/method coverage for introduced timing
+- [x] Require 100% reachable line/branch/method coverage for introduced timing
   code and preserve existing downstream gates. Verify report assembly names,
   covered/total counts, and methods, not just rounded line percentages. Do not
   add coverage exclusions or hollow tests to reach the target.
-- [ ] Require zero warmed timing allocations and retain comparable before/after
+- [x] Require zero warmed timing allocations and retain comparable before/after
   containing-frame measurements. Use repeated matched runs if changes approach
   noise. Record data-layout costs and any accepted regression explicitly.
-- [ ] Verify private package consumers with isolated caches, correct source
+- [x] Verify private package consumers with isolated caches, correct source
   mapping, and consistent Standard/Lean dependencies before release readiness
   claims. Do not install fake release versions into the normal cache.
-- [ ] Obtain independent correctness and Ponytail simplification reviews of
+- [x] Obtain independent correctness and Ponytail simplification reviews of
   arithmetic, restore atomicity, dependency graph, and downstream lifetimes.
   Resolve findings and rerun affected gates before marking work complete.
-- [ ] Resolve `TRB-Issue-124` only after the containing-frame regression passes
+- [x] Resolve `TRB-Issue-124` only after the containing-frame regression passes
   and all stamp consumers have migrated. Update owning trackers for independently
   confirmed pre-existing issues. Planning alone closes nothing.
-- [ ] Condense final evidence, limitations, and decisions into this document;
+- [x] Condense final evidence, limitations, and decisions into this document;
   move it to `docs/feature-work/done` only when the complete scope is finished.
 
 **Suggested commit:** `docs: document shared simulation timing and migration`
@@ -678,8 +678,8 @@ begins; a separate task or branch is created only if requested.
 - [x] Independent plan review approved after clarifying signed endpoint
   subtraction, fixed value hashing, widened body-record schemas, and package
   metadata. Deep-struct carrier validation was also checked against both
-  current transport implementations. Later-phase runtime acceptance remains
-  unexecuted.
+  current transport implementations. Runtime acceptance was still pending at
+  that initial plan-review boundary; the execution records below supersede it.
 - [x] Owner review of this plan; Phase 0 and Phase 1 authorized on 2026-09-22.
 - [x] Phase 0: boundary regressions and baseline evidence.
 - [x] Phase 1: canonical wide values.
@@ -687,7 +687,7 @@ begins; a separate task or branch is created only if requested.
 - [x] Phase 3: FixedMathSharp bridge and source graph.
 - [x] Phase 4: Gravitas adoption.
 - [x] Phase 5: Trailblazer and adapter adoption.
-- [ ] Phase 6: documentation, full validation, review, and closeout.
+- [x] Phase 6: documentation, full validation, review, and closeout.
 
 ### Phase 0 / 1 execution record - 2026-09-22
 
@@ -808,8 +808,9 @@ test assembly's partial coverage of core as the core suite's coverage.
 
 Chronicler's existing gaps precede this feature. No exclusions or weakened
 assertions were added to conceal them. Shim package tests build external
-consumers, so a core report containing an uninstrumented shim does not establish
-shim coverage. Phase 1's exact new-code gate is separate from those baselines.
+consumers, so a core report with no recorded shim coverage does not establish
+coverage for those external executions. Phase 1's exact new-code gate is
+separate from those baselines.
 
 #### Phase 1 implementation and verification
 
@@ -1404,6 +1405,130 @@ Source-mode executable hosts now explicitly reference FixedMathSharp.Chronicler
 because their transitive project references are disabled; package floors are
 unchanged, not silently inferred from fixture version overrides.
 
-**Phase boundary:** Phase 5 is complete and uncommitted for owner review. Phase 6
-is next for cross-stack documentation, full validation and package/release gates;
-this source-stack result does not establish release readiness.
+**Phase boundary:** The owner subsequently reviewed and committed Phase 5.
+Phase 6 owns cross-stack documentation, full validation and private-package
+gates; source-stack results alone do not establish release readiness.
+
+### Phase 6 execution record - 2026-09-23
+
+**Scope and bases.** The owner approved final cleanup after reviewing Phase 5.
+The existing `develop` checkouts began clean at Chronicler `0e787d1`,
+FixedMathSharp `112e394`, Gravitas `4227cc7`, and Trailblazer `0afb0b4`.
+SwiftCollections `1ed2be3` and GridForge `e7223ae` remain unchanged dependencies.
+No runtime implementation, release versions, dependency floors, staging, commits,
+tags, pushes, or publication are part of this cleanup. Ignored evidence is under
+Chronicler `artifacts/timing/phase6`; no shipped sample or new test infrastructure
+was added.
+
+**Documentation and executable examples.** Chronicler's README/API landing pages
+now present timing alongside state transfer. The timing guide explains frame
+deadlines across rate changes, elapsed-time deadlines, shared origins, and
+host-owned reset/restore boundaries. Existing behavior tests cover the wide
+timestamp, bounded conversion and clock restore examples; the existing clock
+test now also proves that a precomputed frame deadline survives a rate change.
+The README's complete quick-start originally failed compilation with CS8803
+because top-level statements followed type declarations. Moving the statements
+before the types makes the exact snippet compile and its restored health/ammo
+assertions pass in both package configurations.
+
+FixedMathSharp's existing companion assembly is now included in DocFX metadata,
+with namespace guidance for exact conversions and record hashing. Its test file
+and class now use `FixedChronicleTimeTests`; the same 49 cases remain. Gravitas
+has `docs/MIGRATION.md` outside the wiki, covering long stamps, wide elapsed time,
+duration counts, wait lifetimes, body schemas, and replay changes. Host guidance
+distinguishes independent context clocks from standalone clock population.
+Previously updated AGENTS, package descriptions/tags, TOCs, XML comments and
+Trailblazer migration guidance were verified and retained without cosmetic churn.
+All four DocFX sites pass `--warningsAsErrors` with zero warnings/errors.
+
+**Cross-platform matrix.** Both library targets (`netstandard2.1`, `net8.0`)
+build with `UseLocalLsfStack=true` on Windows SDK 10.0.302 / .NET 8.0.29 and
+Linux SDK 10.0.203 / .NET 8.0.26. Linux runs independent `-t:Rebuild -m:1`
+builds, not copied Windows test binaries. All builds report zero warnings/errors;
+Release and ReleaseLean full suites pass with the same counts on each operating
+system, zero failures and zero skips (41,660 test cases across the four matrices).
+Final Windows rebuilds restore both native configurations with zero warnings or
+errors. The source-graph check verifies 15 project/framework boundaries per
+configuration: Chronicler compile references resolve to sibling source outputs,
+assembly references retain the expected 0.4.0.0 identity, runtime copies match
+their source hashes, and Chronicler has no reversed FixedMathSharp dependency.
+
+| Suite | Release | ReleaseLean |
+| --- | ---: | ---: |
+| Chronicler | 228 | 161 |
+| Chronicler.MemoryPackShim | 4 | 4 |
+| FixedMathSharp | 2,824 | 2,803 |
+| FixedMathSharp.Chronicler | 49 | 49 |
+| Gravitas | 4,103 | 4,044 |
+| Trailblazer | 3,244 | 3,145 |
+| Trailblazer.Gravitas | 88 | 84 |
+
+Fresh Windows coverage collections use owning filters; ReportGenerator summaries
+verify assembly names and fully covered methods, not rounded percentages.
+Each slash-separated count below is covered/total. Both configurations pass:
+
+| Scope | Lines | Branches | Fully covered methods |
+| --- | ---: | ---: | ---: |
+| Introduced Chronicler timing and records | 109/109 | 36/36 | 42/42 |
+| Introduced FixedChronicleTime bridge | 15/15 | 10/10 | 4/4 |
+| Entire FixedMathSharp.Chronicler companion | 85/85 | 12/12 | 18/18 |
+| FixedMathSharp Release | 47,681/47,681 | 8,898/8,898 | 3,409/3,409 |
+| FixedMathSharp ReleaseLean | 47,673/47,673 | 8,898/8,898 | 3,405/3,405 |
+| Gravitas Release | 56,241/56,241 | 16,034/16,034 | 5,354/5,354 |
+| Gravitas ReleaseLean | 56,239/56,239 | 16,034/16,034 | 5,353/5,353 |
+| Trailblazer, either configuration | 32,282/32,282 | 13,262/13,262 | 3,177/3,177 |
+| Trailblazer.Gravitas, either configuration | 193/193 | 30/30 | 13/13 |
+
+Chronicler's pre-existing non-timing gaps remain visible: entire-assembly Release
+is 1,040/1,044 lines, 438/457 branches, 236/239 fully covered methods; ReleaseLean
+is 803/865, 321/357, 180/207 respectively. The shim has no recorded coverage in
+that Lean core collection; its separate four package-boundary tests pass. This is not a
+claim of 100% for all legacy Chronicler/shim code. No exclusions or hollow tests
+were added. Existing warmed zero-allocation checks pass. Because Phase 6 changes
+no runtime implementation, the matched Phase 4/5 containing-frame captures and
+layout costs above remain the performance evidence; no new speed claim is made.
+
+**Normal-package graph.** Both private consumers use `UseLocalLsfStack=false`,
+only a Trailblazer.Gravitas package root, isolated per-family feeds/caches and
+source mapping that routes every LSF package to its private feed. Packages were
+built through normal project package references, not by editing nuspecs or
+substituting source DLLs into packages. Each consumer asserts wide differences,
+out-of-range narrowing rejection, record/hash restoration, frame deadlines,
+matched context advancement/rate changes, and independent reset ownership.
+The resolved assets contain no project references; SHA-256 checks match all
+nine Standard and ten Lean LSF runtime assemblies from nupkg to isolated cache
+to consumer output. Nuspecs retain both target frameworks and consistent family
+dependencies; Lean contains the shim but no MemoryPack runtime. The evidence
+script initially assumed `obj/project.assets.json`; Chronicler uses platform-
+separated intermediate directories. Resolving `ProjectAssetsFile` fixed that
+artifact-copy step; both consumer builds/runs and provenance checks pass.
+
+Existing pinned identities (Chronicler/shim 0.4.0, FixedMathSharp/companion 7.1.0,
+SwiftCollections 7.0.0 and its math companion 7.1.0, GridForge 9.1.0, Gravitas
+1.1.0, Trailblazer/adapter 2.0.0) are isolated fixture identities, not new release
+choices. Private fixtures were not installed into the normal NuGet cache. This
+validates the current package graph, not the contents of already-published
+packages or final release dependency floors. The same packaged consumer binaries
+also pass when executed on Linux; that extra runtime check is distinct from the
+independent source rebuilds above.
+
+**Independent review.** A fresh reviewer completed correctness and Ponytail
+simplification passes over the Phase 6 diff, timing arithmetic, staged recording,
+dependency ownership, waits and downstream commit lifetimes, with no actionable
+Critical, Important or Minor findings. The review accepted keeping unrelated
+body-population redesign, `TRB-Issue-155`, `GRV-Issue-077`, another performance
+campaign, and release-version selection outside this cleanup. All required
+matrix, coverage, package, source-graph, and DocFX gates subsequently passed.
+
+**Closure.** All seven phases are complete. This plan is archived in
+`docs/feature-work/done`; Trailblazer's feature overview and Gravitas's tracker
+point to that location. `TRB-Issue-124` and `GRV-Issue-076` remain resolved by
+their containing-lifecycle regressions, not merely by a widened counter.
+Evidence includes `matrix-summary.json`, `coverage-summary.json`,
+`source-graph-*.json`, per-family package `provenance.json`, and the command logs
+under the ignored Phase 6 directory. The tables and decisions here retain the
+durable summary without committing validation scaffolding.
+
+Final public package versions, dependency floors and released-chain verification
+remain the owner's coordinated release work after the broader feature scope.
+No release was performed or implied by this closeout.

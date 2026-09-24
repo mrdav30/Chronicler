@@ -48,6 +48,9 @@ publishable. Leave package mode as the default for real release validation.
    For time values, cover signed endpoints, fractional carry/borrow, exact
    ordering and allocation-free successful arithmetic. Wide-number test
    oracles belong in tests, not the runtime library.
+   Compile guide examples and assert their results in the existing suites; do
+   not add a separate sample project just to verify documentation. Preserve the
+   distinction between standalone clock population and host-owned world restore.
 3. Update XML comments, the root README, and the matching guide when public
    behavior, package shape, or developer workflow changes.
 4. Run the relevant Release and ReleaseLean validation commands and describe the
