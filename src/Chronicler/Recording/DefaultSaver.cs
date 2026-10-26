@@ -10,6 +10,11 @@ namespace Chronicler;
 /// <summary>
 /// Provides a reusable save/apply lifecycle base for explicit state transfer helpers.
 /// </summary>
+/// <remarks>
+/// Host integrations can use these hooks to transfer settings and configuration
+/// between a library and an editor or game engine. The host owns when each phase
+/// runs; this base class has no engine dependency.
+/// </remarks>
 public abstract class DefaultSaver
 {
     /// <summary>

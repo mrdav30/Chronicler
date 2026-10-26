@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Chronicler;
+namespace Chronicler.Serialization;
 
 /// <summary>
 /// Serializes <see cref="IRecordable"/> state graphs to and from MemoryPack through the chronicler API.
@@ -81,7 +81,7 @@ public static class MemoryPackRecordSerializer
 
         public MemoryPackRecordWriter(ChronicleContext context)
         {
-            Context = context ?? throw new ArgumentNullException(nameof(context));
+            Context = context;
         }
 
         public ChronicleContext Context { get; }
@@ -158,8 +158,10 @@ public static class MemoryPackRecordSerializer
         public MemoryPackRecordReader(ReadOnlySpan<byte> data, ChronicleContext context)
         {
             MemoryPackRecordEnvelope? envelope = MemoryPackSerializer.Deserialize<MemoryPackRecordEnvelope>(data);
-            _entries = envelope?.ToEntryMap() ?? new OrderedStringMap<byte[]?>(8, StringComparer.Ordinal);
-            Context = context ?? throw new ArgumentNullException(nameof(context));
+            _entries = envelope == null
+                ? new OrderedStringMap<byte[]?>(8, StringComparer.Ordinal)
+                : envelope.ToEntryMap();
+            Context = context;
         }
 
         public ChronicleContext Context { get; }
@@ -201,12 +203,14 @@ public static class MemoryPackRecordSerializer
 
         public void LookDeepStruct<T>(ref T value, string name) where T : struct, IRecordable
         {
-            value = CreateDefaultDeepStruct<T>();
-
             if (!_entries.TryGetValue(name, out byte[]? entry)
                 || entry == null)
+            {
+                value = CreateDefaultDeepStruct<T>();
                 return;
+            }
 
+            value = new();
             var nested = new MemoryPackRecordReader(entry, Context);
             value.RecordData(nested);
         }
@@ -220,7 +224,7 @@ public static class MemoryPackRecordSerializer
                 return;
             }
 
-            T nestedValue = CreateDefaultDeepStruct<T>();
+            T nestedValue = new();
             var nested = new MemoryPackRecordReader(entry, Context);
             nestedValue.RecordData(nested);
             value = nestedValue;
@@ -236,6 +240,7 @@ public static class MemoryPackRecordSerializer
             if (!TryReadLinkId(name, out string? id))
             {
                 value = default!;
+                assignLoadedValue?.Invoke(value);
                 return;
             }
 

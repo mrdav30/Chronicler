@@ -56,7 +56,7 @@ jobs:
         run: dotnet build Chronicler.slnx --configuration Release --no-restore
 
       - name: Run tests with coverage
-        run: dotnet test tests/Chronicler.Tests/Chronicler.Tests.csproj --configuration Release --no-build --collect:"XPlat Code Coverage" --settings tests/Chronicler.Tests/coverlet.runsettings --results-directory artifacts/coverage
+        run: dotnet test Chronicler.slnx --configuration Release --no-build --collect:"XPlat Code Coverage" --settings tests/Chronicler.Tests/coverlet.runsettings --results-directory artifacts/coverage
 
       - name: Restore local tools
         run: dotnet tool restore
@@ -70,6 +70,8 @@ jobs:
           dotnet tool run docfx docs/api/docfx.json --warningsAsErrors
           test -f docs/api/obj/_site/index.html
           test -f docs/api/obj/_site/api/Chronicler.html
+          test -f docs/api/obj/_site/api/Chronicler.Serialization.html
+          test -f docs/api/obj/_site/api/Chronicler.Hashing.html
           test -f docs/api/obj/_site/api/MemoryPack.html
           test -f docs/api/obj/_site/guides/getting-started.html
           test -f docs/api/obj/_site/guides/serialization-model.html
@@ -146,6 +148,8 @@ jobs:
           cp -a artifacts/coverage-report/. artifacts/pages/coverage/
           test -f artifacts/pages/index.html
           test -f artifacts/pages/api/Chronicler.html
+          test -f artifacts/pages/api/Chronicler.Serialization.html
+          test -f artifacts/pages/api/Chronicler.Hashing.html
           test -f artifacts/pages/api/MemoryPack.html
           test -f artifacts/pages/guides/getting-started.html
           test -f artifacts/pages/assets/icon_128x128.png

@@ -1,7 +1,8 @@
 # Contributing to Chronicler
 
 Thanks for helping improve Chronicler. Focused bug fixes, tests, documentation,
-and proposals that strengthen explicit deterministic state transfer are welcome.
+and proposals that strengthen explicit deterministic state transfer and
+simulation timing are welcome.
 For a large or breaking change, open an issue first so the serialization
 contract and migration impact can be discussed before implementation.
 
@@ -35,9 +36,25 @@ dotnet tool run docfx docs/api/docfx.json --warningsAsErrors
 
 ## Pull Request Process
 
-1. Keep the change focused and preserve the public `Chronicler` namespace.
+For coordinated sibling builds, pass `-p:UseLocalLsfStack=true`. Chronicler and
+its Lean shim use source-only 0.4.0 identities to match the existing dependency
+graph. These do not select release versions or make generated local packages
+publishable. Leave package mode as the default for real release validation.
+
+1. Keep the change focused: shared recording APIs and host lifecycle hooks use
+   `Chronicler`, transports and converters use `Chronicler.Serialization`,
+   record-hash APIs use `Chronicler.Hashing`, and time values and the clock use
+   `Chronicler.Timing`. Transport subfolders do not add public namespaces.
+   See the [migration guide](docs/MIGRATION.md)
+   for consumer changes and recorded-type identity implications.
 2. Add or update tests for meaningful behavior changes. Exercise JSON and
    MemoryPack where transport parity is part of the contract.
+   For time values, cover signed endpoints, fractional carry/borrow, exact
+   ordering and allocation-free successful arithmetic. Wide-number test
+   oracles belong in tests, not the runtime library.
+   Compile guide examples and assert their results in the existing suites; do
+   not add a separate sample project just to verify documentation. Preserve the
+   distinction between standalone clock population and host-owned world restore.
 3. Update XML comments, the root README, and the matching guide when public
    behavior, package shape, or developer workflow changes.
 4. Run the relevant Release and ReleaseLean validation commands and describe the

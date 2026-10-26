@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace Chronicler;
+namespace Chronicler.Hashing;
 
 /// <summary>
 /// Writes deterministic primitive payloads into a fixed-width record hash.

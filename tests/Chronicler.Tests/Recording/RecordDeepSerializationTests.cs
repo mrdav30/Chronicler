@@ -124,9 +124,12 @@ public class RecordDeepSerializationTests
             }
         };
 
+        NestedObjectRecord? originalChild = target.Child;
+
         SerializationTestHarness.Populate(target, payload, transport);
 
         target.Child.Should().NotBeNull();
+        target.Child.Should().BeSameAs(originalChild);
         target.Child!.Level.Should().Be(5);
         target.Child.Name.Should().Be("alpha");
     }
@@ -177,9 +180,12 @@ public class RecordDeepSerializationTests
             }
         };
 
+        NestedObjectRecord? originalChild = target.Child;
+
         SerializationTestHarness.Populate(target, payload, transport);
 
         target.Child.Should().NotBeNull();
+        target.Child.Should().BeSameAs(originalChild);
         target.Child!.Level.Should().Be(99);
         target.Child.Name.Should().Be("placeholder");
     }

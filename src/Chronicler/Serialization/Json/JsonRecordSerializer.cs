@@ -5,7 +5,7 @@ using System.IO;
 using System.Text;
 using System.Text.Json;
 
-namespace Chronicler;
+namespace Chronicler.Serialization;
 
 /// <summary>
 /// Serializes <see cref="IRecordable"/> state graphs to and from JSON through the chronicler API.
@@ -86,7 +86,7 @@ public static class JsonRecordSerializer
         public JsonRecordWriter(JsonSerializerOptions options, ChronicleContext context)
         {
             _options = options;
-            Context = context ?? throw new ArgumentNullException(nameof(context));
+            Context = context;
         }
 
         public ChronicleContext Context { get; }
@@ -182,7 +182,7 @@ public static class JsonRecordSerializer
             _document = JsonDocument.Parse(json);
             _root = _document.RootElement;
             _options = options;
-            Context = context ?? throw new ArgumentNullException(nameof(context));
+            Context = context;
         }
 
         public ChronicleContext Context { get; }
@@ -228,11 +228,13 @@ public static class JsonRecordSerializer
 
         public void LookDeepStruct<T>(ref T value, string name) where T : struct, IRecordable
         {
-            value = CreateDefaultDeepStruct<T>();
-
             if (!_root.TryGetProperty(name, out JsonElement entry) || entry.ValueKind == JsonValueKind.Null)
+            {
+                value = CreateDefaultDeepStruct<T>();
                 return;
+            }
 
+            value = new();
             using var nested = new JsonRecordReader(entry.GetRawText(), _options, Context);
             value.RecordData(nested);
         }
@@ -245,7 +247,7 @@ public static class JsonRecordSerializer
                 return;
             }
 
-            T nestedValue = CreateDefaultDeepStruct<T>();
+            T nestedValue = new();
             using var nested = new JsonRecordReader(entry.GetRawText(), _options, Context);
             nestedValue.RecordData(nested);
             value = nestedValue;
@@ -261,6 +263,7 @@ public static class JsonRecordSerializer
             if (!TryReadLinkId(name, out string? id))
             {
                 value = default!;
+                assignLoadedValue?.Invoke(value);
                 return;
             }
 

@@ -1,3 +1,4 @@
+using Chronicler.Serialization;
 using FluentAssertions;
 using System;
 using Xunit;
@@ -6,27 +7,40 @@ namespace Chronicler.Tests;
 
 public class SerializationPayloadEditorTests
 {
-#if !CHRONICLER_DISABLE_MEMORYPACK
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void WrapperMethods_ShouldRoundTripAndEditPayloadUsingSelectedTransport(bool useMemoryPack)
+    [Fact]
+    public void JsonWorkflow_ShouldEditTypedPayloadAndPopulateRecord()
     {
         var source = new PayloadRoot
         {
-            State = new PayloadState
-            {
-                Count = 12,
-                Enabled = false
-            }
+            State = new PayloadState { Count = 12, Enabled = false }
         };
 
-        object payload = SerializationPayloadEditor.SerializeRecord(source, useMemoryPack);
-        payload = SerializationPayloadEditor.SetPayloadValue(payload, 42, useMemoryPack, "state", nameof(PayloadState.Count));
-        payload = SerializationPayloadEditor.RemovePayloadEntry(payload, useMemoryPack, "state", nameof(PayloadState.Enabled));
+        string payload = JsonRecordSerializer.Serialize(source, writeIndented: true);
+        payload = SerializationPayloadEditor.SetJsonValue(payload, 42, "state", nameof(PayloadState.Count));
+        payload = SerializationPayloadEditor.RemoveJsonProperty(payload, "state", nameof(PayloadState.Enabled));
 
         var target = new PayloadRoot();
-        SerializationPayloadEditor.PopulateRecord(target, payload, useMemoryPack);
+        JsonRecordSerializer.Populate(target, payload);
+
+        target.State.Count.Should().Be(42);
+        target.State.Enabled.Should().BeTrue();
+    }
+
+#if !CHRONICLER_DISABLE_MEMORYPACK
+    [Fact]
+    public void MemoryPackWorkflow_ShouldEditTypedPayloadAndPopulateRecord()
+    {
+        var source = new PayloadRoot
+        {
+            State = new PayloadState { Count = 12, Enabled = false }
+        };
+
+        byte[] payload = MemoryPackRecordSerializer.Serialize(source);
+        payload = SerializationPayloadEditor.SetMemoryPackValue(payload, 42, "state", nameof(PayloadState.Count));
+        payload = SerializationPayloadEditor.RemoveMemoryPackEntry(payload, "state", nameof(PayloadState.Enabled));
+
+        var target = new PayloadRoot();
+        MemoryPackRecordSerializer.Populate(target, payload);
 
         target.State.Count.Should().Be(42);
         target.State.Enabled.Should().BeTrue();

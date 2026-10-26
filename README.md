@@ -2,8 +2,8 @@
 
 ![Chronicler Icon](https://raw.githubusercontent.com/mrdav30/Chronicler/main/icon.png)
 
-**Deterministic state transfer for .NET runtimes that own their objects and
-their schemas.**
+**Deterministic state transfer and simulation timing for .NET runtimes that own
+their objects and their schemas.**
 
 [![build-and-test](https://github.com/mrdav30/Chronicler/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/mrdav30/Chronicler/actions/workflows/build-and-test.yml)
 [![Branch Coverage](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fmrdav30.github.io%2FChronicler%2Fcoverage%2FSummary.json&query=%24.summary.branchcoverage&suffix=%25&label=branch%20coverage&color=brightgreen)](https://mrdav30.github.io/Chronicler/coverage/)
@@ -17,6 +17,10 @@ schema for JSON, MemoryPack, restore workflows, stable runtime links, and
 deterministic record hashes. Your host constructs the object graph; Chronicler
 transfers state into it without taking ownership of your runtime.
 
+It also provides exact simulation timestamps and signed durations with 64-bit
+whole seconds and 32 fractional bits, plus an explicitly advanced, recordable
+clock. These timing primitives are independent of any engine or math package.
+
 ## Why Chronicler?
 
 - **Schemas stay in your code.** `RecordData(...)` makes names, defaults, order,
@@ -27,6 +31,8 @@ transfers state into it without taking ownership of your runtime.
   through a session-scoped registry.
 - **Compare deterministic state.** Compute replay and conformance signals from
   the recording schema without hashing a transport payload.
+- **Keep long-lived time exact.** Advance a recordable clock explicitly; subtract
+  wide timestamps before converting short intervals for motion calculations.
 - **Choose your dependency surface.** Use JSON and MemoryPack together, or take
   the Lean package when the built-in MemoryPack transport is unnecessary.
 
@@ -43,6 +49,13 @@ and MemoryPack transports.
 
 ```csharp
 using Chronicler;
+using Chronicler.Serialization;
+
+PlayerSnapshot source = new() { Health = 72 };
+string json = JsonRecordSerializer.Serialize(source, writeIndented: true);
+
+PlayerSnapshot restored = new(); // The host creates and initializes the shell.
+JsonRecordSerializer.Populate(restored, json);
 
 public sealed class PlayerSnapshot : IRecordable
 {
@@ -65,16 +78,18 @@ public sealed class WeaponSnapshot : IRecordable
         RecordValues.Look(chronicler, ref Ammo, "ammo", 30);
     }
 }
-
-PlayerSnapshot source = new() { Health = 72 };
-string json = JsonRecordSerializer.Serialize(source, writeIndented: true);
-
-PlayerSnapshot restored = new(); // The host creates and initializes the shell.
-JsonRecordSerializer.Populate(restored, json);
 ```
 
 The same `RecordData(...)` implementation works with
 `MemoryPackRecordSerializer` in the standard package.
+`restored.Health` is now `72`; its existing `Weapon` keeps the declared ammo
+default of `30`.
+
+Recording contracts and helpers live in `Chronicler`. Use
+`Chronicler.Serialization` for transports and converters, `Chronicler.Hashing`
+for deterministic record hashes, and `Chronicler.Timing` for time values and
+the clock. See the [migration guide](https://github.com/mrdav30/Chronicler/blob/main/docs/MIGRATION.md)
+when upgrading existing code.
 
 ## Choose a package
 
@@ -89,6 +104,7 @@ The same `RecordData(...)` implementation works with
 - [Getting started](https://mrdav30.github.io/Chronicler/guides/getting-started.html)
 - [Understand values, owned state, and links](https://mrdav30.github.io/Chronicler/guides/serialization-model.html)
 - [Use deterministic record hashes](https://mrdav30.github.io/Chronicler/guides/record-hashes.html)
+- [Represent simulation time](https://mrdav30.github.io/Chronicler/guides/simulation-timing.html)
 - [Browse the API reference](https://mrdav30.github.io/Chronicler/api/Chronicler.html)
 - [View test coverage](https://mrdav30.github.io/Chronicler/coverage/)
 

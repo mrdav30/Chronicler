@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Chronicler;
+namespace Chronicler.Serialization;
 
 /// <summary>
 /// Creates JSON converters for types that explicitly implement <see cref="IStateBacked{TState}"/>.
@@ -32,8 +32,7 @@ public sealed class StateJsonConverterFactory : JsonConverterFactory
         Type converterType = typeof(StateJsonConverter<,>).MakeGenericType(typeToConvert, stateType);
         Delegate factory = CreateFactory(typeToConvert, stateType, constructor);
 
-        return (JsonConverter)(Activator.CreateInstance(converterType, factory)
-            ?? throw new InvalidOperationException($"Failed to create converter instance for type '{converterType}'."));
+        return (JsonConverter)Activator.CreateInstance(converterType, factory)!;
     }
 
     private static bool HasStateBackedContract(Type type)

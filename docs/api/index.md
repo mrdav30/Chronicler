@@ -1,6 +1,6 @@
 ---
 title: Chronicler documentation
-description: Guides and API reference for explicit deterministic state transfer in .NET.
+description: Guides and API reference for explicit deterministic state transfer and simulation timing in .NET.
 ---
 
 <div class="chr-hero">
@@ -8,7 +8,8 @@ description: Guides and API reference for explicit deterministic state transfer 
   <h1>Record state on your terms.</h1>
   <p>Chronicler gives each type one visible schema for JSON, MemoryPack,
   restoring existing runtime objects, stable links, and deterministic replay
-  signals.</p>
+  signals. Exact time values and a host-advanced clock keep long-running
+  simulations on an explicit timeline.</p>
   <div class="chr-actions">
     <a href="guides/getting-started.md">Get started</a>
     <a href="xref:Chronicler">Browse the API</a>
@@ -24,8 +25,9 @@ description: Guides and API reference for explicit deterministic state transfer 
     <code>RecordData(...)</code>.</p>
   </div>
   <div class="chr-card">
-    <h3><a href="xref:Chronicler.JsonRecordSerializer">Choose a transport</a></h3>
-    <p>Use built-in JSON everywhere, with built-in MemoryPack available in the
+    <h3><a href="xref:Chronicler.Serialization">Choose a transport</a></h3>
+    <p>Use built-in <a href="xref:Chronicler.Serialization.JsonRecordSerializer">JSON</a>
+    everywhere, with built-in <a href="xref:Chronicler.Serialization.MemoryPackRecordSerializer">MemoryPack</a> available in the
     standard package.</p>
   </div>
   <div class="chr-card">
@@ -44,7 +46,7 @@ description: Guides and API reference for explicit deterministic state transfer 
     of serializing them inline.</p>
   </div>
   <div class="chr-card">
-    <h3><a href="xref:Chronicler.ChronicleHashSerializer">Compare recorded state</a></h3>
+    <h3><a href="xref:Chronicler.Hashing.ChronicleHashSerializer">Compare recorded state</a></h3>
     <p>Build deterministic replay and conformance signals directly from the
     recording schema.</p>
   </div>
@@ -56,6 +58,8 @@ description: Guides and API reference for explicit deterministic state transfer 
 </div>
 
 ## Package family
+
+Both Core variants include the same dependency-free simulation timing APIs.
 
 | Package                     | Includes                                                                     |
 | --------------------------- | ---------------------------------------------------------------------------- |
@@ -71,6 +75,8 @@ description: Guides and API reference for explicit deterministic state transfer 
   object ownership, defaults, link resolution, and package boundaries.
 - [Deterministic record hashes](guides/record-hashes.md) documents the replay
   and conformance hash contract.
+- [Simulation timing](guides/simulation-timing.md) explains wide timestamps,
+  signed intervals, explicit clock advancement, and transactional clock restore.
 
 ## Part of the LSF ecosystem
 
@@ -84,6 +90,8 @@ tools throughout the Lockstep Simulation Framework ecosystem:
 
 ## Resources
 
+- [Migration guide](https://github.com/mrdav30/Chronicler/blob/main/docs/MIGRATION.md)
+  covers upgrade steps and compatibility changes.
 - [Source, issues, and releases](https://github.com/mrdav30/Chronicler)
 - [NuGet packages](https://www.nuget.org/packages/Chronicler.Core)
 - [Core test-suite coverage](https://mrdav30.github.io/Chronicler/coverage/)

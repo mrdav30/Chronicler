@@ -1,5 +1,7 @@
 <Project>
   <PropertyGroup>
+    <!-- Preserve the caller's configuration for the source-backed Lean shim. -->
+    <ShouldUnsetParentConfigurationAndPlatform Condition="'$(UseLocalLsfStack)' == 'true'">false</ShouldUnsetParentConfigurationAndPlatform>
     <_ChroniclerHostPlatform Condition="$([MSBuild]::IsOSPlatform('Windows'))">windows</_ChroniclerHostPlatform>
     <_ChroniclerHostPlatform Condition="'$(_ChroniclerHostPlatform)' == '' And $([MSBuild]::IsOSPlatform('OSX'))">macos</_ChroniclerHostPlatform>
     <_ChroniclerHostPlatform Condition="'$(_ChroniclerHostPlatform)' == ''">unix</_ChroniclerHostPlatform>
