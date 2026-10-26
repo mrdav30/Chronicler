@@ -27,8 +27,7 @@ public static class RecordChronicleTime
         value = new ChronicleTimestamp(record.WholeSeconds, record.FractionalSecond);
     }
 
-    // Both transports first populate a struct against an empty reader. Validate
-    // only after the actual deep read returns, not during that initialization.
+    // Validate after the deep read so missing records are rejected as well.
     private struct TimeRecord : IRecordable
     {
         private int _schemaVersion;

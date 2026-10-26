@@ -8,6 +8,25 @@ public class RecordLinkEdgeCaseTests
 {
     [Theory]
     [MemberData(nameof(SerializationTransportData.All), MemberType = typeof(SerializationTransportData))]
+    public void Populate_ShouldClearCallbackTargets_WhenLinkIsNullOrMissing(SerializationTransport transport)
+    {
+        object original = SerializationTestHarness.Serialize(new DeferredImmediateResolutionRecord(), transport);
+        foreach (object payload in new[] { original, SerializationTestHarness.RemoveEntry(original, transport, "resource") })
+        {
+            var stale = new LinkResource("stale");
+            var deferred = new DeferredImmediateResolutionRecord { Resource = stale };
+            SerializationTestHarness.Populate(deferred, payload, transport);
+            deferred.Resource.Should().BeNull();
+
+            var immediate = new ImmediateCallbackRecord { Resource = stale, AssignedResource = stale };
+            SerializationTestHarness.Populate(immediate, payload, transport);
+            immediate.Resource.Should().BeNull();
+            immediate.AssignedResource.Should().BeNull();
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(SerializationTransportData.All), MemberType = typeof(SerializationTransportData))]
     public void Populate_ShouldInvokeImmediateAssignmentCallback_WithResolvedInstance(SerializationTransport transport)
     {
         var sourceResource = new LinkResource("source");

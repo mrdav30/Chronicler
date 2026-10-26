@@ -203,12 +203,14 @@ public static class MemoryPackRecordSerializer
 
         public void LookDeepStruct<T>(ref T value, string name) where T : struct, IRecordable
         {
-            value = CreateDefaultDeepStruct<T>();
-
             if (!_entries.TryGetValue(name, out byte[]? entry)
                 || entry == null)
+            {
+                value = CreateDefaultDeepStruct<T>();
                 return;
+            }
 
+            value = new();
             var nested = new MemoryPackRecordReader(entry, Context);
             value.RecordData(nested);
         }
@@ -222,7 +224,7 @@ public static class MemoryPackRecordSerializer
                 return;
             }
 
-            T nestedValue = CreateDefaultDeepStruct<T>();
+            T nestedValue = new();
             var nested = new MemoryPackRecordReader(entry, Context);
             nestedValue.RecordData(nested);
             value = nestedValue;
@@ -238,6 +240,7 @@ public static class MemoryPackRecordSerializer
             if (!TryReadLinkId(name, out string? id))
             {
                 value = default!;
+                assignLoadedValue?.Invoke(value);
                 return;
             }
 

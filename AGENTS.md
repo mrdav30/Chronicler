@@ -147,8 +147,9 @@ Keep the distinction clear:
   and a host-advanced clock. Keep arithmetic dependency-free and compatible
   with both target frameworks; check the final result after carry/borrow.
   Advance and clock population validate before mutation. `RecordChronicleTime`
-  in Recording validates carriers after deep loading, not during the transports'
-  empty-reader initialization. Hosts own reset/restore lifetime invalidation.
+  in Recording validates carriers after deep loading. Present deep structs load
+  directly from their payload; only missing structs use an empty reader to apply
+  declared defaults. Hosts own reset/restore lifetime invalidation.
 - `src/Chronicler/Serialization` Payload editing and shared ordered-map
   infrastructure, also used internally by link registration.
 - `src/Chronicler/Serialization/Json` JSON transport and state-backed converters.

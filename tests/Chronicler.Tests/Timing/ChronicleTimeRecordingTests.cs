@@ -9,6 +9,65 @@ namespace Chronicler.Tests;
 
 public sealed class ChronicleTimeRecordingTests
 {
+    public static IEnumerable<object[]> NestedTimeRecords
+    {
+        get
+        {
+            foreach (object[] transport in SerializationTransportData.All)
+            foreach (bool nullable in new[] { false, true })
+                yield return new object[] { transport[0], nullable };
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(NestedTimeRecords))]
+    public void TimeValuesInsideStructsRoundTrip(SerializationTransport transport, bool nullable)
+    {
+        var source = new TimeStructContainer(nullable);
+        var target = new TimeStructContainer(nullable);
+        source.State = new TimeStruct { Duration = new(-1, uint.MaxValue), Timestamp = new(long.MaxValue, 1) };
+        source.OptionalState = source.State;
+        object payload = SerializationTestHarness.Serialize(source, transport);
+
+        SerializationTestHarness.Populate(target, payload, transport);
+
+        TimeStruct restored = nullable ? target.OptionalState!.Value : target.State;
+        Assert.Equal(source.State.Duration, restored.Duration);
+        Assert.Equal(source.State.Timestamp, restored.Timestamp);
+        Assert.Equal(ChronicleHashSerializer.Compute(source), ChronicleHashSerializer.Compute(target));
+    }
+
+    [Theory]
+    [MemberData(nameof(NestedTimeRecords))]
+    public void TimeValuesInsideStructsStillRequireValidSchemas(SerializationTransport transport, bool nullable)
+    {
+        var source = new TimeStructContainer(nullable) { OptionalState = new TimeStruct() };
+        object original = SerializationTestHarness.Serialize(source, transport);
+        foreach (string field in new[] { "Duration", "Timestamp" })
+        foreach (string defect in new[] { "missing record", "missing schema", "unsupported schema" })
+        {
+            object payload = defect switch
+            {
+                "missing record" => SerializationTestHarness.RemoveEntry(original, transport, "State", field),
+                "missing schema" => SerializationTestHarness.RemoveEntry(original, transport, "State", field, "SchemaVersion"),
+                _ => SerializationTestHarness.SetValue(original, transport, 2, "State", field, "SchemaVersion")
+            };
+            Assert.Throws<InvalidOperationException>(() =>
+                SerializationTestHarness.Populate(new TimeStructContainer(nullable), payload, transport));
+        }
+
+        object missing = SerializationTestHarness.RemoveEntry(original, transport, "State");
+        if (nullable)
+        {
+            SerializationTestHarness.Populate(source, missing, transport);
+            Assert.Null(source.OptionalState);
+        }
+        else
+        {
+            Assert.Throws<InvalidOperationException>(() => SerializationTestHarness.Populate(source, missing, transport));
+        }
+    }
+
     [Theory]
     [MemberData(nameof(SerializationTransportData.All), MemberType = typeof(SerializationTransportData))]
     public void ValuesRoundTripExactlyAcrossTheirRanges(SerializationTransport transport)
@@ -288,6 +347,35 @@ public sealed class ChronicleTimeRecordingTests
         var clock = RunningClock();
         SerializationTestHarness.Populate(clock, SerializationTestHarness.Serialize(record, transport), transport);
         return clock;
+    }
+
+    private sealed class TimeStructContainer : IRecordable
+    {
+        private readonly bool _nullable;
+        public TimeStruct State;
+        public TimeStruct? OptionalState;
+
+        public TimeStructContainer(bool nullable) => _nullable = nullable;
+
+        public void RecordData(IChronicler chronicler)
+        {
+            if (_nullable)
+                RecordNullableDeep.Look(chronicler, ref OptionalState, "State");
+            else
+                RecordDeepStruct.Look(chronicler, ref State, "State");
+        }
+    }
+
+    private struct TimeStruct : IRecordable
+    {
+        public ChronicleDuration Duration;
+        public ChronicleTimestamp Timestamp;
+
+        public void RecordData(IChronicler chronicler)
+        {
+            RecordChronicleTime.Look(chronicler, ref Duration, nameof(Duration));
+            RecordChronicleTime.Look(chronicler, ref Timestamp, nameof(Timestamp));
+        }
     }
 
     private sealed class TimeValues : IRecordable
