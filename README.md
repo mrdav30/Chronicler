@@ -6,7 +6,7 @@
 their objects and their schemas.**
 
 [![build-and-test](https://github.com/mrdav30/Chronicler/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/mrdav30/Chronicler/actions/workflows/build-and-test.yml)
-[![Branch Coverage](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fmrdav30.github.io%2FChronicler%2Fcoverage%2FSummary.json&query=%24.summary.branchcoverage&suffix=%25&label=branch%20coverage&color=brightgreen)](https://mrdav30.github.io/Chronicler/coverage/)
+[![Coverage](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fmrdav30.github.io%2FChronicler%2Fcoverage%2FSummary.json&query=%24.summary.branchcoverage&suffix=%25&label=coverage&color=brightgreen)](https://mrdav30.github.io/Chronicler/coverage/)
 [![NuGet](https://img.shields.io/nuget/v/Chronicler.Core.svg)](https://www.nuget.org/packages/Chronicler.Core)
 [![License](https://img.shields.io/github/license/mrdav30/Chronicler.svg)](https://github.com/mrdav30/Chronicler/blob/main/LICENSE)
 [![API](https://img.shields.io/badge/docs-API-f4511e)](https://mrdav30.github.io/Chronicler/)
@@ -31,8 +31,9 @@ clock. These timing primitives are independent of any engine or math package.
   through a session-scoped registry.
 - **Compare deterministic state.** Compute replay and conformance signals from
   the recording schema without hashing a transport payload.
-- **Keep long-lived time exact.** Advance a recordable clock explicitly; subtract
-  wide timestamps before converting short intervals for motion calculations.
+- **Keep long-lived time exact.** Advance a recordable clock explicitly;
+  subtract wide timestamps before converting short intervals for motion
+  calculations.
 - **Choose your dependency surface.** Use JSON and MemoryPack together, or take
   the Lean package when the built-in MemoryPack transport is unnecessary.
 
@@ -81,14 +82,14 @@ public sealed class WeaponSnapshot : IRecordable
 ```
 
 The same `RecordData(...)` implementation works with
-`MemoryPackRecordSerializer` in the standard package.
-`restored.Health` is now `72`; its existing `Weapon` keeps the declared ammo
-default of `30`.
+`MemoryPackRecordSerializer` in the standard package. `restored.Health` is now
+`72`; its existing `Weapon` keeps the declared ammo default of `30`.
 
 Recording contracts and helpers live in `Chronicler`. Use
 `Chronicler.Serialization` for transports and converters, `Chronicler.Hashing`
-for deterministic record hashes, and `Chronicler.Timing` for time values and
-the clock. See the [migration guide](https://github.com/mrdav30/Chronicler/blob/main/docs/MIGRATION.md)
+for deterministic record hashes, and `Chronicler.Timing` for time values and the
+clock. See the
+[migration guide](https://github.com/mrdav30/Chronicler/blob/main/docs/MIGRATION.md)
 when upgrading existing code.
 
 ## Choose a package
