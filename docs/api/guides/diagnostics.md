@@ -54,7 +54,7 @@ and interpolation expressions.
 
 ## Guard invalid inputs
 
-<xref:Chronicler.Diagnostics.ThrowHelper> offers common argument, range, state,
+<xref:Chronicler.Diagnostics.ChronicleGuard> offers common argument, range, state,
 disposal, and key guards. It preserves parameter names and routes exceptions
 through separate throw methods. Its interpolated overloads build messages only
 when the guard fails:
@@ -62,7 +62,7 @@ when the guard fails:
 ```csharp
 int capacity = 128;
 int requested = 256;
-ThrowHelper.ThrowIfArgumentOutOfRange(
+ChronicleGuard.ThrowIfArgumentOutOfRange(
     requested > capacity, requested, nameof(requested),
     $"Requested {requested} entries; capacity is {capacity}.");
 ```

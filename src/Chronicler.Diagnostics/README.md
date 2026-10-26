@@ -15,7 +15,7 @@ var channel = new DiagnosticChannel("MyLibrary")
 };
 
 channel.Warn($"Buffer capacity reached {capacity}.");
-ThrowHelper.ThrowIfNull(settings);
+ChronicleGuard.ThrowIfNull(settings);
 
 static void WriteDiagnostic(in DiagnosticEvent diagnostic)
     => Console.WriteLine($"[{diagnostic.Level}] {diagnostic.Channel}: {diagnostic.Message}");

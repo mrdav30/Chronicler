@@ -1,5 +1,5 @@
 //=======================================================================
-// ThrowHelper.cs
+// ChronicleGuard.cs
 //=======================================================================
 // MIT License, Copyright (c) 2024-present David Oravsky (mrdav30)
 // See LICENSE file in the project root for full license information.
@@ -19,7 +19,7 @@ using System.Runtime.CompilerServices;
 /// Validation methods keep the success path small and route exception creation through no-inline throw helpers.
 /// Interpolated custom messages are condition-gated so formatted expressions are not evaluated unless the guard throws.
 /// </remarks>
-public static class ThrowHelper
+public static class ChronicleGuard
 {
     private static class GenericNullability<T>
     {

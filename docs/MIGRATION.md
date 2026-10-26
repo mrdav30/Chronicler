@@ -30,7 +30,7 @@ identity; an assembly compiled against the previous name must be rebuilt.
 Shared logging and exception guards now come from the independent
 `Chronicler.Diagnostics` package (v1.0.0), in both standard and Lean builds.
 Replace imports of `SwiftCollections.Diagnostics` for shared types with
-`Chronicler.Diagnostics`. Rename `SwiftThrowHelper` to `ThrowHelper` and
+`Chronicler.Diagnostics`. Rename `SwiftThrowHelper` to `ChronicleGuard` and
 `SwiftThrowInterpolatedStringHandler` to `ThrowInterpolatedStringHandler`.
 `SwiftCollections.Diagnostics.SwiftCollectionDiagnostics.Shared` stays in
 SwiftCollections; library-specific logger facades and channel names stay intact.

@@ -97,7 +97,7 @@ public ref struct DiagnosticMessageHandler<TLevel>
         DiagnosticLevel level,
         out bool isEnabled)
     {
-        ThrowHelper.ThrowIfNull(channel, nameof(channel));
+        ChronicleGuard.ThrowIfNull(channel, nameof(channel));
         _message = new DiagnosticInterpolatedStringHandler(literalLength, formattedCount, channel, level, out isEnabled);
     }
 

@@ -107,7 +107,7 @@ public static class DiagnosticChannelLoggingExtensions
         DiagnosticInterpolatedStringHandler message,
         string source)
     {
-        ThrowHelper.ThrowIfNull(channel, nameof(channel));
+        ChronicleGuard.ThrowIfNull(channel, nameof(channel));
         channel.Write(level, message, source);
     }
 
