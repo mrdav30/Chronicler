@@ -17,6 +17,7 @@ explicit contracts over convenience features.
 
 ## Project Snapshot
 
+- Diagnostics package ID: `Chronicler.Diagnostics` (independent; no Core dependency)
 - Standard package ID: `Chronicler.Core`
 - Lean package ID: `Chronicler.Core.Lean`
 - Compatibility package ID: `Chronicler.MemoryPackShim`
@@ -58,6 +59,14 @@ Read these in order before making non-trivial changes:
 7. Completed design records under
    [`docs/feature-work/done`](docs/feature-work/done) when a task touches record
    hashes or the Lean compatibility shim.
+
+Diagnostics, lazy message handlers, and exception guards live in the separate
+`src/Chronicler.Diagnostics` project and `Chronicler.Diagnostics` namespace.
+It has no runtime package dependencies and the same package serves standard and
+Lean consumers. Public netstandard compiler-attribute shims live there too.
+Library-specific channels and logger facades stay in the consuming libraries.
+Tests under `tests/Chronicler.Diagnostics.Tests` are also compiled by
+`tests/Chronicler.Diagnostics.NetStandard.Tests` to exercise the fallback assembly.
 
 ## Source Of Truth
 

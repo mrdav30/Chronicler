@@ -41,6 +41,10 @@ its Lean shim use source-only 0.4.0 identities to match the existing dependency
 graph. These do not select release versions or make generated local packages
 publishable. Leave package mode as the default for real release validation.
 
+The independent `Chronicler.Diagnostics` package uses a source-only 1.0.0
+identity and has no runtime package dependencies. Its tests run against both
+net8.0 and netstandard2.1 assemblies (the latter on the .NET 8 test host).
+
 1. Keep the change focused: shared recording APIs and host lifecycle hooks use
    `Chronicler`, transports and converters use `Chronicler.Serialization`,
    record-hash APIs use `Chronicler.Hashing`, and time values and the clock use

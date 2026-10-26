@@ -5,6 +5,7 @@
         {
           "files": [
             "src/Chronicler/bin/Release/net8.0/Chronicler.dll",
+            "src/Chronicler.Diagnostics/bin/Release/net8.0/Chronicler.Diagnostics.dll",
             "src/Chronicler.MemoryPackShim/bin/Release/net8.0/Chronicler.MemoryPackShim.dll"
           ],
           "src": "../.."

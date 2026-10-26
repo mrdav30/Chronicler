@@ -63,12 +63,16 @@ jobs:
 
       - name: Build API documentation
         run: |
+          test -f src/Chronicler.Diagnostics/bin/Release/net8.0/Chronicler.Diagnostics.dll
+          test -f src/Chronicler.Diagnostics/bin/Release/net8.0/Chronicler.Diagnostics.xml
           test -f src/Chronicler/bin/Release/net8.0/Chronicler.dll
           test -f src/Chronicler/bin/Release/net8.0/Chronicler.xml
           test -f src/Chronicler.MemoryPackShim/bin/Release/net8.0/Chronicler.MemoryPackShim.dll
           test -f src/Chronicler.MemoryPackShim/bin/Release/net8.0/Chronicler.MemoryPackShim.xml
           dotnet tool run docfx docs/api/docfx.json --warningsAsErrors
           test -f docs/api/obj/_site/index.html
+          test -f docs/api/obj/_site/api/Chronicler.Diagnostics.html
+          test -f docs/api/obj/_site/guides/diagnostics.html
           test -f docs/api/obj/_site/api/Chronicler.html
           test -f docs/api/obj/_site/api/Chronicler.Serialization.html
           test -f docs/api/obj/_site/api/Chronicler.Hashing.html
