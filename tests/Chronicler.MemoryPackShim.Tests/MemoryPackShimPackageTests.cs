@@ -251,7 +251,7 @@ public sealed class MemoryPackShimPackageTests
             <Project Sdk="Microsoft.NET.Sdk">
               <PropertyGroup>
                 <TargetFramework>net10.0</TargetFramework>
-                <LangVersion>11.0</LangVersion>
+                <LangVersion>14.0</LangVersion>
                 <ImplicitUsings>disable</ImplicitUsings>
                 <Nullable>enable</Nullable>
                 <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -274,7 +274,7 @@ public sealed class MemoryPackShimPackageTests
               <PropertyGroup>
                 <TargetFramework>net10.0</TargetFramework>
                 <AssemblyName>FriendLibrary</AssemblyName>
-                <LangVersion>11.0</LangVersion>
+                <LangVersion>14.0</LangVersion>
                 <ImplicitUsings>disable</ImplicitUsings>
                 <Nullable>enable</Nullable>
                 <DisableMemoryPack>true</DisableMemoryPack>
@@ -302,7 +302,7 @@ public sealed class MemoryPackShimPackageTests
               <PropertyGroup>
                 <TargetFramework>net10.0</TargetFramework>
                 <AssemblyName>FriendConsumer</AssemblyName>
-                <LangVersion>11.0</LangVersion>
+                <LangVersion>14.0</LangVersion>
                 <ImplicitUsings>disable</ImplicitUsings>
                 <Nullable>enable</Nullable>
                 <DisableMemoryPack>true</DisableMemoryPack>

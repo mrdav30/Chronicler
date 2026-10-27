@@ -21,9 +21,15 @@ static void WriteDiagnostic(in DiagnosticEvent diagnostic)
     => Console.WriteLine($"[{diagnostic.Level}] {diagnostic.Channel}: {diagnostic.Message}");
 ```
 
-The example assumes the host supplies `capacity` and `settings`. Interpolated
-messages skip formatted expressions when their channel level is disabled.
-Interpolated exception messages are built only when the guard throws.
+The example assumes the host supplies `capacity` and `settings`. With C# 10 or
+later, interpolated messages skip formatted expressions when their channel level
+is disabled, and interpolated exception messages are built only when the guard
+throws.
+
+C# 9 callers use the string logging overloads. Their interpolation runs before
+the call; guard it with `channel.IsEnabled(DiagnosticLevel.Warning)` when
+formatting should be skipped. Pass explicit guard parameter names when needed:
+`ChronicleGuard.ThrowIfNull(settings, nameof(settings))`.
 
 Channels start disabled with a no-op sink. `DiagnosticLogger` provides an optional
 base for library-specific facades, with normal/debug channels and a configurable

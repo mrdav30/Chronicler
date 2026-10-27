@@ -36,10 +36,30 @@ static void WriteDiagnostic(in DiagnosticEvent diagnostic)
     => Console.WriteLine($"[{diagnostic.Level}] {diagnostic.Channel}: {diagnostic.Message}");
 ```
 
-`Info`, `Warn`, `Error`, and dynamic-level `Log` skip formatted interpolation
-expressions when disabled. A string constructed before the logging call has
-already paid its formatting cost. When a source is omitted, the helpers derive
-it from caller file and method information.
+`Info`, `Warn`, `Error`, and dynamic-level `Log` accept both strings and custom
+interpolated-string handlers. With C# 10 or later, interpolated calls select the
+handler overload and skip formatted expressions when disabled. String arguments
+are already formatted when the helper receives them. When a source is omitted,
+both paths derive it from caller file and method information.
+
+### Older-language callers
+
+C# 9 callers can use the same helper names through the string overloads. Their
+interpolation expressions run before the call, even when that level is disabled.
+Use an explicit level check to avoid that work:
+
+```csharp
+if (channel.IsEnabled(DiagnosticLevel.Warning))
+    channel.Warn($"Buffer capacity reached {capacity}.", source: "Buffer");
+```
+
+The libraries are distributed as compiled assemblies. The `netstandard2.1`
+implementation uses C# 11; callers do not need to compile its source syntax.
+The .NET 10 implementation, tests, and benchmarks use C# 14. The existing
+diagnostics suite tests string behavior and modern lazy-handler selection.
+C# 9 consumer compilation is checked separately as a release smoke check when
+the public diagnostic API changes. These checks do not establish compatibility
+with every host runtime, AOT pipeline, or linker.
 
 <xref:Chronicler.Diagnostics.DiagnosticLogger> is an optional base for a
 library-owned facade. It provides normal/debug channels and configurable
@@ -67,9 +87,12 @@ ChronicleGuard.ThrowIfArgumentOutOfRange(
     $"Requested {requested} entries; capacity is {capacity}.");
 ```
 
-The same lazy-message behavior is supported on both target frameworks. The
-netstandard assembly carries the public compiler attributes needed by downstream
-interpolated-handler APIs.
+The handler overloads support the same lazy-message behavior on both target
+frameworks when the caller uses C# 10 or later. Older callers can use the string
+guard overloads and pass explicit parameter names where needed, for example
+`ChronicleGuard.ThrowIfNull(settings, nameof(settings))`. A preformatted string
+guard message is evaluated before the guard runs. The netstandard assembly
+carries the public compiler attributes needed by downstream handler APIs.
 
 See the [migration guide](https://github.com/mrdav30/Chronicler/blob/main/docs/MIGRATION.md)
 when upgrading from `SwiftCollections.Diagnostics`.

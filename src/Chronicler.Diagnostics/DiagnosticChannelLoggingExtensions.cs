@@ -11,10 +11,82 @@ using System.IO;
 using System.Runtime.CompilerServices;
 
 /// <summary>
-/// Provides interpolated diagnostic logging helpers for <see cref="DiagnosticChannel"/>.
+/// Provides string and interpolated diagnostic logging helpers for <see cref="DiagnosticChannel"/>.
 /// </summary>
 public static class DiagnosticChannelLoggingExtensions
 {
+    /// <summary>
+    /// Writes an already formatted info message when info diagnostics are enabled.
+    /// </summary>
+    /// <param name="channel">The diagnostic channel that receives the message.</param>
+    /// <param name="message">The already formatted diagnostic message.</param>
+    /// <param name="source">An optional source identifier. When omitted, caller information is used.</param>
+    /// <param name="method">The calling method name, automatically captured.</param>
+    /// <param name="filePath">The calling file name, automatically captured to get the class name.</param>
+    public static void Info(
+        this DiagnosticChannel channel,
+        string message,
+        string source = "",
+        [CallerMemberName] string method = "",
+        [CallerFilePath] string filePath = "") =>
+        Log(channel, DiagnosticLevel.Info, message, source, method, filePath);
+
+    /// <summary>
+    /// Writes an already formatted warning message when warning diagnostics are enabled.
+    /// </summary>
+    /// <param name="channel">The diagnostic channel that receives the message.</param>
+    /// <param name="message">The already formatted diagnostic message.</param>
+    /// <param name="source">An optional source identifier. When omitted, caller information is used.</param>
+    /// <param name="method">The calling method name, automatically captured.</param>
+    /// <param name="filePath">The calling file name, automatically captured to get the class name.</param>
+    public static void Warn(
+        this DiagnosticChannel channel,
+        string message,
+        string source = "",
+        [CallerMemberName] string method = "",
+        [CallerFilePath] string filePath = "") =>
+        Log(channel, DiagnosticLevel.Warning, message, source, method, filePath);
+
+    /// <summary>
+    /// Writes an already formatted error message when error diagnostics are enabled.
+    /// </summary>
+    /// <param name="channel">The diagnostic channel that receives the message.</param>
+    /// <param name="message">The already formatted diagnostic message.</param>
+    /// <param name="source">An optional source identifier. When omitted, caller information is used.</param>
+    /// <param name="method">The calling method name, automatically captured.</param>
+    /// <param name="filePath">The calling file name, automatically captured to get the class name.</param>
+    public static void Error(
+        this DiagnosticChannel channel,
+        string message,
+        string source = "",
+        [CallerMemberName] string method = "",
+        [CallerFilePath] string filePath = "") =>
+        Log(channel, DiagnosticLevel.Error, message, source, method, filePath);
+
+    /// <summary>
+    /// Writes an already formatted message when the requested diagnostic level is enabled.
+    /// </summary>
+    /// <param name="channel">The diagnostic channel that receives the message.</param>
+    /// <param name="level">The severity level of the diagnostic event.</param>
+    /// <param name="message">The already formatted diagnostic message.</param>
+    /// <param name="source">An optional source identifier. When omitted, caller information is used.</param>
+    /// <param name="method">The calling method name, automatically captured.</param>
+    /// <param name="filePath">The calling file name, automatically captured to get the class name.</param>
+    public static void Log(
+        this DiagnosticChannel channel,
+        DiagnosticLevel level,
+        string message,
+        string source = "",
+        [CallerMemberName] string method = "",
+        [CallerFilePath] string filePath = "")
+    {
+        ChronicleGuard.ThrowIfNull(channel, nameof(channel));
+        if (!channel.IsEnabled(level))
+            return;
+
+        channel.Write(level, message, ResolveSource(source, method, filePath));
+    }
+
     /// <summary>
     /// Writes an info diagnostic message without evaluating formatted expressions when info diagnostics are disabled.
     /// </summary>

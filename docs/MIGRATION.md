@@ -35,6 +35,11 @@ Replace imports of `SwiftCollections.Diagnostics` for shared types with
 `SwiftCollections.Diagnostics.SwiftCollectionDiagnostics.Shared` stays in
 SwiftCollections; library-specific logger facades and channel names stay intact.
 
+The logging helpers also accept strings for C# 9 callers. Interpolated calls from
+older compilers format eagerly; use an explicit `IsEnabled` check when needed.
+C# 10 and later callers retain the lazy handler overloads. See the
+[diagnostics guide](api/guides/diagnostics.md#older-language-callers).
+
 Rebuild consumers and adapters together: moved types have new CLR identities,
 including types exposed in logger signatures. There are no forwarding wrappers.
 This extraction does not change recorded fields or record-hash identities.

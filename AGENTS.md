@@ -24,6 +24,7 @@ explicit contracts over convenience features.
 - Assembly name: `Chronicler`
 - Root namespace: `Chronicler`
 - Target frameworks: `netstandard2.1`, `net10.0`
+- Language versions: C# 14 by default; C# 11 for `netstandard2.1`
 - Standard transports: `System.Text.Json`, `MemoryPack`
 - Lean transport: `System.Text.Json`; MemoryPack-specific source is compiled out
 - Nullable reference types: enabled
@@ -65,8 +66,10 @@ Diagnostics, lazy message handlers, and exception guards live in the separate
 It has no runtime package dependencies and the same package serves standard and
 Lean consumers. Public netstandard compiler-attribute shims live there too.
 Library-specific channels and logger facades stay in the consuming libraries.
-Tests under `tests/Chronicler.Diagnostics.Tests` are also compiled by
-`tests/Chronicler.Diagnostics.NetStandard.Tests` to exercise the fallback assembly.
+The existing diagnostics suite verifies string overloads, caller information,
+explicit formatting guards, and lazy handler selection. Older-language consumer
+compilation is a focused release smoke check when these public APIs change;
+ordinary C# 14 unit tests do not establish older-compiler or host-runtime support.
 
 ## Source Of Truth
 
