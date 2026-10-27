@@ -124,7 +124,7 @@ recording helpers. Time values and `ChronicleClock` retain `Chronicler.Timing`.
 
 This organization adds no packages or assemblies. Continue using
 `Chronicler.Core` or `Chronicler.Core.Lean`. The assembly name remains
-`Chronicler`; target frameworks remain `netstandard2.1` and `net8.0`.
+`Chronicler`; target frameworks remain `netstandard2.1` and `net10.0`.
 MemoryPack transport APIs remain available only in the standard package.
 
 `Chronicler.MemoryPackShim` remains a separate compatibility package whose

@@ -11,7 +11,7 @@ By participating, you agree to follow the code of conduct below.
 ## Development setup
 
 Chronicler uses the .NET 10 SDK for solution tooling and executes its test suite
-on .NET 8. From the repository root:
+on .NET 10. From the repository root:
 
 ```bash
 dotnet restore Chronicler.slnx
@@ -43,7 +43,7 @@ publishable. Leave package mode as the default for real release validation.
 
 The independent `Chronicler.Diagnostics` package uses a source-only 1.0.0
 identity and has no runtime package dependencies. Its tests run against both
-net8.0 and netstandard2.1 assemblies (the latter on the .NET 8 test host).
+net10.0 and netstandard2.1 assemblies (the latter on the .NET 10 test host).
 
 1. Keep the change focused: shared recording APIs and host lifecycle hooks use
    `Chronicler`, transports and converters use `Chronicler.Serialization`,

@@ -6,7 +6,7 @@ description: Use dependency-free diagnostic channels, lazy messages, and excepti
 # Diagnostics and guards
 
 `Chronicler.Diagnostics` is an independent package for host-facing diagnostics
-and exception guards. It targets `netstandard2.1` and `net8.0` without depending
+and exception guards. It targets `netstandard2.1` and `net10.0` without depending
 on `Chronicler.Core`, JSON, MemoryPack, or an engine. Standard and Lean consumers
 use the same package.
 

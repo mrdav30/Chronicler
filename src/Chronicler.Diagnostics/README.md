@@ -1,7 +1,7 @@
 # Chronicler.Diagnostics
 
 Dependency-free diagnostic channels, lazy logging, and exception guards for
-engine-agnostic .NET libraries and hosts. Targets `netstandard2.1` and `net8.0`.
+engine-agnostic .NET libraries and hosts. Targets `netstandard2.1` and `net10.0`.
 The same package supports standard and Lean applications; it does not depend on
 Chronicler.Core, JSON, or MemoryPack.
 

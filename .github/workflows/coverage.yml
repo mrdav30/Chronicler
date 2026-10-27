@@ -38,7 +38,6 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: |
-            8.0.x
             10.0.x
 
       - name: Cache NuGet packages
@@ -63,12 +62,12 @@ jobs:
 
       - name: Build API documentation
         run: |
-          test -f src/Chronicler.Diagnostics/bin/Release/net8.0/Chronicler.Diagnostics.dll
-          test -f src/Chronicler.Diagnostics/bin/Release/net8.0/Chronicler.Diagnostics.xml
-          test -f src/Chronicler/bin/Release/net8.0/Chronicler.dll
-          test -f src/Chronicler/bin/Release/net8.0/Chronicler.xml
-          test -f src/Chronicler.MemoryPackShim/bin/Release/net8.0/Chronicler.MemoryPackShim.dll
-          test -f src/Chronicler.MemoryPackShim/bin/Release/net8.0/Chronicler.MemoryPackShim.xml
+          test -f src/Chronicler.Diagnostics/bin/Release/net10.0/Chronicler.Diagnostics.dll
+          test -f src/Chronicler.Diagnostics/bin/Release/net10.0/Chronicler.Diagnostics.xml
+          test -f src/Chronicler/bin/Release/net10.0/Chronicler.dll
+          test -f src/Chronicler/bin/Release/net10.0/Chronicler.xml
+          test -f src/Chronicler.MemoryPackShim/bin/Release/net10.0/Chronicler.MemoryPackShim.dll
+          test -f src/Chronicler.MemoryPackShim/bin/Release/net10.0/Chronicler.MemoryPackShim.xml
           dotnet tool run docfx docs/api/docfx.json --warningsAsErrors
           test -f docs/api/obj/_site/index.html
           test -f docs/api/obj/_site/api/Chronicler.Diagnostics.html

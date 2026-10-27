@@ -23,7 +23,7 @@ explicit contracts over convenience features.
 - Compatibility package ID: `Chronicler.MemoryPackShim`
 - Assembly name: `Chronicler`
 - Root namespace: `Chronicler`
-- Target frameworks: `netstandard2.1`, `net8.0`
+- Target frameworks: `netstandard2.1`, `net10.0`
 - Standard transports: `System.Text.Json`, `MemoryPack`
 - Lean transport: `System.Text.Json`; MemoryPack-specific source is compiled out
 - Nullable reference types: enabled

@@ -18,7 +18,7 @@ The standard package is the best starting point:
 dotnet add package Chronicler.Core
 ```
 
-It targets `netstandard2.1` and `net8.0` and includes both built-in transports.
+It targets `netstandard2.1` and `net10.0` and includes both built-in transports.
 Choose `Chronicler.Core.Lean` when you want the same core recording model and
 JSON support without the MemoryPack dependency or transport.
 

@@ -43,7 +43,7 @@ clock. These timing primitives are independent of any engine or math package.
 dotnet add package Chronicler.Core
 ```
 
-`Chronicler.Core` targets `netstandard2.1` and `net8.0` and includes the JSON
+`Chronicler.Core` targets `netstandard2.1` and `net10.0` and includes the JSON
 and MemoryPack transports.
 
 ## Quick start
