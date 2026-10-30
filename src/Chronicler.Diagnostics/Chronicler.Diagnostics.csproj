@@ -4,6 +4,7 @@
 		<LangVersion>14.0</LangVersion>
 		<LangVersion Condition="'$(TargetFramework)' == 'netstandard2.1'">11.0</LangVersion>
 		<Configurations>Debug;Release;ReleaseLean</Configurations>
+		<Optimize Condition="'$(Configuration)' == 'Release' Or '$(Configuration)' == 'ReleaseLean'">true</Optimize>
 		<SemVer Condition="'$(GitVersion_FullSemVer)' != ''">$(GitVersion_FullSemVer)</SemVer>
 		<!-- Stable source-only identity for coordinated diagnostics development. -->
 		<SemVer Condition="'$(UseLocalLsfStack)' == 'true' And '$(SemVer)' == ''">1.0.0</SemVer>
