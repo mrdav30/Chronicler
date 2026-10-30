@@ -11,7 +11,8 @@ By participating, you agree to follow the code of conduct below.
 ## Development setup
 
 Chronicler uses the .NET 10 SDK for solution tooling and executes its test suite
-on .NET 8. From the repository root:
+on .NET 10. C# 14 is the default language version; library projects override it
+to C# 11 for `netstandard2.1`. From the repository root:
 
 ```bash
 dotnet restore Chronicler.slnx
@@ -40,6 +41,14 @@ For coordinated sibling builds, pass `-p:UseLocalLsfStack=true`. Chronicler and
 its Lean shim use source-only 0.4.0 identities to match the existing dependency
 graph. These do not select release versions or make generated local packages
 publishable. Leave package mode as the default for real release validation.
+
+The independent `Chronicler.Diagnostics` package uses a source-only 1.0.0
+identity and has no runtime package dependencies. Its existing .NET 10 tests
+cover string overloads, caller information, explicit formatting guards, and lazy
+handler selection. When changing the public diagnostic API, perform a focused
+C# 9 consumer compilation smoke check against the built netstandard assembly.
+That release check is separate from the ordinary unit-test build; neither check
+establishes compatibility with every host runtime or AOT pipeline.
 
 1. Keep the change focused: shared recording APIs and host lifecycle hooks use
    `Chronicler`, transports and converters use `Chronicler.Serialization`,

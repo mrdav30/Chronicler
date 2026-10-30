@@ -110,9 +110,9 @@ public sealed class ChronicleTimeRecordingTests
         get
         {
             foreach (object[] transport in SerializationTransportData.All)
-            foreach (string field in new[] { "Duration", "Timestamp" })
+            foreach (string @field in new[] { "Duration", "Timestamp" })
             foreach (string defect in new[] { "missing record", "missing schema", "unsupported schema" })
-                yield return new object[] { transport[0], field, defect };
+                yield return new object[] { transport[0], @field, defect };
         }
     }
 

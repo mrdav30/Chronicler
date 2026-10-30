@@ -25,6 +25,28 @@ identity; an assembly compiled against the previous name must be rebuilt.
   remain unchanged for unchanged recorded graphs; audit any downstream record
   type renames separately.
 
+### Shared diagnostics extraction
+
+Shared logging and exception guards now come from the independent
+`Chronicler.Diagnostics` package (v1.0.0), in both standard and Lean builds.
+Replace imports of `SwiftCollections.Diagnostics` for shared types with
+`Chronicler.Diagnostics`. Rename `SwiftThrowHelper` to `ChronicleGuard` and
+`SwiftThrowInterpolatedStringHandler` to `ThrowInterpolatedStringHandler`.
+`SwiftCollections.Diagnostics.SwiftCollectionDiagnostics.Shared` stays in
+SwiftCollections; library-specific logger facades and channel names stay intact.
+
+The logging helpers also accept strings for C# 9 callers. Interpolated calls from
+older compilers format eagerly; use an explicit `IsEnabled` check when needed.
+C# 10 and later callers retain the lazy handler overloads. See the
+[diagnostics guide](api/guides/diagnostics.md#older-language-callers).
+
+Rebuild consumers and adapters together: moved types have new CLR identities,
+including types exposed in logger signatures. There are no forwarding wrappers.
+This extraction does not change recorded fields or record-hash identities.
+Publish Chronicler.Diagnostics before dependent packages, then validate against
+the coordinated released versions; local-stack builds alone do not prove the
+published package graph is compatible.
+
 ### Serialization And Hashing Namespaces
 
 Each type below previously lived directly in `Chronicler`:
@@ -107,7 +129,7 @@ recording helpers. Time values and `ChronicleClock` retain `Chronicler.Timing`.
 
 This organization adds no packages or assemblies. Continue using
 `Chronicler.Core` or `Chronicler.Core.Lean`. The assembly name remains
-`Chronicler`; target frameworks remain `netstandard2.1` and `net8.0`.
+`Chronicler`; target frameworks remain `netstandard2.1` and `net10.0`.
 MemoryPack transport APIs remain available only in the standard package.
 
 `Chronicler.MemoryPackShim` remains a separate compatibility package whose

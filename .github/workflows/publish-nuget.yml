@@ -164,6 +164,7 @@ jobs:
         set -euo pipefail
 
         expected_ids=(
+          "Chronicler.Diagnostics"
           "Chronicler.Core"
           "Chronicler.Core.Lean"
           "Chronicler.MemoryPackShim"

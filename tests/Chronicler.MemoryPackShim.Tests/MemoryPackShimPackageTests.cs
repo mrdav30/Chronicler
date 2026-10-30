@@ -204,7 +204,7 @@ public sealed class MemoryPackShimPackageTests
 
         using var archive = ZipFile.OpenRead(packagePath);
         Assert.Contains(archive.Entries, entry =>
-            entry.FullName == "lib/net8.0/Chronicler.MemoryPackShim.dll");
+            entry.FullName == "lib/net10.0/Chronicler.MemoryPackShim.dll");
         Assert.Contains(archive.Entries, entry =>
             entry.FullName == "lib/netstandard2.1/Chronicler.MemoryPackShim.dll");
         Assert.DoesNotContain(archive.Entries, entry =>
@@ -250,8 +250,8 @@ public sealed class MemoryPackShimPackageTests
         string content = $$"""
             <Project Sdk="Microsoft.NET.Sdk">
               <PropertyGroup>
-                <TargetFramework>net8.0</TargetFramework>
-                <LangVersion>11.0</LangVersion>
+                <TargetFramework>net10.0</TargetFramework>
+                <LangVersion>14.0</LangVersion>
                 <ImplicitUsings>disable</ImplicitUsings>
                 <Nullable>enable</Nullable>
                 <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -272,9 +272,9 @@ public sealed class MemoryPackShimPackageTests
         string content = $$"""
             <Project Sdk="Microsoft.NET.Sdk">
               <PropertyGroup>
-                <TargetFramework>net8.0</TargetFramework>
+                <TargetFramework>net10.0</TargetFramework>
                 <AssemblyName>FriendLibrary</AssemblyName>
-                <LangVersion>11.0</LangVersion>
+                <LangVersion>14.0</LangVersion>
                 <ImplicitUsings>disable</ImplicitUsings>
                 <Nullable>enable</Nullable>
                 <DisableMemoryPack>true</DisableMemoryPack>
@@ -300,9 +300,9 @@ public sealed class MemoryPackShimPackageTests
         string content = $$"""
             <Project Sdk="Microsoft.NET.Sdk">
               <PropertyGroup>
-                <TargetFramework>net8.0</TargetFramework>
+                <TargetFramework>net10.0</TargetFramework>
                 <AssemblyName>FriendConsumer</AssemblyName>
-                <LangVersion>11.0</LangVersion>
+                <LangVersion>14.0</LangVersion>
                 <ImplicitUsings>disable</ImplicitUsings>
                 <Nullable>enable</Nullable>
                 <DisableMemoryPack>true</DisableMemoryPack>
@@ -356,7 +356,7 @@ public sealed class MemoryPackShimPackageTests
             projectDirectory,
             "bin",
             "Release",
-            "net8.0",
+            "net10.0",
             "Consumer.dll");
         return Assembly.LoadFile(assemblyPath);
     }

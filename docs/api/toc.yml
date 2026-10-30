@@ -9,6 +9,8 @@ items:
         href: guides/serialization-model.md
       - name: Deterministic Record Hashes
         href: guides/record-hashes.md
+      - name: Diagnostics and Guards
+        href: guides/diagnostics.md
       - name: Simulation Timing
         href: guides/simulation-timing.md
   - name: API Reference

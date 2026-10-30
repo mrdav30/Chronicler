@@ -17,12 +17,14 @@ explicit contracts over convenience features.
 
 ## Project Snapshot
 
+- Diagnostics package ID: `Chronicler.Diagnostics` (independent; no Core dependency)
 - Standard package ID: `Chronicler.Core`
 - Lean package ID: `Chronicler.Core.Lean`
 - Compatibility package ID: `Chronicler.MemoryPackShim`
 - Assembly name: `Chronicler`
 - Root namespace: `Chronicler`
-- Target frameworks: `netstandard2.1`, `net8.0`
+- Target frameworks: `netstandard2.1`, `net10.0`
+- Language versions: C# 14 by default; C# 11 for `netstandard2.1`
 - Standard transports: `System.Text.Json`, `MemoryPack`
 - Lean transport: `System.Text.Json`; MemoryPack-specific source is compiled out
 - Nullable reference types: enabled
@@ -58,6 +60,16 @@ Read these in order before making non-trivial changes:
 7. Completed design records under
    [`docs/feature-work/done`](docs/feature-work/done) when a task touches record
    hashes or the Lean compatibility shim.
+
+Diagnostics, lazy message handlers, and exception guards live in the separate
+`src/Chronicler.Diagnostics` project and `Chronicler.Diagnostics` namespace.
+It has no runtime package dependencies and the same package serves standard and
+Lean consumers. Public netstandard compiler-attribute shims live there too.
+Library-specific channels and logger facades stay in the consuming libraries.
+The existing diagnostics suite verifies string overloads, caller information,
+explicit formatting guards, and lazy handler selection. Older-language consumer
+compilation is a focused release smoke check when these public APIs change;
+ordinary C# 14 unit tests do not establish older-compiler or host-runtime support.
 
 ## Source Of Truth
 

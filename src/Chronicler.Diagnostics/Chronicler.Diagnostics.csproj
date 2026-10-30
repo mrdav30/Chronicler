@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.1;net10.0</TargetFrameworks>
+		<LangVersion>14.0</LangVersion>
+		<LangVersion Condition="'$(TargetFramework)' == 'netstandard2.1'">11.0</LangVersion>
+		<Configurations>Debug;Release;ReleaseLean</Configurations>
+		<Optimize Condition="'$(Configuration)' == 'Release' Or '$(Configuration)' == 'ReleaseLean'">true</Optimize>
+		<SemVer Condition="'$(GitVersion_FullSemVer)' != ''">$(GitVersion_FullSemVer)</SemVer>
+		<!-- Stable source-only identity for coordinated diagnostics development. -->
+		<SemVer Condition="'$(UseLocalLsfStack)' == 'true' And '$(SemVer)' == ''">1.0.0</SemVer>
+		<SemVer Condition="'$(SemVer)' == ''">0.0.0</SemVer>
+		<InfoVer Condition="'$(GitVersion_InformationalVersion)' != ''">$(GitVersion_InformationalVersion)</InfoVer>
+		<InfoVer Condition="'$(InfoVer)' == ''">$(SemVer)</InfoVer>
+		<AssemblySemVer Condition="'$(GitVersion_AssemblySemVer)' != ''">$(GitVersion_AssemblySemVer)</AssemblySemVer>
+		<AssemblySemVer Condition="'$(AssemblySemVer)' == ''">$(SemVer).0</AssemblySemVer>
+		<AssemblySemFileVer Condition="'$(GitVersion_AssemblySemFileVer)' != ''">$(GitVersion_AssemblySemFileVer)</AssemblySemFileVer>
+		<AssemblySemFileVer Condition="'$(AssemblySemFileVer)' == ''">$(AssemblySemVer)</AssemblySemFileVer>
+		<InformationalVersion>$(InfoVer)</InformationalVersion>
+		<Version>$(SemVer)</Version>
+		<AssemblyVersion>$(AssemblySemVer)</AssemblyVersion>
+		<FileVersion>$(AssemblySemFileVer)</FileVersion>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<Deterministic>true</Deterministic>
+		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<IncludeSymbols>true</IncludeSymbols>
+		<DebugType>portable</DebugType>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<DocumentationFile>bin\$(Configuration)\$(TargetFramework)\Chronicler.Diagnostics.xml</DocumentationFile>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<AssemblyName>Chronicler.Diagnostics</AssemblyName>
+		<RootNamespace>Chronicler.Diagnostics</RootNamespace>
+		<PackageId>Chronicler.Diagnostics</PackageId>
+		<Authors>mrdav30</Authors>
+		<Description>Dependency-free diagnostic channels, lazy logging, and allocation-conscious exception guards for .NET libraries and hosts.</Description>
+		<PackageTags>diagnostics;logging;guards;exceptions;lockstep</PackageTags>
+		<PackageProjectUrl>https://github.com/mrdav30/Chronicler</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/mrdav30/Chronicler</RepositoryUrl>
+		<PackageIcon>icon.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="Chronicler.Diagnostics.Tests" />
+		<InternalsVisibleTo Include="Chronicler.Diagnostics.NetStandard.Tests" />
+		<None Include="..\..\COPYRIGHT" Pack="true" PackagePath="\" Visible="false" />
+		<None Include="..\..\NOTICE" Pack="true" PackagePath="\" Visible="false" />
+		<None Include="..\..\LICENSE" Pack="true" PackagePath="\" Visible="false" />
+		<None Include="README.md" Pack="true" PackagePath="\" Visible="false" />
+		<None Include="..\..\icon.png" Pack="true" PackagePath="\" Visible="false" />
+	</ItemGroup>
+</Project>
