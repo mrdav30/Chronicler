@@ -63,7 +63,7 @@ Both Core variants include the same dependency-free simulation timing APIs.
 
 | Package                     | Includes                                                                     |
 | --------------------------- | ---------------------------------------------------------------------------- |
-| `Chronicler.Diagnostics` | Independent diagnostic channels, lazy logging, and exception guards |
+| `Chronicler.Diagnostics`    | Independent diagnostic channels, lazy logging, and exception guards          |
 | `Chronicler.Core`           | Core recording APIs plus JSON and MemoryPack transports                      |
 | `Chronicler.Core.Lean`      | Core recording APIs and JSON, without the MemoryPack dependency or transport |
 | `Chronicler.MemoryPackShim` | Compatibility attributes for annotated Lean assemblies; not a serializer     |
@@ -91,6 +91,7 @@ tools throughout the Lockstep Simulation Framework ecosystem:
 - [SwiftCollections](https://github.com/mrdav30/SwiftCollections)
 - [GridForge](https://github.com/mrdav30/GridForge)
 - [Gravitas](https://github.com/mrdav30/Gravitas)
+- [Trailblazer](https://github.com/mrdav30/Trailblazer)
 
 ## Resources
 
