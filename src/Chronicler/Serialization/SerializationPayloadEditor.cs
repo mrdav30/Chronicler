@@ -134,7 +134,7 @@ public static class SerializationPayloadEditor
 
     private static MemoryPackRecordEnvelope ReadEnvelope(byte[] data)
     {
-        return MemoryPackSerializer.Deserialize<MemoryPackRecordEnvelope>(data)
+        return MemoryPackRecordEnvelope.Deserialize(data)
             ?? new MemoryPackRecordEnvelope();
     }
 

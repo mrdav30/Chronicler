@@ -22,6 +22,12 @@ internal sealed partial class MemoryPackRecordEnvelope
     /// </summary>
     public MemoryPackRecordEntryTable? Entries { get; set; } = new();
 
+    // Enter this type first so generated formatter registration finishes before provider lookup.
+    internal static MemoryPackRecordEnvelope? Deserialize(ReadOnlySpan<byte> data)
+    {
+        return MemoryPackSerializer.Deserialize<MemoryPackRecordEnvelope>(data);
+    }
+
     internal static MemoryPackRecordEnvelope FromEntries(OrderedStringMap<byte[]?> entries)
     {
         return new MemoryPackRecordEnvelope

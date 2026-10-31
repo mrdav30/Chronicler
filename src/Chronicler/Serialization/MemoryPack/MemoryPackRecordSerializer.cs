@@ -164,7 +164,7 @@ public static class MemoryPackRecordSerializer
 
         public MemoryPackRecordReader(ReadOnlySpan<byte> data, ChronicleContext context)
         {
-            MemoryPackRecordEnvelope? envelope = MemoryPackSerializer.Deserialize<MemoryPackRecordEnvelope>(data);
+            MemoryPackRecordEnvelope? envelope = MemoryPackRecordEnvelope.Deserialize(data);
             _entries = envelope == null
                 ? new OrderedStringMap<byte[]?>(8, StringComparer.Ordinal)
                 : envelope.ToEntryMap();
