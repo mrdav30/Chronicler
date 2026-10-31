@@ -99,8 +99,8 @@ tools throughout the Lockstep Simulation Framework ecosystem:
   covers upgrade steps and compatibility changes.
 - [Source, issues, and releases](https://github.com/mrdav30/Chronicler)
 - [NuGet packages](https://www.nuget.org/packages/Chronicler.Core)
-- [Core test-suite coverage](https://mrdav30.github.io/Chronicler/coverage/)
+- [Test coverage](https://mrdav30.github.io/Chronicler/coverage/)
 
-The API reference is generated from the standard library and compatibility shim
-XML documentation. The guides explain how those types work together in
-task-oriented prose.
+The API reference is generated from the Core, Diagnostics, and compatibility
+shim assemblies and their XML documentation. The guides explain how those types
+work together.

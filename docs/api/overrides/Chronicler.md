@@ -22,11 +22,11 @@ the same recording schema to produce replay and conformance signals.
 host integrations, such as settings and configuration edited in a game engine.
 The host invokes each phase; Chronicler takes no engine dependency.
 
-The <xref:Chronicler.Timing> namespace provides immutable timestamps and durations
-with 64-bit whole seconds and 32 binary fractional bits, plus a host-advanced
-`ChronicleClock`. `RecordChronicleTime` records the values explicitly; clock
-population validates all state before mutation. Hosts retain simulation-loop
-and reset/restore lifetime ownership.
+The <xref:Chronicler.Timing> namespace provides immutable timestamps and
+durations with 64-bit whole seconds and 32 binary fractional bits, plus a
+host-advanced `ChronicleClock`. `RecordChronicleTime` records the values
+explicitly; clock population validates all state before mutation. Hosts retain
+simulation-loop and reset/restore lifetime ownership.
 
 Chronicler is designed for the deterministic
 [Lockstep Simulation Framework](https://github.com/mrdav30/FixedMathSharp)

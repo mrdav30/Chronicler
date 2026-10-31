@@ -1,9 +1,9 @@
 # MemoryPack Lean Source Shim Implementation Plan
 
 **Date:** 2026-06-28  
-**Status:** Done
-**Primary Repository:** `Chronicler`  
-**Related Repositories:** `FixedMathSharp`, `SwiftCollections`, `GridForge`, `Gravitas`
+**Status:** Done **Primary Repository:** `Chronicler`  
+**Related Repositories:** `FixedMathSharp`, `SwiftCollections`, `GridForge`,
+`Gravitas`
 
 ---
 
@@ -13,30 +13,43 @@
 > references. `Chronicler.MemoryPackShim` now supplies one shared public
 > attribute identity and remains serialization-free.
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` for independent review tasks, or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use
+> `superpowers:subagent-driven-development` for independent review tasks, or
+> `superpowers:executing-plans` to implement this plan task-by-task. Steps use
+> checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace copied per-library Lean MemoryPack shim files with a Chronicler-owned source-only shim package that compiles internal placeholder attributes into each consuming Lean assembly without exporting fake `MemoryPack` APIs.
+**Goal:** Replace copied per-library Lean MemoryPack shim files with a
+Chronicler-owned source-only shim package that compiles internal placeholder
+attributes into each consuming Lean assembly without exporting fake `MemoryPack`
+APIs.
 
-**Architecture:** Chronicler owns a small source-only NuGet package that contributes `MemoryPack.*` compatibility attributes through `buildTransitive` assets only when `DisableMemoryPack=true`. Standard builds continue to reference the real MemoryPack package and must not compile the shim. Downstream LSF libraries consume the shim package in their Lean item groups, remove local shim files, and validate Release/ReleaseLean package graphs in stack order.
+**Architecture:** Chronicler owns a small source-only NuGet package that
+contributes `MemoryPack.*` compatibility attributes through `buildTransitive`
+assets only when `DisableMemoryPack=true`. Standard builds continue to reference
+the real MemoryPack package and must not compile the shim. Downstream LSF
+libraries consume the shim package in their Lean item groups, remove local shim
+files, and validate Release/ReleaseLean package graphs in stack order.
 
-**Tech Stack:** .NET `netstandard2.1`/`net8.0`, MSBuild `buildTransitive` assets, source-only NuGet packaging, MemoryPack attribute compatibility, Chronicler, FixedMathSharp, SwiftCollections, GridForge, Gravitas.
+**Tech Stack:** .NET `netstandard2.1`/`net8.0`, MSBuild `buildTransitive`
+assets, source-only NuGet packaging, MemoryPack attribute compatibility,
+Chronicler, FixedMathSharp, SwiftCollections, GridForge, Gravitas.
 
 ## Purpose
 
-Each LSF library currently carries its own conditional `MemoryPack.Disable.Shim.cs`.
-That works for simple package builds, but it creates repeated maintenance and
-fragile local-link behavior when one Lean project builds another Lean project
-through `ProjectReference`. A shared runtime DLL with public fake
-`MemoryPack.*` attributes would avoid copied files, but it would also leak a
-false MemoryPack API surface into consumers and risk conflicts with the real
-MemoryPack package.
+Each LSF library currently carries its own conditional
+`MemoryPack.Disable.Shim.cs`. That works for simple package builds, but it
+creates repeated maintenance and fragile local-link behavior when one Lean
+project builds another Lean project through `ProjectReference`. A shared runtime
+DLL with public fake `MemoryPack.*` attributes would avoid copied files, but it
+would also leak a false MemoryPack API surface into consumers and risk conflicts
+with the real MemoryPack package.
 
 The right direction is a Chronicler-owned source-only package. The package
 should compile internal placeholder attributes into the consuming assembly only
 when the consuming project has opted out of MemoryPack. Because the placeholder
 types are internal source inside each consumer, public LSF types can keep their
-normal MemoryPack annotations in source without exporting fake MemoryPack
-types from Lean assemblies.
+normal MemoryPack annotations in source without exporting fake MemoryPack types
+from Lean assemblies.
 
 ## Non-Goals
 
@@ -158,25 +171,27 @@ source without changing `Chronicler.Core` runtime behavior.
 **Files:**
 
 - Create: `src/Chronicler.MemoryPackShim/Chronicler.MemoryPackShim.csproj`
-- Create: `src/Chronicler.MemoryPackShim/buildTransitive/Chronicler.MemoryPackShim.targets`
-- Create: `src/Chronicler.MemoryPackShim/contentFiles/cs/any/MemoryPack.Disable.Shim.cs`
+- Create:
+  `src/Chronicler.MemoryPackShim/buildTransitive/Chronicler.MemoryPackShim.targets`
+- Create:
+  `src/Chronicler.MemoryPackShim/contentFiles/cs/any/MemoryPack.Disable.Shim.cs`
 - Modify: `Chronicler.slnx`
 - Modify: `README.md`
 
 **Tasks:**
 
-- [x] Create the `Chronicler.MemoryPackShim` project as a packaging-only
-  project that produces a NuGet package and no runtime DLL.
+- [x] Create the `Chronicler.MemoryPackShim` project as a packaging-only project
+      that produces a NuGet package and no runtime DLL.
 - [x] Add package metadata that makes the package description explicit:
-  source-only MemoryPack compatibility attributes for Lean builds.
+      source-only MemoryPack compatibility attributes for Lean builds.
 - [x] Add `MemoryPack.Disable.Shim.cs` with the six internal attribute types
-  listed in the proposed package shape.
+      listed in the proposed package shape.
 - [x] Add `Chronicler.MemoryPackShim.targets` so the source is included only
-  when `DisableMemoryPack=true` and `ChroniclerMemoryPackShimEnabled` is not
-  `false`.
+      when `DisableMemoryPack=true` and `ChroniclerMemoryPackShimEnabled` is not
+      `false`.
 - [x] Add the project to `Chronicler.slnx`.
 - [x] Document the package in `README.md` as a source-only Lean helper, not a
-  serializer and not a runtime dependency.
+      serializer and not a runtime dependency.
 
 **Validation:**
 
@@ -187,19 +202,19 @@ dotnet build Chronicler.slnx -c ReleaseLean
 
 ## Workstream 2: Shim Consumer Fixtures
 
-**Goal:** Prove the source package behaves correctly before migrating the
-stack.
+**Goal:** Prove the source package behaves correctly before migrating the stack.
 
 **Files:**
 
-- Create: `tests/Chronicler.MemoryPackShim.Tests/Chronicler.MemoryPackShim.Tests.csproj`
+- Create:
+  `tests/Chronicler.MemoryPackShim.Tests/Chronicler.MemoryPackShim.Tests.csproj`
 - Create: `tests/Chronicler.MemoryPackShim.Tests/MemoryPackShimPackageTests.cs`
 - Modify: `Chronicler.slnx`
 
 **Tasks:**
 
 - [x] Add tests that pack `Chronicler.MemoryPackShim` and create a temporary
-  consumer project with `DisableMemoryPack=true`.
+      consumer project with `DisableMemoryPack=true`.
 - [x] In the temporary consumer, compile a public annotated type:
 
   ```csharp
@@ -217,13 +232,13 @@ stack.
   ```
 
 - [x] Assert the Lean consumer compiles without a `MemoryPack` package
-  reference.
+      reference.
 - [x] Assert the Lean consumer output does not include a public
-  `MemoryPack.MemoryPackableAttribute` type.
+      `MemoryPack.MemoryPackableAttribute` type.
 - [x] Add a standard consumer fixture with `DisableMemoryPack=false` that
-  references real `MemoryPack` and proves the shim source is not compiled.
+      references real `MemoryPack` and proves the shim source is not compiled.
 - [x] Add a fixture proving `ChroniclerMemoryPackShimEnabled=false` disables
-  source injection for projects that intentionally provide their own shim.
+      source injection for projects that intentionally provide their own shim.
 
 **Validation:**
 
@@ -246,9 +261,9 @@ dotnet test tests/Chronicler.MemoryPackShim.Tests/Chronicler.MemoryPackShim.Test
 **Tasks:**
 
 - [x] Verify `Chronicler.Core` and `Chronicler.Core.Lean` package behavior is
-  unchanged.
+      unchanged.
 - [x] Verify `Chronicler.MemoryPackShim` package contents include only
-  build/source assets and package metadata.
+      build/source assets and package metadata.
 - [x] Generate release notes that call out the new source-only helper package.
 
 **Validation:**
@@ -265,9 +280,9 @@ dotnet test Chronicler.slnx -c ReleaseLean
 - Added `Chronicler.MemoryPackShim`, a source-only Lean helper package that
   contributes internal `MemoryPack.*` compatibility attributes only when
   `DisableMemoryPack=true`.
-- Added package fixture coverage proving Lean consumers compile annotated
-  source without real MemoryPack, standard consumers keep using real MemoryPack,
-  and the shim package ships no runtime assembly.
+- Added package fixture coverage proving Lean consumers compile annotated source
+  without real MemoryPack, standard consumers keep using real MemoryPack, and
+  the shim package ships no runtime assembly.
 
 ## Workstream 4: FixedMathSharp Migration
 
@@ -281,13 +296,13 @@ source-only package in Lean builds.
 - Delete: `src/FixedMathSharp/Serialization/MemoryPack.Disable.Shim.cs`
 - Modify: `Directory.Build.props`
 - Modify: `src/FixedMathSharp/FixedMathSharp.csproj`
-- Modify: `tests/FixedMathSharp.Tests/FixedMathSharp.Tests.csproj` if local
-  test project references need explicit package flow.
+- Modify: `tests/FixedMathSharp.Tests/FixedMathSharp.Tests.csproj` if local test
+  project references need explicit package flow.
 
 **Tasks:**
 
 - [x] Add `Chronicler.MemoryPackShim` to the Lean item group with
-  `PrivateAssets="all"`.
+      `PrivateAssets="all"`.
 - [x] Delete the local shim file.
 - [x] Verify standard builds still reference real `MemoryPack`.
 - [x] Verify Lean builds do not reference real `MemoryPack`.
@@ -315,10 +330,10 @@ dotnet test FixedMathSharp.slnx -c ReleaseLean
   `Chronicler.MemoryPackShim` locally to
   `F:\gamedevrepos\Chronicler\artifacts\local-packages` and passing that path
   through `RestoreSources` for Lean builds.
-- FixedMathSharp's Lean package graph includes
-  `Chronicler.MemoryPackShim` as a private build-time source helper, does not
-  include real `MemoryPack`/`MemoryPack.Core`, and does not publish a runtime
-  dependency on the shim package.
+- FixedMathSharp's Lean package graph includes `Chronicler.MemoryPackShim` as a
+  private build-time source helper, does not include real
+  `MemoryPack`/`MemoryPack.Core`, and does not publish a runtime dependency on
+  the shim package.
 
 ## Workstream 5: SwiftCollections Migration
 
@@ -331,17 +346,19 @@ source-only package in Lean builds.
 
 - Delete: `src/SwiftCollections/Support/MemoryPack.Disable.Shim.cs`
 - Modify: `src/SwiftCollections/SwiftCollections.csproj`
-- Modify: `src/SwiftCollections.FixedMathSharp/SwiftCollections.FixedMathSharp.csproj` if package flow requires it.
-- Modify: test project files if local project references require explicit
-  Lean package flow during validation.
+- Modify:
+  `src/SwiftCollections.FixedMathSharp/SwiftCollections.FixedMathSharp.csproj`
+  if package flow requires it.
+- Modify: test project files if local project references require explicit Lean
+  package flow during validation.
 
 **Tasks:**
 
-- [x] Add `Chronicler.MemoryPackShim` to Lean item groups where annotated
-  source compiles without real `MemoryPack`.
+- [x] Add `Chronicler.MemoryPackShim` to Lean item groups where annotated source
+      compiles without real `MemoryPack`.
 - [x] Delete the local shim file.
 - [x] Keep `Chronicler.Core.Lean` references for actual Chronicler runtime APIs
-  where they are already used.
+      where they are already used.
 - [x] Verify standard builds still reference real `MemoryPack`.
 - [x] Verify Lean builds do not reference real `MemoryPack`.
 - [x] Run the SwiftCollections Release and ReleaseLean validation suites.
@@ -374,10 +391,10 @@ package in Lean builds.
 **Tasks:**
 
 - [x] Add `Chronicler.MemoryPackShim` to the Lean item group with
-  `PrivateAssets="all"`.
+      `PrivateAssets="all"`.
 - [x] Delete the local shim file.
 - [x] Keep MemoryPack annotations directly in source; do not wrap them in
-  `#if !GRIDFORGE_DISABLE_MEMORYPACK`.
+      `#if !GRIDFORGE_DISABLE_MEMORYPACK`.
 - [x] Verify standard builds still reference real `MemoryPack`.
 - [x] Verify Lean builds do not reference real `MemoryPack`.
 - [x] Run the GridForge Release and ReleaseLean validation suites.
@@ -412,19 +429,21 @@ lower-stack work.
 **Tasks:**
 
 - [x] Add `Chronicler.MemoryPackShim` to the Lean item group with
-  `PrivateAssets="all"`.
+      `PrivateAssets="all"`.
 - [x] Delete the local shim file.
 - [x] Keep MemoryPack annotations directly in source; do not wrap them in
-  `#if !GRAVITAS_DISABLE_MEMORYPACK`.
-- [x] When local project references are needed for sibling packages, add them
-  to the main, test, and benchmark projects only as active validation scaffolding.
-- [x] For local project references, pass `DisableMemoryPack=$(DisableMemoryPack)`
-  and remove parent `DefineConstants` from child builds so one library's Lean
-  symbol does not leak into another library's compile.
+      `#if !GRAVITAS_DISABLE_MEMORYPACK`.
+- [x] When local project references are needed for sibling packages, add them to
+      the main, test, and benchmark projects only as active validation
+      scaffolding.
+- [x] For local project references, pass
+      `DisableMemoryPack=$(DisableMemoryPack)` and remove parent
+      `DefineConstants` from child builds so one library's Lean symbol does not
+      leak into another library's compile.
 - [x] Leave local project references unstaged/uncommitted unless the repository
-  owner explicitly asks to commit them.
+      owner explicitly asks to commit them.
 - [x] Remove local project references before package release validation unless
-  the repository owner explicitly asks to keep them in place.
+      the repository owner explicitly asks to keep them in place.
 - [x] Run the Gravitas Release and ReleaseLean validation suites.
 
 **Validation:**

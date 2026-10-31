@@ -1,19 +1,13 @@
 //=======================================================================
 // DiagnosticChannel.cs
 //=======================================================================
-// MIT License, Copyright (c) 2024–present David Oravsky (mrdav30)
+// MIT License, Copyright (c) 2024-present David Oravsky (mrdav30)
 // See LICENSE file in the project root for full license information.
 //=======================================================================
 
 namespace Chronicler.Diagnostics;
 
 using System.Runtime.CompilerServices;
-
-/// <summary>
-/// Receives diagnostic events emitted by a <see cref="DiagnosticChannel"/>.
-/// </summary>
-/// <param name="diagnostic">The emitted diagnostic event.</param>
-public delegate void DiagnosticSink(in DiagnosticEvent diagnostic);
 
 /// <summary>
 /// Represents a named diagnostic channel with a configurable sink and minimum level.

@@ -24,5 +24,5 @@ items:
         href: https://github.com/mrdav30/Chronicler
       - name: NuGet
         href: https://www.nuget.org/packages/Chronicler.Core
-      - name: Core Test Coverage
+      - name: Test Coverage
         href: https://mrdav30.github.io/Chronicler/coverage/

@@ -28,7 +28,7 @@ internal static class AllocationTestHelper
         {
             IsBackground = true
         };
-        
+
         thread.Start();
         thread.Join();
 

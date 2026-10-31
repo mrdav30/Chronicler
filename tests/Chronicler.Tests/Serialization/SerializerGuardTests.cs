@@ -1,6 +1,6 @@
+using System;
 using Chronicler.Serialization;
 using FluentAssertions;
-using System;
 using Xunit;
 
 namespace Chronicler.Tests;

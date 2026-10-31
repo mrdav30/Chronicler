@@ -17,7 +17,8 @@ explicit contracts over convenience features.
 
 ## Project Snapshot
 
-- Diagnostics package ID: `Chronicler.Diagnostics` (independent; no Core dependency)
+- Diagnostics package ID: `Chronicler.Diagnostics` (independent; no Core
+  dependency)
 - Standard package ID: `Chronicler.Core`
 - Lean package ID: `Chronicler.Core.Lean`
 - Compatibility package ID: `Chronicler.MemoryPackShim`
@@ -46,8 +47,9 @@ Read these in order before making non-trivial changes:
    [`src/Chronicler.MemoryPackShim/Chronicler.MemoryPackShim.csproj`](src/Chronicler.MemoryPackShim/Chronicler.MemoryPackShim.csproj)
    for target frameworks, package variants, and dependency boundaries.
 3. The relevant source area under [`src/Chronicler`](src/Chronicler).
-4. The matching tests under [`tests/Chronicler.Tests`](tests/Chronicler.Tests)
-   and, for shim work,
+4. The matching tests under [`tests/Chronicler.Tests`](tests/Chronicler.Tests),
+   [`tests/Chronicler.Diagnostics.Tests`](tests/Chronicler.Diagnostics.Tests)
+   for diagnostics work, and
    [`tests/Chronicler.MemoryPackShim.Tests`](tests/Chronicler.MemoryPackShim.Tests).
 5. [`docs/api/guides/getting-started.md`](docs/api/guides/getting-started.md)
    and
@@ -62,14 +64,15 @@ Read these in order before making non-trivial changes:
    hashes or the Lean compatibility shim.
 
 Diagnostics, lazy message handlers, and exception guards live in the separate
-`src/Chronicler.Diagnostics` project and `Chronicler.Diagnostics` namespace.
-It has no runtime package dependencies and the same package serves standard and
+`src/Chronicler.Diagnostics` project and `Chronicler.Diagnostics` namespace. It
+has no runtime package dependencies and the same package serves standard and
 Lean consumers. Public netstandard compiler-attribute shims live there too.
 Library-specific channels and logger facades stay in the consuming libraries.
 The existing diagnostics suite verifies string overloads, caller information,
 explicit formatting guards, and lazy handler selection. Older-language consumer
 compilation is a focused release smoke check when these public APIs change;
-ordinary C# 14 unit tests do not establish older-compiler or host-runtime support.
+ordinary C# 14 unit tests do not establish older-compiler or host-runtime
+support.
 
 ## Source Of Truth
 
@@ -85,7 +88,7 @@ changes:
   namespace overrides, logo, repository link, and custom theme;
 - [`src/Chronicler`](src/Chronicler) and
   [`src/Chronicler.MemoryPackShim`](src/Chronicler.MemoryPackShim);
-- both test projects under [`tests`](tests);
+- all three test projects under [`tests`](tests);
 - relevant workflows under [`.github/workflows`](.github/workflows).
 
 Chronicler does not publish a GitHub Wiki. Keep conceptual documentation in the
@@ -148,23 +151,24 @@ Keep the distinction clear:
 - `src/Chronicler` Foundational `IRecordable`, `IChronicler`, and `IStateBacked`
   interfaces alongside the project file.
 - `src/Chronicler/Recording` Recording helpers, session context, serialization
-  mode, and `DefaultSaver` host lifecycle hooks. `DefaultSaver` supports explicit
-  settings/configuration integration with host editors and game engines without
-  taking an engine dependency.
-- `src/Chronicler/Recording/Links` Stable link recording, resolution, and registry
-  support. These types retain the root `Chronicler` namespace.
+  mode, and `DefaultSaver` host lifecycle hooks. `DefaultSaver` supports
+  explicit settings/configuration integration with host editors and game engines
+  without taking an engine dependency.
+- `src/Chronicler/Recording/Links` Stable link recording, resolution, and
+  registry support. These types retain the root `Chronicler` namespace.
 - `src/Chronicler/Hashing` Deterministic hash values, primitive writing, and the
   recording backend, in `Chronicler.Hashing`.
 - `src/Chronicler/Timing` Immutable signed durations, nonnegative timestamps,
-  and a host-advanced clock. Keep arithmetic dependency-free and compatible
-  with both target frameworks; check the final result after carry/borrow.
-  Advance and clock population validate before mutation. `RecordChronicleTime`
-  in Recording validates carriers after deep loading. Present deep structs load
-  directly from their payload; only missing structs use an empty reader to apply
-  declared defaults. Hosts own reset/restore lifetime invalidation.
+  and a host-advanced clock. Keep arithmetic dependency-free and compatible with
+  both target frameworks; check the final result after carry/borrow. Advance and
+  clock population validate before mutation. `RecordChronicleTime` in Recording
+  validates carriers after deep loading. Present deep structs load directly from
+  their payload; only missing structs use an empty reader to apply declared
+  defaults. Hosts own reset/restore lifetime invalidation.
 - `src/Chronicler/Serialization` Payload editing and shared ordered-map
   infrastructure, also used internally by link registration.
-- `src/Chronicler/Serialization/Json` JSON transport and state-backed converters.
+- `src/Chronicler/Serialization/Json` JSON transport and state-backed
+  converters.
 - `src/Chronicler/Serialization/MemoryPack` MemoryPack transport and envelope.
   All three folders use `Chronicler.Serialization`; transport folders do not
   create additional public namespaces.
@@ -176,6 +180,8 @@ Keep the distinction clear:
   and namespaces when moving tests; those identities affect hash vectors.
 - `tests/Chronicler.MemoryPackShim.Tests` Package-boundary and compatibility
   tests for the shim.
+- `tests/Chronicler.Diagnostics.Tests` Diagnostic channels, logging, lazy
+  handlers, and exception guards.
 - `docs/api` DocFX configuration, branded landing page, conceptual guides,
   namespace overrides, and theme. Generated output under `docs/api/obj` is
   ignored.
@@ -214,6 +220,13 @@ many new conceptual layers.
 - Follow the existing simple, direct C# style.
 - Avoid unnecessary abstraction layers in a library this small.
 - Keep comments and docs useful, not verbose.
+- Give each namespace-level type or delegate its own file. Public/internal
+  nested types belong in separate files; private nested helpers may stay with
+  their owner. Preserve recorded type identities when moving declarations.
+- Authored C# files under `src` carry the existing MIT license header with the
+  current filename. Test files do not carry license headers.
+- Use the cleanup and check commands in [CONTRIBUTING.md](CONTRIBUTING.md). Keep
+  generated output out of formatting and leave changes unstaged.
 
 ## Testing Expectations
 
@@ -239,9 +252,9 @@ Use these as the normal validation loop:
 
 ```bash
 dotnet build Chronicler.slnx -c Release
-dotnet test tests/Chronicler.Tests/Chronicler.Tests.csproj -c Release --no-build
+dotnet test Chronicler.slnx -c Release --no-build
 dotnet build Chronicler.slnx -c ReleaseLean
-dotnet test tests/Chronicler.Tests/Chronicler.Tests.csproj -c ReleaseLean --no-build
+dotnet test Chronicler.slnx -c ReleaseLean --no-build
 dotnet test Chronicler.slnx -c Release --collect:"XPlat Code Coverage" --settings tests/Chronicler.Tests/coverlet.runsettings
 dotnet tool restore
 dotnet tool run docfx docs/api/docfx.json --warningsAsErrors

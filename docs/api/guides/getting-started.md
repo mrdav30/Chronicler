@@ -85,8 +85,9 @@ object graph factory.
 
 ## 4. Choose another transport when needed
 
-The standard package exposes <xref:Chronicler.Serialization.MemoryPackRecordSerializer> over
-the same `RecordData(...)` schema:
+The standard package exposes
+<xref:Chronicler.Serialization.MemoryPackRecordSerializer> over the same
+`RecordData(...)` schema:
 
 ```csharp
 byte[] payload = MemoryPackRecordSerializer.Serialize(source);
@@ -117,10 +118,11 @@ whatever happened to be in the target object.
   ownership, stable IDs, deferred links, and state-backed JSON helpers.
 - Read [Deterministic record hashes](record-hashes.md) for replay and
   conformance signals.
-- Read [Simulation timing](simulation-timing.md) for exact timestamps, durations,
-  frame deadlines, and explicit clock advancement and restore.
-- Read the [migration guide](https://github.com/mrdav30/Chronicler/blob/main/docs/MIGRATION.md) when upgrading an existing
-  consumer.
-- Browse the <xref:Chronicler> recording contracts, <xref:Chronicler.Serialization>
-  transports, <xref:Chronicler.Hashing> hash APIs, and <xref:Chronicler.Timing>
-  timing APIs.
+- Read [Simulation timing](simulation-timing.md) for exact timestamps,
+  durations, frame deadlines, and explicit clock advancement and restore.
+- Read the
+  [migration guide](https://github.com/mrdav30/Chronicler/blob/main/docs/MIGRATION.md)
+  when upgrading an existing consumer.
+- Browse the <xref:Chronicler> recording contracts,
+  <xref:Chronicler.Serialization> transports, <xref:Chronicler.Hashing> hash
+  APIs, and <xref:Chronicler.Timing> timing APIs.

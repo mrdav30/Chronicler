@@ -92,15 +92,16 @@ clock. See the
 [migration guide](https://github.com/mrdav30/Chronicler/blob/main/docs/MIGRATION.md)
 when upgrading existing code.
 
-The independent `Chronicler.Diagnostics` package provides diagnostic channels, lazy
-logging, and exception guards without depending on either Core variant. See the
+The independent `Chronicler.Diagnostics` package provides diagnostic channels,
+lazy logging, and exception guards without depending on either Core variant. See
+the
 [diagnostics guide](https://mrdav30.github.io/Chronicler/guides/diagnostics.html).
 
 ## Choose a package
 
 | Package                                                                                 | Use it when                                                                                                                                 |
 | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`Chronicler.Diagnostics`](https://www.nuget.org/packages/Chronicler.Diagnostics) | You need shared logging and exception guards without serialization dependencies. |
+| [`Chronicler.Diagnostics`](https://www.nuget.org/packages/Chronicler.Diagnostics)       | You need shared logging and exception guards without serialization dependencies.                                                            |
 | [`Chronicler.Core`](https://www.nuget.org/packages/Chronicler.Core)                     | You want the core recording model plus built-in JSON and MemoryPack transports.                                                             |
 | [`Chronicler.Core.Lean`](https://www.nuget.org/packages/Chronicler.Core.Lean)           | You want the core recording model and JSON without the MemoryPack dependency or built-in MemoryPack transport.                              |
 | [`Chronicler.MemoryPackShim`](https://www.nuget.org/packages/Chronicler.MemoryPackShim) | A Lean library keeps MemoryPack annotations in its public metadata. This package supplies compatibility attributes; it is not a serializer. |
@@ -118,7 +119,7 @@ logging, and exception guards without depending on either Core variant. See the
 
 ```bash
 dotnet build Chronicler.slnx --configuration Release
-dotnet test tests/Chronicler.Tests/Chronicler.Tests.csproj --configuration Release --no-build
+dotnet test Chronicler.slnx --configuration Release --no-build
 ```
 
 See the
@@ -130,6 +131,14 @@ for the full workflow.
 Open an [issue](https://github.com/mrdav30/Chronicler/issues) for bugs and
 feature requests, or join the
 [LSF Discord community](https://discord.gg/mhwK2QFNBA).
+
+See
+[Support](https://github.com/mrdav30/Chronicler/blob/main/.github/SUPPORT.md),
+the
+[Code of Conduct](https://github.com/mrdav30/Chronicler/blob/main/CODE_OF_CONDUCT.md),
+and the
+[security policy](https://github.com/mrdav30/Chronicler/blob/main/SECURITY.md)
+for help and reporting guidance.
 
 Chronicler is available under the
 [MIT License](https://github.com/mrdav30/Chronicler/blob/main/LICENSE). See the

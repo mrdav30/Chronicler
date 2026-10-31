@@ -6,9 +6,9 @@ description: Use dependency-free diagnostic channels, lazy messages, and excepti
 # Diagnostics and guards
 
 `Chronicler.Diagnostics` is an independent package for host-facing diagnostics
-and exception guards. It targets `netstandard2.1` and `net10.0` without depending
-on `Chronicler.Core`, JSON, MemoryPack, or an engine. Standard and Lean consumers
-use the same package.
+and exception guards. It targets `netstandard2.1` and `net10.0` without
+depending on `Chronicler.Core`, JSON, MemoryPack, or an engine. Standard and
+Lean consumers use the same package.
 
 ```bash
 dotnet add package Chronicler.Diagnostics
@@ -54,30 +54,30 @@ if (channel.IsEnabled(DiagnosticLevel.Warning))
 ```
 
 The libraries are distributed as compiled assemblies. The `netstandard2.1`
-implementation uses C# 11; callers do not need to compile its source syntax.
-The .NET 10 implementation, tests, and benchmarks use C# 14. The existing
-diagnostics suite tests string behavior and modern lazy-handler selection.
-C# 9 consumer compilation is checked separately as a release smoke check when
-the public diagnostic API changes. These checks do not establish compatibility
-with every host runtime, AOT pipeline, or linker.
+implementation uses C# 11; callers do not need to compile its source syntax. The
+.NET 10 implementation and tests use C# 14. Host runtime, AOT, and linker
+support also depend on the consuming application's toolchain; validate those
+environments as part of your integration.
+
+## Use a library-owned facade
 
 <xref:Chronicler.Diagnostics.DiagnosticLogger> is an optional base for a
 library-owned facade. It provides normal/debug channels and configurable
 formatting and output. Its normal channel starts at Warning; debug logging is
 disabled. Its default output writes errors to stderr and other levels to stdout.
 
-Keep library-specific channel names and facades with their owning library.
-For example, SwiftCollections retains `SwiftCollectionDiagnostics.Shared`, and
+Keep library-specific channel names and facades with their owning library. For
+example, SwiftCollections retains `SwiftCollectionDiagnostics.Shared`, and
 GridForge retains `GridForgeLogger`. Diagnostics do not become recorded state or
 contribute to record hashes. Keep simulation decisions out of logging callbacks
 and interpolation expressions.
 
 ## Guard invalid inputs
 
-<xref:Chronicler.Diagnostics.ChronicleGuard> offers common argument, range, state,
-disposal, and key guards. It preserves parameter names and routes exceptions
-through separate throw methods. Its interpolated overloads build messages only
-when the guard fails:
+<xref:Chronicler.Diagnostics.ChronicleGuard> offers common argument, range,
+state, disposal, and key guards. It preserves parameter names and routes
+exceptions through separate throw methods. Its interpolated overloads build
+messages only when the guard fails:
 
 ```csharp
 int capacity = 128;
@@ -94,5 +94,6 @@ guard overloads and pass explicit parameter names where needed, for example
 guard message is evaluated before the guard runs. The netstandard assembly
 carries the public compiler attributes needed by downstream handler APIs.
 
-See the [migration guide](https://github.com/mrdav30/Chronicler/blob/main/docs/MIGRATION.md)
+See the
+[migration guide](https://github.com/mrdav30/Chronicler/blob/main/docs/MIGRATION.md)
 when upgrading from `SwiftCollections.Diagnostics`.

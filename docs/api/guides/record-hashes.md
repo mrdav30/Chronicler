@@ -19,7 +19,8 @@ transport's formatting and envelope details do not become part of the signal.
 
 ## Start with a recordable graph
 
-Use <xref:Chronicler.Hashing.ChronicleHashSerializer.Compute(Chronicler.IRecordable)>
+Use
+<xref:Chronicler.Hashing.ChronicleHashSerializer.Compute(Chronicler.IRecordable)>
 for a standalone graph:
 
 ```csharp
@@ -41,8 +42,8 @@ ChronicleHash hash = ChronicleHashSerializer.Compute(actorState, context);
 
 ## Compose a domain-owned hash
 
-Use <xref:Chronicler.Hashing.ChronicleHashWriter> when a replay or simulation hash needs
-domain metadata around a recordable subtree:
+Use <xref:Chronicler.Hashing.ChronicleHashWriter> when a replay or simulation
+hash needs domain metadata around a recordable subtree:
 
 ```csharp
 var writer = new ChronicleHashWriter();
@@ -71,9 +72,10 @@ Changing any of them is a hash-contract change, even if the resulting runtime
 state appears equivalent.
 
 Recorded type identities include their full names and generic arguments, so
-moving a recorded type to another namespace can change its hash. Moving the
-hash utilities into `Chronicler.Hashing` preserves the hash stream for unchanged
-recorded graphs. See the [migration guide](https://github.com/mrdav30/Chronicler/blob/main/docs/MIGRATION.md) for details.
+moving a recorded type to another namespace or containing type can change its
+hash. Moving a source file alone preserves that identity. See the
+[migration guide](https://github.com/mrdav30/Chronicler/blob/main/docs/MIGRATION.md)
+when upgrading existing consumers.
 
 ### Leaf values
 
@@ -100,7 +102,8 @@ hash never falls back to process-local object identity.
 
 ## Primitive byte contract
 
-<xref:Chronicler.Hashing.ChronicleHashWriter> writes deterministic primitive bytes:
+<xref:Chronicler.Hashing.ChronicleHashWriter> writes deterministic primitive
+bytes:
 
 - integral values are little-endian;
 - `char` is written as one UTF-16 code unit;

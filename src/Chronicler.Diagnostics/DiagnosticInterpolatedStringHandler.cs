@@ -1,7 +1,7 @@
 //=======================================================================
 // DiagnosticInterpolatedStringHandler.cs
 //=======================================================================
-// MIT License, Copyright (c) 2024–present David Oravsky (mrdav30)
+// MIT License, Copyright (c) 2024-present David Oravsky (mrdav30)
 // See LICENSE file in the project root for full license information.
 //=======================================================================
 
@@ -9,7 +9,9 @@ namespace Chronicler.Diagnostics;
 
 using System;
 using System.Runtime.CompilerServices;
+#if !NET6_0_OR_GREATER
 using System.Text;
+#endif
 
 /// <summary>
 /// Builds diagnostic messages for enabled diagnostic levels while allowing disabled levels
@@ -42,8 +44,7 @@ public ref struct DiagnosticInterpolatedStringHandler
         DiagnosticLevel level,
         out bool isEnabled)
         : this(literalLength, formattedCount, channel != null && channel.IsEnabled(level), out isEnabled)
-    {
-    }
+    { }
 
     internal DiagnosticInterpolatedStringHandler(
         int literalLength,

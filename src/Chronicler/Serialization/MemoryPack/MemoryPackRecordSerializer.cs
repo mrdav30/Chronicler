@@ -1,9 +1,16 @@
+//=======================================================================
+// MemoryPackRecordSerializer.cs
+//=======================================================================
+// MIT License, Copyright (c) 2024-present David Oravsky (mrdav30)
+// See LICENSE file in the project root for full license information.
+//=======================================================================
+
 #if !CHRONICLER_DISABLE_MEMORYPACK
 
-using MemoryPack;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using MemoryPack;
 
 namespace Chronicler.Serialization;
 

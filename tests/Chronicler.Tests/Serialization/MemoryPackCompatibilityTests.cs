@@ -1,6 +1,6 @@
+using System;
 using Chronicler.Serialization;
 using FluentAssertions;
-using System;
 using Xunit;
 
 namespace Chronicler.Tests;
@@ -30,9 +30,4 @@ public class MemoryPackCompatibilityTests
             RecordValues.Look(chronicler, ref Count, "count", 7);
         }
     }
-}
-
-[CollectionDefinition("MemoryPack compatibility", DisableParallelization = true)]
-public sealed class MemoryPackCompatibilityCollection
-{
 }

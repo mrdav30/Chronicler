@@ -1,5 +1,4 @@
 using System;
-using Chronicler.Diagnostics;
 using Xunit;
 
 namespace Chronicler.Diagnostics.Tests;

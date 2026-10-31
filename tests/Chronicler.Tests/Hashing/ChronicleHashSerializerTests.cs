@@ -1,7 +1,7 @@
-using Chronicler.Hashing;
-using FluentAssertions;
 using System;
 using System.Collections.Generic;
+using Chronicler.Hashing;
+using FluentAssertions;
 using Xunit;
 
 namespace Chronicler.Tests;

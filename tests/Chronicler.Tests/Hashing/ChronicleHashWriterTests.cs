@@ -1,6 +1,6 @@
+using System;
 using Chronicler.Hashing;
 using FluentAssertions;
-using System;
 using Xunit;
 
 namespace Chronicler.Tests;

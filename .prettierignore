@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+**/TestResults/
+artifacts/
+BenchmarkDotNet.Artifacts/
+.vs/
+.codex/
+node_modules/

@@ -3,15 +3,15 @@
 ## Migrating To v1.0.0
 
 Chronicler v1.0.0 groups transports and hash APIs into focused namespaces and
-removes the payload editor's untyped convenience methods. Update imports,
-fully qualified names, and payload-editor calls, then rebuild consuming
-libraries and applications together. A namespace change changes a CLR type's
-identity; an assembly compiled against the previous name must be rebuilt.
+removes the payload editor's untyped convenience methods. Update imports, fully
+qualified names, and payload-editor calls, then rebuild consuming libraries and
+applications together. A namespace change changes a CLR type's identity; an
+assembly compiled against the previous name must be rebuilt.
 
 ### Upgrade Checklist
 
-- Update Chronicler package references across consuming libraries and applications
-  to v1.0.0, keeping the appropriate standard or Lean package.
+- Update Chronicler package references across consuming libraries and
+  applications to v1.0.0, keeping the appropriate standard or Lean package.
 - Add `using Chronicler.Serialization;` where you use serializers, converters,
   or payload editing.
 - Add `using Chronicler.Hashing;` where you use hash values, writers, or record
@@ -35,9 +35,9 @@ Replace imports of `SwiftCollections.Diagnostics` for shared types with
 `SwiftCollections.Diagnostics.SwiftCollectionDiagnostics.Shared` stays in
 SwiftCollections; library-specific logger facades and channel names stay intact.
 
-The logging helpers also accept strings for C# 9 callers. Interpolated calls from
-older compilers format eagerly; use an explicit `IsEnabled` check when needed.
-C# 10 and later callers retain the lazy handler overloads. See the
+The logging helpers also accept strings for C# 9 callers. Interpolated calls
+from older compilers format eagerly; use an explicit `IsEnabled` check when
+needed. C# 10 and later callers retain the lazy handler overloads. See the
 [diagnostics guide](api/guides/diagnostics.md#older-language-callers).
 
 Rebuild consumers and adapters together: moved types have new CLR identities,
@@ -51,16 +51,16 @@ published package graph is compatible.
 
 Each type below previously lived directly in `Chronicler`:
 
-| Type | New namespace |
-| --- | --- |
-| `JsonRecordSerializer` | `Chronicler.Serialization` |
-| `MemoryPackRecordSerializer` | `Chronicler.Serialization` |
+| Type                                  | New namespace              |
+| ------------------------------------- | -------------------------- |
+| `JsonRecordSerializer`                | `Chronicler.Serialization` |
+| `MemoryPackRecordSerializer`          | `Chronicler.Serialization` |
 | `StateJsonConverter<TRecord, TState>` | `Chronicler.Serialization` |
-| `StateJsonConverterFactory` | `Chronicler.Serialization` |
-| `SerializationPayloadEditor` | `Chronicler.Serialization` |
-| `ChronicleHash` | `Chronicler.Hashing` |
-| `ChronicleHashWriter` | `Chronicler.Hashing` |
-| `ChronicleHashSerializer` | `Chronicler.Hashing` |
+| `StateJsonConverterFactory`           | `Chronicler.Serialization` |
+| `SerializationPayloadEditor`          | `Chronicler.Serialization` |
+| `ChronicleHash`                       | `Chronicler.Hashing`       |
+| `ChronicleHashWriter`                 | `Chronicler.Hashing`       |
+| `ChronicleHashSerializer`             | `Chronicler.Hashing`       |
 
 Import the domains your code uses:
 
@@ -88,12 +88,12 @@ below.
 accepted or returned `object`; their default transport and signatures differed
 between standard and Lean builds. Replace them with typed calls:
 
-| Removed method | JSON replacement | MemoryPack replacement (standard only) |
-| --- | --- | --- |
-| `SerializeRecord` | `JsonRecordSerializer.Serialize` | `MemoryPackRecordSerializer.Serialize` |
-| `PopulateRecord` | `JsonRecordSerializer.Populate` | `MemoryPackRecordSerializer.Populate` |
+| Removed method       | JSON replacement                                | MemoryPack replacement (standard only)             |
+| -------------------- | ----------------------------------------------- | -------------------------------------------------- |
+| `SerializeRecord`    | `JsonRecordSerializer.Serialize`                | `MemoryPackRecordSerializer.Serialize`             |
+| `PopulateRecord`     | `JsonRecordSerializer.Populate`                 | `MemoryPackRecordSerializer.Populate`              |
 | `RemovePayloadEntry` | `SerializationPayloadEditor.RemoveJsonProperty` | `SerializationPayloadEditor.RemoveMemoryPackEntry` |
-| `SetPayloadValue` | `SerializationPayloadEditor.SetJsonValue` | `SerializationPayloadEditor.SetMemoryPackValue` |
+| `SetPayloadValue`    | `SerializationPayloadEditor.SetJsonValue`       | `SerializationPayloadEditor.SetMemoryPackValue`    |
 
 JSON payloads remain `string`; MemoryPack payloads remain `byte[]`. Remove the
 `useMemoryPack` argument and select the corresponding method instead. A previous
@@ -137,9 +137,9 @@ attributes use the `MemoryPack` namespace. It does not provide a serializer.
 
 ### Payloads And Deterministic Hashes
 
-The reorganization preserves field names, record order, declared defaults,
-link semantics, and the built-in transport encoding. Existing payloads do not
-need rewriting because the serializer classes moved namespaces.
+The reorganization preserves field names, record order, declared defaults, link
+semantics, and the built-in transport encoding. Existing payloads do not need
+rewriting because the serializer classes moved namespaces.
 
 The hash implementation also preserves its existing stream for unchanged
 recorded graphs. However, recorded type identity is part of that stream:
@@ -150,9 +150,9 @@ recorded graphs. However, recorded type identity is part of that stream:
 - nested recordable carriers contribute their own type identities.
 
 Renaming or moving one of those recorded types can change hashes even when its
-fields and values are unchanged. This includes types declared for links.
-Moving only a source file, with its namespace and containing type unchanged,
-does not change that identity.
+fields and values are unchanged. This includes types declared for links. Moving
+only a source file, with its namespace and containing type unchanged, does not
+change that identity.
 
 `RecordChronicleTime` retains its nested `TimeRecord` identity, and
 `ChronicleClock` retains its existing namespace and schema. Their existing hash
@@ -160,6 +160,7 @@ golden vectors remain unchanged. Downstream namespace reorganizations should
 review their own recorded types separately and version replay/conformance
 contracts deliberately when those identities change.
 
-See [Deterministic record hashes](api/guides/record-hashes.md) for the complete hash
-contract and [Values, owned state, and links](api/guides/serialization-model.md) for the
+See [Deterministic record hashes](api/guides/record-hashes.md) for the complete
+hash contract and
+[Values, owned state, and links](api/guides/serialization-model.md) for the
 shared state model.

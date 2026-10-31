@@ -1,7 +1,7 @@
-using Chronicler.Serialization;
-using Chronicler.Hashing;
 using System;
 using System.Collections.Generic;
+using Chronicler.Hashing;
+using Chronicler.Serialization;
 using Chronicler.Timing;
 using Xunit;
 
@@ -14,8 +14,8 @@ public sealed class ChronicleTimeRecordingTests
         get
         {
             foreach (object[] transport in SerializationTransportData.All)
-            foreach (bool nullable in new[] { false, true })
-                yield return new object[] { transport[0], nullable };
+                foreach (bool nullable in new[] { false, true })
+                    yield return new object[] { transport[0], nullable };
         }
     }
 
@@ -44,17 +44,17 @@ public sealed class ChronicleTimeRecordingTests
         var source = new TimeStructContainer(nullable) { OptionalState = new TimeStruct() };
         object original = SerializationTestHarness.Serialize(source, transport);
         foreach (string field in new[] { "Duration", "Timestamp" })
-        foreach (string defect in new[] { "missing record", "missing schema", "unsupported schema" })
-        {
-            object payload = defect switch
+            foreach (string defect in new[] { "missing record", "missing schema", "unsupported schema" })
             {
-                "missing record" => SerializationTestHarness.RemoveEntry(original, transport, "State", field),
-                "missing schema" => SerializationTestHarness.RemoveEntry(original, transport, "State", field, "SchemaVersion"),
-                _ => SerializationTestHarness.SetValue(original, transport, 2, "State", field, "SchemaVersion")
-            };
-            Assert.Throws<InvalidOperationException>(() =>
-                SerializationTestHarness.Populate(new TimeStructContainer(nullable), payload, transport));
-        }
+                object payload = defect switch
+                {
+                    "missing record" => SerializationTestHarness.RemoveEntry(original, transport, "State", field),
+                    "missing schema" => SerializationTestHarness.RemoveEntry(original, transport, "State", field, "SchemaVersion"),
+                    _ => SerializationTestHarness.SetValue(original, transport, 2, "State", field, "SchemaVersion")
+                };
+                Assert.Throws<InvalidOperationException>(() =>
+                    SerializationTestHarness.Populate(new TimeStructContainer(nullable), payload, transport));
+            }
 
         object missing = SerializationTestHarness.RemoveEntry(original, transport, "State");
         if (nullable)
@@ -74,19 +74,19 @@ public sealed class ChronicleTimeRecordingTests
     {
         foreach (var duration in new[] { ChronicleDuration.Zero, new ChronicleDuration(-1, uint.MaxValue),
             new ChronicleDuration(long.MinValue, 0), new ChronicleDuration(long.MaxValue, uint.MaxValue) })
-        foreach (var timestamp in new[] { ChronicleTimestamp.Zero, new ChronicleTimestamp(0, 1),
+            foreach (var timestamp in new[] { ChronicleTimestamp.Zero, new ChronicleTimestamp(0, 1),
             new ChronicleTimestamp(long.MaxValue, uint.MaxValue) })
-        {
-            var source = new TimeValues { Duration = duration, Timestamp = timestamp };
-            var hash = ChronicleHashSerializer.Compute(source);
-            object payload = SerializationTestHarness.Serialize(source, transport);
-            var target = new TimeValues { Duration = new(7, 8), Timestamp = new(9, 10) };
-            SerializationTestHarness.Populate(target, payload, transport);
-            Assert.Equal(duration, target.Duration);
-            Assert.Equal(timestamp, target.Timestamp);
-            Assert.Equal(hash, ChronicleHashSerializer.Compute(target));
-            Assert.Equal(hash, ChronicleHashSerializer.Compute(source));
-        }
+            {
+                var source = new TimeValues { Duration = duration, Timestamp = timestamp };
+                var hash = ChronicleHashSerializer.Compute(source);
+                object payload = SerializationTestHarness.Serialize(source, transport);
+                var target = new TimeValues { Duration = new(7, 8), Timestamp = new(9, 10) };
+                SerializationTestHarness.Populate(target, payload, transport);
+                Assert.Equal(duration, target.Duration);
+                Assert.Equal(timestamp, target.Timestamp);
+                Assert.Equal(hash, ChronicleHashSerializer.Compute(target));
+                Assert.Equal(hash, ChronicleHashSerializer.Compute(source));
+            }
     }
 
     [Theory]
@@ -110,9 +110,9 @@ public sealed class ChronicleTimeRecordingTests
         get
         {
             foreach (object[] transport in SerializationTransportData.All)
-            foreach (string @field in new[] { "Duration", "Timestamp" })
-            foreach (string defect in new[] { "missing record", "missing schema", "unsupported schema" })
-                yield return new object[] { transport[0], @field, defect };
+                foreach (string @field in new[] { "Duration", "Timestamp" })
+                    foreach (string defect in new[] { "missing record", "missing schema", "unsupported schema" })
+                        yield return new object[] { transport[0], @field, defect };
         }
     }
 
@@ -197,11 +197,11 @@ public sealed class ChronicleTimeRecordingTests
         get
         {
             foreach (object[] transport in SerializationTransportData.All)
-            foreach (string defect in new[] { "root schema missing", "root schema unsupported", "negative frame",
+                foreach (string defect in new[] { "root schema missing", "root schema unsupported", "negative frame",
                 "elapsed missing", "elapsed schema missing", "elapsed schema unsupported", "negative elapsed",
                 "step missing", "step schema missing", "step schema unsupported", "zero step", "negative step",
                 "zero frame with elapsed", "nonzero frame without elapsed" })
-                yield return new object[] { transport[0], defect };
+                    yield return new object[] { transport[0], defect };
         }
     }
 
@@ -341,9 +341,12 @@ public sealed class ChronicleTimeRecordingTests
     private static ChronicleClock LoadClock(SerializationTransport transport, long frame,
         long seconds, uint fraction, ChronicleDuration step)
     {
-        var record = new RawClockRecord { FrameCount = frame,
+        var record = new RawClockRecord
+        {
+            FrameCount = frame,
             ElapsedTime = new RawTimeRecord(seconds, fraction),
-            StepDuration = new RawTimeRecord(step.WholeSeconds, step.FractionalSecond) };
+            StepDuration = new RawTimeRecord(step.WholeSeconds, step.FractionalSecond)
+        };
         var clock = RunningClock();
         SerializationTestHarness.Populate(clock, SerializationTestHarness.Serialize(record, transport), transport);
         return clock;

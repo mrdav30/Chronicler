@@ -28,10 +28,22 @@ public void RecordData(IChronicler chronicler)
 
 Saving and loading run this method in the same order. Field names, declared
 defaults, and the choice of recording helper are durable parts of the schema.
-The transports do not discover members with reflection or infer ownership from
-the object graph.
+The recording layer does not discover schema members with reflection or infer
+ownership from the object graph. Leaf values use the selected transport's own
+serialization rules.
 
 ## Pick a lane by ownership
+
+```mermaid
+flowchart TD
+    Field[State to record] --> Ownership{Who owns it?}
+    Ownership -->|Leaf data| Value[RecordValues]
+    Ownership -->|Owned nested state| Shape{Class or struct?}
+    Shape -->|Class| Deep[RecordDeep]
+    Shape -->|Struct| Struct[RecordDeepStruct]
+    Shape -->|Optional struct| Optional[RecordNullableDeep]
+    Ownership -->|Runtime or external object| Link[RecordLinks: stable ID]
+```
 
 ### Values
 
@@ -67,6 +79,19 @@ public void RecordData(IChronicler chronicler)
 The host remains responsible for construction, dependency injection, pooling,
 and runtime registration. Chronicler only transfers the recorded state.
 
+Missing or null entries have different meanings for each helper:
+
+| Helper               | Load behavior for a missing or null entry                                                                       |
+| -------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `RecordValues`       | Assigns the declared default.                                                                                   |
+| `RecordDeep`         | Leaves the existing reference and its state unchanged. A present non-null entry requires an initialized target. |
+| `RecordDeepStruct`   | Creates a fresh value and runs its schema against an empty reader to apply declared defaults.                   |
+| `RecordNullableDeep` | Assigns `null`.                                                                                                 |
+| `RecordLinks`        | Assigns `default(T)` and invokes the assignment callback, if supplied.                                          |
+
+A present deep struct loads directly into a fresh value. Its schema can reject
+missing required fields; an empty reader does not bypass those guards.
+
 ### Runtime-owned or external links
 
 Use <xref:Chronicler.RecordLinks> when a field points to an object that should
@@ -74,6 +99,19 @@ not be serialized inline. A <xref:Chronicler.ChronicleContext> carries the
 session's <xref:Chronicler.ChronicleLinkRegistry>:
 
 ```csharp
+using Chronicler;
+using Chronicler.Serialization;
+
+RuntimeEntity runtimeEntity = new();
+ActorState actorState = new() { Target = runtimeEntity };
+ActorState restoredActorState = new();
+ChronicleContext context = new();
+context.Links.RegisterInstance("player-42", runtimeEntity);
+
+string json = JsonRecordSerializer.Serialize(actorState, context);
+JsonRecordSerializer.Populate(restoredActorState, json, context);
+// restoredActorState.Target is the same runtimeEntity instance.
+
 public sealed class ActorState : IRecordable
 {
     public RuntimeEntity? Target;
@@ -84,11 +122,7 @@ public sealed class ActorState : IRecordable
     }
 }
 
-ChronicleContext context = new();
-context.Links.RegisterInstance("player-42", runtimeEntity);
-
-string json = JsonRecordSerializer.Serialize(actorState, context);
-JsonRecordSerializer.Populate(restoredActorState, json, context);
+public sealed class RuntimeEntity { }
 ```
 
 The registry maps a stable ID to the runtime instance and can also use a custom
@@ -102,9 +136,9 @@ loaded and throws if any remain unresolved.
 
 ## Transport behavior
 
-<xref:Chronicler.Serialization.JsonRecordSerializer> and, in the standard package,
-<xref:Chronicler.Serialization.MemoryPackRecordSerializer> implement the same
-<xref:Chronicler.IChronicler> contract. They both:
+<xref:Chronicler.Serialization.JsonRecordSerializer> and, in the standard
+package, <xref:Chronicler.Serialization.MemoryPackRecordSerializer> implement
+the same <xref:Chronicler.IChronicler> contract. They both:
 
 - call the type-owned schema directly;
 - populate an existing target;
@@ -119,9 +153,9 @@ is the state behavior expressed by `RecordData(...)`.
 
 <xref:Chronicler.IStateBacked`1> covers a separate System.Text.Json integration
 for helper objects that expose one canonical state value. Register
-<xref:Chronicler.Serialization.StateJsonConverterFactory> when each record type implements one
-`IStateBacked<TState>` contract and has a public constructor accepting that
-exact state type:
+<xref:Chronicler.Serialization.StateJsonConverterFactory> when each record type
+implements one `IStateBacked<TState>` contract and has a public constructor
+accepting that exact state type:
 
 ```csharp
 var options = new JsonSerializerOptions();
@@ -133,16 +167,22 @@ the helper from that state constructor. This is not the same as populating an
 `IRecordable` runtime shell; use it only when construction from canonical state
 is the intended contract.
 
+The factory discovers the state contract through reflection and compiles a
+constructor delegate. When the types are known, register a
+`StateJsonConverter<TRecord, TState>` with an explicit factory instead. The
+state payload still follows System.Text.Json's configured serialization rules.
+
 ## Payload editing
 
-<xref:Chronicler.Serialization.SerializationPayloadEditor> can remove or replace entries in a
-serialized payload. It is useful for compatibility tests and controlled schema
-migrations. Use the format-specific methods to keep the payload type explicit:
+<xref:Chronicler.Serialization.SerializationPayloadEditor> can remove or replace
+entries in a serialized payload. It is useful for compatibility tests and
+controlled schema migrations. Use the format-specific methods to keep the
+payload type explicit:
 
-| Format | Payload type | Set a value | Remove an entry |
-| --- | --- | --- | --- |
-| JSON (standard and Lean) | `string` | `SetJsonValue` | `RemoveJsonProperty` |
-| MemoryPack (standard only) | `byte[]` | `SetMemoryPackValue` | `RemoveMemoryPackEntry` |
+| Format                     | Payload type | Set a value          | Remove an entry         |
+| -------------------------- | ------------ | -------------------- | ----------------------- |
+| JSON (standard and Lean)   | `string`     | `SetJsonValue`       | `RemoveJsonProperty`    |
+| MemoryPack (standard only) | `byte[]`     | `SetMemoryPackValue` | `RemoveMemoryPackEntry` |
 
 Serialize and populate through the corresponding record serializer:
 
@@ -155,8 +195,8 @@ JsonRecordSerializer.Populate(target, json);
 
 Paths and replacement values must match the recorded schema. The editor
 serializes replacement values directly with the selected transport; it does not
-invoke `RecordData` to construct a replacement deep record. It parses the payload
-representation without populating a recordable object graph.
+invoke `RecordData` to construct a replacement deep record. It parses the
+payload representation without populating a recordable object graph.
 
 ## Host integration lifecycle
 

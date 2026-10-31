@@ -1,9 +1,9 @@
-using Chronicler.Serialization;
-using FluentAssertions;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using Chronicler.Serialization;
+using FluentAssertions;
 using Xunit;
 
 namespace Chronicler.Tests;

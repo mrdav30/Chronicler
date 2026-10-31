@@ -1,8 +1,8 @@
-using Chronicler.Serialization;
-using FluentAssertions;
 using System;
 using System.Text;
 using System.Text.Json;
+using Chronicler.Serialization;
+using FluentAssertions;
 using Xunit;
 
 namespace Chronicler.Tests;

@@ -1,60 +1,13 @@
 //=======================================================================
 // DiagnosticMessageHandler.cs
 //=======================================================================
-// MIT License, Copyright (c) 2024–present David Oravsky (mrdav30)
+// MIT License, Copyright (c) 2024-present David Oravsky (mrdav30)
 // See LICENSE file in the project root for full license information.
 //=======================================================================
 
 namespace Chronicler.Diagnostics;
 
 using System.Runtime.CompilerServices;
-
-/// <summary>
-/// Describes a fixed diagnostic level for an interpolated diagnostic message handler.
-/// </summary>
-public interface IDiagnosticLevelProvider
-{
-    /// <summary>
-    /// Gets the diagnostic level for this provider.
-    /// </summary>
-    DiagnosticLevel Level { get; }
-}
-
-/// <summary>
-/// Provides the info diagnostic level for fixed-level interpolated logging.
-/// </summary>
-public readonly struct InfoDiagnosticLevel : IDiagnosticLevelProvider
-{
-    /// <inheritdoc />
-    public DiagnosticLevel Level => DiagnosticLevel.Info;
-}
-
-/// <summary>
-/// Provides the warning diagnostic level for fixed-level interpolated logging.
-/// </summary>
-public readonly struct WarningDiagnosticLevel : IDiagnosticLevelProvider
-{
-    /// <inheritdoc />
-    public DiagnosticLevel Level => DiagnosticLevel.Warning;
-}
-
-/// <summary>
-/// Provides the error diagnostic level for fixed-level interpolated logging.
-/// </summary>
-public readonly struct ErrorDiagnosticLevel : IDiagnosticLevelProvider
-{
-    /// <inheritdoc />
-    public DiagnosticLevel Level => DiagnosticLevel.Error;
-}
-
-/// <summary>
-/// Provides a placeholder level for dynamic-level interpolated logging.
-/// </summary>
-public readonly struct DynamicDiagnosticLevel : IDiagnosticLevelProvider
-{
-    /// <inheritdoc />
-    public DiagnosticLevel Level => DiagnosticLevel.None;
-}
 
 /// <summary>
 /// Builds interpolated diagnostic messages only when the requested diagnostic level is enabled.

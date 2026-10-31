@@ -1,28 +1,7 @@
-using Chronicler.Serialization;
 using System;
-using System.Collections.Generic;
+using Chronicler.Serialization;
 
 namespace Chronicler.Tests;
-
-public enum SerializationTransport
-{
-    Json,
-    MemoryPack
-}
-
-public static class SerializationTransportData
-{
-    public static IEnumerable<object[]> All
-    {
-        get
-        {
-            yield return new object[] { SerializationTransport.Json };
-#if !CHRONICLER_DISABLE_MEMORYPACK
-            yield return new object[] { SerializationTransport.MemoryPack };
-#endif
-        }
-    }
-}
 
 internal static class SerializationTestHarness
 {
