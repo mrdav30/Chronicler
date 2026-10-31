@@ -76,6 +76,22 @@ compatibility with every host runtime or AOT pipeline.
    compatibility changes explicitly; these can affect persisted data and
    deterministic replay.
 
+## Local release archives
+
+With the .NET SDK and the global `GitVersion.Tool` tool available on `PATH`, run:
+
+```powershell
+.\.assets\scripts\set-version-and-build.ps1
+```
+
+The script builds Release and ReleaseLean, then writes ZIP archives for
+Chronicler, Chronicler.Diagnostics, and Chronicler.MemoryPackShim to
+`artifacts/releases/`. Each archive includes the project's output for one
+declared target framework. Names include the project, GitVersion version,
+framework, and configuration, for example
+`Chronicler-v1.0.0-netstandard2.1-releaselean.zip`. The current projects produce
+12 archives; obsolete framework directories from older builds are excluded.
+
 ## Formatting and file layout
 
 Run cleanup from the repository root with the .NET SDK selected by `global.json`

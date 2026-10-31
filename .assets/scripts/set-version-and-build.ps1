@@ -1,3 +1,5 @@
+$ErrorActionPreference = "Stop"
+
 # Import shared functions
 Set-Location (Split-Path $MyInvocation.MyCommand.Path)
 . .\utilities.ps1
@@ -9,46 +11,39 @@ Set-Location $solutionDir
 # Ensure GitVersion environment variables are set
 Ensure-GitVersion-Environment
 
-$solutionName = Split-Path $solutionDir -Leaf
+$archiveOutputDir = Join-Path $solutionDir "artifacts\releases"
+New-Item -ItemType Directory -Path $archiveOutputDir -Force | Out-Null
+Write-Host "Archives will be written to: $archiveOutputDir"
 
 # Build and package for each release configuration
 $configurations = @("Release", "ReleaseLean")
+$libraryProjects = @("Chronicler", "Chronicler.Diagnostics", "Chronicler.MemoryPackShim")
 
 foreach ($config in $configurations) {
     # Build the project with the current configuration
     Build-Project -Configuration $config
 
-    # Output directory for this configuration
-    $releaseDir = Join-Path $solutionDir "src\$solutionName\bin\$config"
+    $configLabel = $config.ToLowerInvariant()
 
-    # Determine archive label suffix (lowercase, hyphen-separated)
-    $configLabel = $config.ToLower() -replace "release", "release" # keeps "release" / "releaselean"
+    foreach ($projectName in $libraryProjects) {
+        $projectPath = Join-Path $solutionDir "src\$projectName\$projectName.csproj"
+        $project = [xml](Get-Content -LiteralPath $projectPath -Raw)
+        # Use declared targets so old build directories are not included.
+        $targetFrameworks = $project.SelectSingleNode("/Project/PropertyGroup/TargetFrameworks").InnerText.Split(';')
+        $releaseDir = Join-Path $solutionDir "src\$projectName\bin\$config"
 
-	if (-not (Test-Path $releaseDir)) {
-		Write-Warning "Release directory not found for configuration '$config': $releaseDir"
-		continue
-	}
+        foreach ($frameworkName in $targetFrameworks) {
+            $targetDir = Join-Path $releaseDir $frameworkName
+            if (-not (Test-Path -LiteralPath $targetDir -PathType Container)) {
+                throw "Framework output not found for $projectName ($config): $targetDir"
+            }
 
-	Get-ChildItem -Path $releaseDir -Directory | ForEach-Object {
-		$targetDir = $_.FullName
-		$frameworkName = $_.Name
+            $zipFileName = "${projectName}-v$($Env:GitVersion_FullSemVer)-${frameworkName}-${configLabel}.zip"
+            $zipPath = Join-Path $archiveOutputDir $zipFileName
 
-		# Construct final archive name
-		$zipFileName = "${solutionName}-v$($Env:GitVersion_FullSemVer)-${frameworkName}-${configLabel}.zip"
-		$zipPath = Join-Path $releaseDir $zipFileName
-
-		Write-Host "Creating archive: $zipPath"
-
-		if (Test-Path $zipPath) {
-			Remove-Item $zipPath -Force
-		}
-
-		Compress-Archive -Path "$targetDir\*" -DestinationPath $zipPath -Force
-
-		if (Test-Path $zipPath) {
-			Write-Host "Archive created for $frameworkName ($config)"
-		} else {
-			Write-Warning "Failed to create archive for $frameworkName ($config)"
-		}
-	}
+            Write-Host "Creating archive: $zipPath"
+            Compress-Archive -Path "$targetDir\*" -DestinationPath $zipPath -Force
+            Write-Host "Archive created for $projectName / $frameworkName ($config)"
+        }
+    }
 }
