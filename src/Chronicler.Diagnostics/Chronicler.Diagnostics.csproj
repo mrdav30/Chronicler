@@ -5,20 +5,6 @@
 		<LangVersion Condition="'$(TargetFramework)' == 'netstandard2.1'">11.0</LangVersion>
 		<Configurations>Debug;Release;ReleaseLean</Configurations>
 		<Optimize Condition="'$(Configuration)' == 'Release' Or '$(Configuration)' == 'ReleaseLean'">true</Optimize>
-		<SemVer Condition="'$(GitVersion_FullSemVer)' != ''">$(GitVersion_FullSemVer)</SemVer>
-		<!-- Stable source-only identity for coordinated diagnostics development. -->
-		<SemVer Condition="'$(UseLocalLsfStack)' == 'true' And '$(SemVer)' == ''">1.0.0</SemVer>
-		<SemVer Condition="'$(SemVer)' == ''">0.0.0</SemVer>
-		<InfoVer Condition="'$(GitVersion_InformationalVersion)' != ''">$(GitVersion_InformationalVersion)</InfoVer>
-		<InfoVer Condition="'$(InfoVer)' == ''">$(SemVer)</InfoVer>
-		<AssemblySemVer Condition="'$(GitVersion_AssemblySemVer)' != ''">$(GitVersion_AssemblySemVer)</AssemblySemVer>
-		<AssemblySemVer Condition="'$(AssemblySemVer)' == ''">$(SemVer).0</AssemblySemVer>
-		<AssemblySemFileVer Condition="'$(GitVersion_AssemblySemFileVer)' != ''">$(GitVersion_AssemblySemFileVer)</AssemblySemFileVer>
-		<AssemblySemFileVer Condition="'$(AssemblySemFileVer)' == ''">$(AssemblySemVer)</AssemblySemFileVer>
-		<InformationalVersion>$(InfoVer)</InformationalVersion>
-		<Version>$(SemVer)</Version>
-		<AssemblyVersion>$(AssemblySemVer)</AssemblyVersion>
-		<FileVersion>$(AssemblySemFileVer)</FileVersion>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<Deterministic>true</Deterministic>

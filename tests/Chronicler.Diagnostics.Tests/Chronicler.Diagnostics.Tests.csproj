@@ -13,7 +13,9 @@
 	</PropertyGroup>
 	
 	<ItemGroup>
-		<ProjectReference Include="..\..\src\Chronicler.Diagnostics\Chronicler.Diagnostics.csproj" />
+		<ProjectReference Include="..\..\src\Chronicler.Diagnostics\Chronicler.Diagnostics.csproj">
+			<AdditionalProperties Condition="'$(UseLocalLsfStack)' == 'true'">Configuration=$(Configuration);$(LocalLsfChroniclerProperties)</AdditionalProperties>
+		</ProjectReference>
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.4.0" />
 		<PackageReference Include="xunit.v3" Version="3.2.2" />
 		<PackageReference Include="xunit.v3.runner.console" Version="3.2.2">

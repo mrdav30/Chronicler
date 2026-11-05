@@ -39,10 +39,18 @@ dotnet tool run docfx docs/api/docfx.json --warningsAsErrors
 
 ## Pull Request Process
 
-For coordinated sibling builds, pass `-p:UseLocalLsfStack=true`. Chronicler and
-its Lean shim use local development identities to match the sibling dependency
-graph. These do not select release versions or make generated local packages
-publishable. Leave package mode as the default for real release validation.
+For coordinated sibling builds, pass `-p:UseLocalLsfStack=true`.
+`Directory.Build.props` owns the shared runtime version selection and local
+reference identities. Core, shim, and diagnostics use
+`0.0.0-chronicler-local-lsf` with assembly/file version `0.0.0.0`, even when
+GitVersion values are present. These identities do not change for releases.
+Leave package mode as the default for real release validation; generated
+source-mode packages are development artifacts.
+
+Set `$env:UseLocalLsfStack='true'` when running the shim package-consumer tests
+in source mode so their child builds inherit the same selection. Pass
+`-p:DisableTransitiveProjectReferences=true` globally through source-mode
+restore/build/test commands and serialize builds with `-m:1`.
 
 The independent `Chronicler.Diagnostics` package has no runtime package
 dependencies. Its existing .NET 10 tests cover string overloads, caller

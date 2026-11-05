@@ -9,24 +9,6 @@
 		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
 		<Deterministic>true</Deterministic>
 	</PropertyGroup>
-	
-	<!-- Git Versioning -->
-	<PropertyGroup>
-		<SemVer Condition="'$(GitVersion_FullSemVer)' != ''">$(GitVersion_FullSemVer)</SemVer>
-		<!-- Stable source-only identity for sibling restores, not a selected release version. -->
-		<SemVer Condition="'$(UseLocalLsfStack)' == 'true' And '$(SemVer)' == ''">0.4.0</SemVer>
-		<SemVer Condition="'$(SemVer)' == ''">0.0.0</SemVer>
-		<InfoVer Condition="'$(GitVersion_InformationalVersion)' != ''">$(GitVersion_InformationalVersion)</InfoVer>
-		<InfoVer Condition="'$(InfoVer)' == ''">$(SemVer)</InfoVer>
-		<AssemblySemVer Condition="'$(GitVersion_AssemblySemVer)' != ''">$(GitVersion_AssemblySemVer)</AssemblySemVer>
-		<AssemblySemVer Condition="'$(AssemblySemVer)' == ''">$(SemVer).0</AssemblySemVer>
-		<AssemblySemFileVer Condition="'$(GitVersion_AssemblySemFileVer)' != ''">$(GitVersion_AssemblySemFileVer)</AssemblySemFileVer>
-		<AssemblySemFileVer Condition="'$(AssemblySemFileVer)' == ''">$(AssemblySemVer)</AssemblySemFileVer>
-		<InformationalVersion>$(InfoVer)</InformationalVersion>
-		<Version>$(SemVer)</Version>
-		<AssemblyVersion>$(AssemblySemVer)</AssemblyVersion>
-		<FileVersion>$(AssemblySemFileVer)</FileVersion>
-	</PropertyGroup>
 
 	<!-- Code Analysis and Documentation -->
 	<PropertyGroup>
@@ -100,7 +82,9 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(DisableMemoryPack)' == 'true'">
-		<ProjectReference Include="..\Chronicler.MemoryPackShim\Chronicler.MemoryPackShim.csproj" />
+		<ProjectReference Include="..\Chronicler.MemoryPackShim\Chronicler.MemoryPackShim.csproj">
+			<AdditionalProperties Condition="'$(UseLocalLsfStack)' == 'true'">Configuration=$(Configuration);$(LocalLsfChroniclerProperties)</AdditionalProperties>
+		</ProjectReference>
 	</ItemGroup>
 	
 	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
