@@ -5,10 +5,9 @@ description: Use dependency-free diagnostic channels, lazy messages, and excepti
 
 # Diagnostics and guards
 
-`Chronicler.Diagnostics` is an independent package for host-facing diagnostics
-and exception guards. It targets `netstandard2.1` and `net10.0` without
-depending on `Chronicler.Core`, JSON, MemoryPack, or an engine. Standard and
-Lean consumers use the same package.
+Warn when a buffer reaches its 128-entry capacity and route the warning to a
+sink your application controls. Then use a guard to reject a request for 256
+entries. Both tasks use the independent `Chronicler.Diagnostics` package.
 
 ```bash
 dotnet add package Chronicler.Diagnostics
@@ -16,31 +15,44 @@ dotnet add package Chronicler.Diagnostics
 
 ## Configure a channel
 
-<xref:Chronicler.Diagnostics.DiagnosticChannel> starts disabled with a no-op
-sink. The host chooses the minimum level and output destination:
+A <xref:Chronicler.Diagnostics.DiagnosticChannel> gives events a name and
+filters them by level. It starts disabled with a no-op **sink**, the callback
+that receives enabled events. Set its minimum level to `Warning` and send events
+to the console. Run this in a console app that references the package.
 
 ```csharp
 using System;
 using Chronicler.Diagnostics;
 
-var channel = new DiagnosticChannel("MyLibrary")
+var channel = new DiagnosticChannel("Buffer")
 {
     MinimumLevel = DiagnosticLevel.Warning,
     Sink = WriteDiagnostic
 };
 
 int capacity = 128;
+channel.Info($"Checking capacity {capacity}.", source: "Buffer");
 channel.Warn($"Buffer capacity reached {capacity}.", source: "Buffer");
 
 static void WriteDiagnostic(in DiagnosticEvent diagnostic)
-    => Console.WriteLine($"[{diagnostic.Level}] {diagnostic.Channel}: {diagnostic.Message}");
+{
+    string label = $"[{diagnostic.Level}] {diagnostic.Channel}";
+    Console.WriteLine($"{label}: {diagnostic.Message}");
+}
+```
+
+Only the warning reaches the sink.
+
+```text
+[Warning] Buffer: Buffer capacity reached 128.
 ```
 
 `Info`, `Warn`, `Error`, and dynamic-level `Log` accept both strings and custom
 interpolated-string handlers. With C# 10 or later, interpolated calls select the
-handler overload and skip formatted expressions when disabled. String arguments
-are already formatted when the helper receives them. When a source is omitted,
-both paths derive it from caller file and method information.
+handler overload. The handler skips evaluating the disabled `Info` call's
+`{capacity}` expression. String arguments are evaluated before the helper
+receives them. When a source is omitted, both paths derive it from caller file
+and method information.
 
 ### Older-language callers
 
@@ -53,11 +65,12 @@ if (channel.IsEnabled(DiagnosticLevel.Warning))
     channel.Warn($"Buffer capacity reached {capacity}.", source: "Buffer");
 ```
 
-The libraries are distributed as compiled assemblies. The `netstandard2.1`
-implementation uses C# 11; callers do not need to compile its source syntax. The
-.NET 10 implementation and tests use C# 14. Host runtime, AOT, and linker
-support also depend on the consuming application's toolchain; validate those
-environments as part of your integration.
+The same package serves standard and Lean consumers. It targets `netstandard2.1`
+and `net10.0` without Core, transport, or engine dependencies. Consumers
+reference compiled assemblies. The `netstandard2.1` implementation uses C# 11
+and carries the public compiler attributes needed by downstream handler APIs.
+The .NET 10 implementation and tests use C# 14. Host runtime, AOT, and linker
+support depend on the application's toolchain.
 
 ## Use a library-owned facade
 
@@ -74,25 +87,24 @@ and interpolation expressions.
 
 ## Guard invalid inputs
 
-<xref:Chronicler.Diagnostics.ChronicleGuard> offers common argument, range,
-state, disposal, and key guards. It preserves parameter names and routes
-exceptions through separate throw methods. Its interpolated overloads build
-messages only when the guard fails:
+Use <xref:Chronicler.Diagnostics.ChronicleGuard> for argument, range, state,
+disposal, and key checks. Insert this before the `WriteDiagnostic` declaration
+to reuse the buffer capacity. The check throws `ArgumentOutOfRangeException`
+with parameter name `requested`, actual value `256`, and a message that includes
+the capacity of 128.
 
 ```csharp
-int capacity = 128;
 int requested = 256;
 ChronicleGuard.ThrowIfArgumentOutOfRange(
     requested > capacity, requested, nameof(requested),
-    $"Requested {requested} entries; capacity is {capacity}.");
+    $"Requested {requested} entries with capacity {capacity}.");
 ```
 
-The handler overloads support the same lazy-message behavior on both target
-frameworks when the caller uses C# 10 or later. Older callers can use the string
-guard overloads and pass explicit parameter names where needed, for example
-`ChronicleGuard.ThrowIfNull(settings, nameof(settings))`. A preformatted string
-guard message is evaluated before the guard runs. The netstandard assembly
-carries the public compiler attributes needed by downstream handler APIs.
+With C# 10 or later, the handler builds the message only when the guard fails on
+either target framework. Older callers can use string overloads and pass
+explicit parameter names, for example
+`ChronicleGuard.ThrowIfNull(settings, nameof(settings))`. The caller evaluates a
+preformatted message before invoking the guard.
 
 See the
 [migration guide](https://github.com/mrdav30/Chronicler/blob/main/docs/MIGRATION.md)

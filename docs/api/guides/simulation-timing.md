@@ -5,15 +5,99 @@ description: Advance and restore exact simulation time without floating point or
 
 # Simulation timing
 
-An instant tells you **when** something happened. A duration tells you **how
-much time** separates two instants. Keeping those concepts distinct avoids
-squeezing a long-running simulation's entire history into the numeric type used
-for one physics step.
+Advance a simulation clock twice, save it at frame 2 with 0.75 seconds elapsed,
+then restore it and advance once more. The restored clock reaches frame 3 at
+exactly 1 second. The host controls when each step runs.
 
-<xref:Chronicler.Timing.ChronicleTimestamp> is a nonnegative instant measured
-from a simulation origin. <xref:Chronicler.Timing.ChronicleDuration> is a signed
-interval. Both are immutable values available in the Standard and Lean packages,
-with no math-library or engine dependency.
+<xref:Chronicler.Timing.ChronicleTimestamp> is an instant measured from the
+simulation's origin. <xref:Chronicler.Timing.ChronicleDuration> is a signed
+interval, such as the time added by one step. Both are immutable and available
+in the standard and Lean packages without a math-library or engine dependency.
+
+See [arithmetic and boundaries](#arithmetic-and-boundaries) for overflow and
+range rules, and [record values and clock state](#record-values-and-clock-state)
+for schema order and load failures.
+
+## Advance a clock explicitly
+
+<xref:Chronicler.Timing.ChronicleClock> starts at frame/time zero and advances
+only when its owner calls `Advance()`. Supply a positive step; there is no
+default frame rate. `FrameCount` is a signed `long`, and `ElapsedTime`
+accumulates each actual step. Changing `StepDuration` affects future advances,
+never history.
+
+Start with a half-second step. At frame 1, switch to quarter-second steps. Set a
+deadline two advances from the start and save when the clock reaches it. Paste
+this into a console app that references either Core package.
+
+```csharp
+using System;
+using Chronicler.Serialization;
+using Chronicler.Timing;
+
+var halfSecond = new ChronicleDuration(0, 0x80000000);
+var quarterSecond = new ChronicleDuration(0, 0x40000000);
+var clock = new ChronicleClock(halfSecond);
+long due = clock.GetDeadlineFrame(2);
+
+clock.Advance(); // Frame 1, 0.5 s.
+clock.SetStepDuration(quarterSecond);
+clock.Advance(); // Frame 2, 0.75 s.
+Console.WriteLine(clock.FrameCount >= due); // True
+
+string snapshot = JsonRecordSerializer.Serialize(clock);
+var restored = new ChronicleClock(halfSecond);
+JsonRecordSerializer.Populate(restored, snapshot);
+restored.Advance();
+Console.WriteLine(restored.FrameCount); // 3
+Console.WriteLine(restored.ElapsedTime == new ChronicleTimestamp(1, 0)); // True
+```
+
+The snapshot restores the quarter-second step as well as frame 2 and elapsed
+time. The next advance adds 0.25 seconds to the restored 0.75 seconds.
+
+`GetDeadlineFrame` adds a nonnegative offset to the current frame in checked
+arithmetic. Zero selects the current frame. Step changes leave frame deadlines
+fixed because they count advances. For a deadline measured in seconds, compare
+`ElapsedTime` to a target timestamp. The host checks deadlines and runs the
+corresponding work.
+
+`Reset()` returns frame/time to zero while retaining the configured step.
+`Advance()` rejects an exhausted frame counter with `InvalidOperationException`
+or an unrepresentable timestamp with `OverflowException`, leaving all clock
+state unchanged. A deadline overflow also throws `OverflowException`.
+Zero/negative steps and negative deadline offsets throw
+`ArgumentOutOfRangeException`.
+
+### Restore a running world
+
+Coordinate clock access on the host because the clock is not thread-safe. Before
+resetting or restoring a running world, stop advancement and discard waits and
+pending work from the old simulation lifetime. Prepare the target objects and
+link registrations, restore the clock and corresponding world state, then resume
+ordered input. Use the owning context's lifecycle API when it manages a private
+clock.
+
+```mermaid
+flowchart TD
+    accTitle: Restore a world at frame 2
+    accDescr: The host pauses and prepares the destination. Chronicler populates frame 2, the clock step, and corresponding world state. The host resumes after successful population.
+    Pause["Host pauses and clears pending work"]
+    Prepare["Host prepares objects and links"]
+    Restore["Chronicler populates frame 2 and world state"]
+    Resume["Host resumes at 0.75 s"]
+    Pause --> Prepare --> Restore --> Resume
+```
+
+In a world checkpoint taken at the example's frame 2, the host can resume at
+0.75 seconds after restoring all state. Clock population applies all its fields
+after validation. Other world objects can be partly updated on failure.
+
+Gravitas and Trailblazer each own their clock. A host using both advances each
+context once per gameplay step with matching durations; the navigation adapter
+does not add another advance, synchronize rates, or repair a missed step. The
+standalone `ChronicleClock` example above does not replace either context's
+loop.
 
 ## Seconds and fractions
 
@@ -22,14 +106,15 @@ fractional unit is exactly `2^-32` seconds; `0x40000000` represents a quarter
 second, and `0x80000000` represents half a second. Fractions never change
 precision as the simulation ages.
 
-Whole seconds are the mathematical floor, not truncation toward zero:
+Whole seconds are the mathematical floor. A negative fraction is represented by
+a negative whole part plus a nonnegative fraction.
 
-| Value                        | WholeSeconds | FractionalSecond |
-| ---------------------------- | -----------: | ---------------: |
-| Zero                         |            0 |                0 |
-| Half a second                |            0 |     `0x80000000` |
-| Negative half a second       |           -1 |     `0x80000000` |
-| Negative one fractional unit |           -1 |  `uint.MaxValue` |
+| Value                        | Seconds |        Fraction |
+| ---------------------------- | ------: | --------------: |
+| Zero                         |       0 |               0 |
+| Half a second                |       0 |    `0x80000000` |
+| Negative half a second       |      -1 |    `0x80000000` |
+| Negative one fractional unit |      -1 | `uint.MaxValue` |
 
 Every duration component pair is canonical. Timestamps reject negative whole
 seconds with `ArgumentOutOfRangeException`. The default value of either type is
@@ -97,100 +182,6 @@ lookup of historical frame numbers. This dependency points toward Chronicler,
 never from Chronicler to the math library. See the companion guide for exact
 conversion examples.
 
-## Advance a clock explicitly
-
-<xref:Chronicler.Timing.ChronicleClock> starts at frame/time zero and advances
-only when its owner calls `Advance()`. Supply a positive step; there is no
-default frame rate. `FrameCount` is a signed `long`, and `ElapsedTime`
-accumulates each actual step. Changing `StepDuration` affects future advances,
-never history.
-
-This complete example changes from half-second to quarter-second steps, saves
-the clock, restores a host-created shell, and continues:
-
-```csharp
-using Chronicler;
-using Chronicler.Serialization;
-using Chronicler.Timing;
-
-public static class ClockExample
-{
-    public static ChronicleClock RestoreAndAdvance()
-    {
-        var clock = new ChronicleClock(new ChronicleDuration(0, 0x80000000));
-        clock.Advance();
-        clock.SetStepDuration(new ChronicleDuration(0, 0x40000000));
-        clock.Advance();
-
-        string snapshot = JsonRecordSerializer.Serialize(clock);
-        var restored = new ChronicleClock(new ChronicleDuration(1, 0));
-        JsonRecordSerializer.Populate(restored, snapshot);
-        restored.Advance();
-        return restored; // Frame 3, exactly 1 second elapsed, quarter-second step.
-    }
-}
-```
-
-`GetDeadlineFrame(offset)` checked-adds a nonnegative frame offset; zero selects
-the current frame. It does not schedule anything. Frame offsets count advances,
-not seconds, so step changes do not move an existing frame deadline.
-
-This fragment is the body of a method; the deadline is reached after two
-advances even though those advances use different step sizes:
-
-```csharp
-var clock = new ChronicleClock(new ChronicleDuration(0, 0x80000000));
-long due = clock.GetDeadlineFrame(2);
-clock.Advance(); // Frame 1: not due yet; 0.5 seconds elapsed.
-clock.SetStepDuration(new ChronicleDuration(0, 0x40000000));
-clock.Advance(); // Frame 2: due; 0.75 seconds elapsed.
-bool isDue = clock.FrameCount >= due;
-```
-
-Use an elapsed timestamp deadline instead when the requirement is a number of
-seconds rather than a number of advances. Neither form schedules work itself.
-
-`Reset()` returns frame/time to zero while retaining the configured step.
-`Advance()` rejects an exhausted frame counter with `InvalidOperationException`
-or an unrepresentable timestamp with `OverflowException`, leaving all clock
-state unchanged. A deadline overflow also throws `OverflowException`.
-Zero/negative steps and negative deadline offsets throw
-`ArgumentOutOfRangeException`.
-
-The clock is not thread-safe and does not run your simulation. A reset or
-restore starts a new owner-controlled lifetime: quiesce the host, invalidate old
-waits and pending work, and coordinate other restored state. Clock
-transactionality does not roll back unrelated host code or exceptions later in a
-simulation step.
-
-For a coordinated restore, stop advancement first, discard old pending work,
-restore the clock and the state that belongs to its origin, then resume ordered
-input. Restoring only the clock is not a rollback of the world. A context that
-owns a clock may deliberately expose no live-clock population API; use that
-context's supported lifecycle instead of reaching into its private clock.
-
-```mermaid
-sequenceDiagram
-    participant Host
-    participant World as Runtime shell
-    participant Chronicler
-    Host->>Host: Stop advancement and invalidate pending work
-    Host->>World: Prepare objects and stable link registrations
-    Host->>Chronicler: Populate clock and recorded world state
-    Chronicler->>World: Apply schemas and resolve deferred links
-    Chronicler-->>Host: Return after successful population
-    Host->>Host: Resume ordered input and advancement
-```
-
-The host coordinates these steps. A population failure can leave other world
-objects partly updated even though the clock's own population is transactional.
-
-Gravitas and Trailblazer each own their clock. A host using both advances each
-context once per gameplay step with matching durations; the navigation adapter
-does not add another advance, synchronize rates, or repair a missed step. The
-standalone `ChronicleClock` example above does not replace either context's
-loop.
-
 ## Record values and clock state
 
 Use <xref:Chronicler.RecordChronicleTime> inside your type's `RecordData` for
@@ -215,10 +206,11 @@ be zero or both positive. A missing frame defaults to zero; both nested schemas
 are required. The clock does **not** require elapsed time to equal frame count
 times the current step, because step sizes can change.
 
-JSON and MemoryPack follow this same schema; Lean uses JSON. Missing/unsupported
-schemas and inconsistent frame/time pairs throw `InvalidOperationException`;
-negative timestamps and nonpositive steps throw `ArgumentOutOfRangeException`.
-Malformed transport payloads can also raise their transport's parsing errors.
-Any failed clock population leaves frame, elapsed time, and step unchanged.
+JSON and MemoryPack follow this same schema. Lean uses JSON. Missing or
+unsupported schemas, negative frame counts, and inconsistent frame/time pairs
+throw `InvalidOperationException`. Negative timestamps and nonpositive steps
+throw `ArgumentOutOfRangeException`. Malformed transport payloads can also raise
+parsing errors. When the clock's payload fails to parse or its schema fails
+validation, its frame, elapsed time, and step stay unchanged.
 <xref:Chronicler.Hashing.ChronicleHashSerializer> hashes the ordered schema,
 including the full-width frame and fractions, without recording host identity.

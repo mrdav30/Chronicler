@@ -33,10 +33,11 @@ body {
 }
 
 .chr-hero h1 {
-  max-width: 17ch;
+  max-width: 22ch;
   margin-block: 0.2rem 0.75rem;
   font-size: clamp(2rem, 5vw, 3.5rem);
   line-height: 1.05;
+  text-wrap: balance;
 }
 
 .chr-hero > p:not(.chr-kicker) {
@@ -83,29 +84,39 @@ body {
 }
 
 .chr-actions a:hover,
-.chr-actions a:focus-visible {
+.chr-actions a:focus-visible,
+.chr-card:hover,
+.chr-card:focus-visible {
   border-color: rgb(var(--chr-green-rgb));
   box-shadow: 0 0 0 0.2rem rgba(var(--chr-green-rgb), 0.2);
 }
 
 .chr-card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   margin-block: 1rem 2.5rem;
 }
 
 .chr-card {
+  flex: 1 1 17rem;
+  min-width: 0;
   padding: 1.25rem;
   border: 1px solid var(--bs-border-color);
   border-radius: 0.75rem;
   background: var(--bs-body-bg);
   box-shadow: 0 0.35rem 1.1rem rgba(var(--chr-green-rgb), 0.08);
+  color: var(--bs-body-color);
+  text-decoration: none;
 }
 
-.chr-card h3 {
-  margin-top: 0;
+.chr-card-title {
+  display: block;
+  margin-bottom: 0.5rem;
   font-size: 1.05rem;
+  color: rgb(var(--bs-link-color-rgb));
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 
 .chr-card p {

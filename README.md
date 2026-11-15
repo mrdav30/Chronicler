@@ -56,6 +56,7 @@ PlayerSnapshot source = new() { Health = 72 };
 string json = JsonRecordSerializer.Serialize(source, writeIndented: true);
 
 PlayerSnapshot restored = new(); // The host creates and initializes the shell.
+restored.Weapon.Ammo = 2;
 JsonRecordSerializer.Populate(restored, json);
 
 public sealed class PlayerSnapshot : IRecordable
@@ -83,7 +84,8 @@ public sealed class WeaponSnapshot : IRecordable
 
 The same `RecordData(...)` implementation works with
 `MemoryPackRecordSerializer` in the standard package. `restored.Health` is now
-`72`; its existing `Weapon` keeps the declared ammo default of `30`.
+`72` and its existing `Weapon` resets from `2` rounds to the declared default of
+`30`.
 
 Recording contracts and helpers live in `Chronicler`. Use
 `Chronicler.Serialization` for transports and converters, `Chronicler.Hashing`
@@ -109,9 +111,7 @@ the
 ## Learn more
 
 - [Getting started](https://mrdav30.github.io/Chronicler/guides/getting-started.html)
-- [Understand values, owned state, and links](https://mrdav30.github.io/Chronicler/guides/serialization-model.html)
-- [Use deterministic record hashes](https://mrdav30.github.io/Chronicler/guides/record-hashes.html)
-- [Represent simulation time](https://mrdav30.github.io/Chronicler/guides/simulation-timing.html)
+- [Browse all guides](https://mrdav30.github.io/Chronicler/#guides)
 - [Browse the API reference](https://mrdav30.github.io/Chronicler/api/Chronicler.html)
 - [View test coverage](https://mrdav30.github.io/Chronicler/coverage/)
 

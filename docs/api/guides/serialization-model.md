@@ -5,12 +5,14 @@ description: Understand Chronicler's explicit schema, runtime-shell ownership, d
 
 # Values, owned state, and links
 
-Chronicler separates state by ownership. That distinction keeps schemas explicit
-and prevents a restore pass from quietly taking control of a runtime's object
-lifecycle.
+Restore a player with 72 health and 30 rounds while keeping the weapon object
+your game already owns. If the player also targets another entity, save that
+entity's stable ID so the game can bind the reference to the corresponding
+object in the restored world.
 
-The examples use `Chronicler` for recording contracts and helpers, and
-`Chronicler.Serialization` for serializers, converters, and payload editing.
+Start with the [player walkthrough](getting-started.md) for the complete types.
+A **runtime shell** is the player and any owned objects that the host creates
+and initializes before handing them to `Populate`.
 
 ## One schema, ordered by code
 
@@ -21,29 +23,40 @@ Every recordable type implements
 public void RecordData(IChronicler chronicler)
 {
     RecordValues.Look(chronicler, ref Health, "health", 100);
-    RecordDeep.Look(chronicler, ref Inventory, "inventory");
-    RecordLinks.Look(chronicler, ref Target, "target");
+    RecordDeep.Look(chronicler, ref Weapon, "weapon");
 }
 ```
 
-Saving and loading run this method in the same order. Field names, declared
-defaults, and the choice of recording helper are durable parts of the schema.
-The recording layer does not discover schema members with reflection or infer
-ownership from the object graph. Leaf values use the selected transport's own
-serialization rules.
+Each pass calls `RecordData` directly. Its statements determine processing
+order, field names, defaults, and how each field maps to the runtime shell. Leaf
+values use the selected transport's own serialization rules.
 
-## Pick a lane by ownership
+In the walkthrough, the writer reads `source` and emits 72 health and an empty
+weapon record. The reader restores 72 health and 30 rounds in the host-created
+`restored` player and its existing weapon.
 
 ```mermaid
 flowchart TD
-    Field[State to record] --> Ownership{Who owns it?}
-    Ownership -->|Leaf data| Value[RecordValues]
-    Ownership -->|Owned nested state| Shape{Class or struct?}
-    Shape -->|Class| Deep[RecordDeep]
-    Shape -->|Struct| Struct[RecordDeepStruct]
-    Shape -->|Optional struct| Optional[RecordNullableDeep]
-    Ownership -->|Runtime or external object| Link[RecordLinks: stable ID]
+    accTitle: Save and restore the player snapshot
+    accDescr: Serialize reads source and writes JSON with health 72 and an empty weapon record. Populate updates restored to health 72 and ammo 30 and keeps its existing weapon.
+    Source["source: health 72, ammo 30"]
+    Payload["JSON: health 72, weapon {}"]
+    Restored["restored: health 72, ammo 30"]
+    Source -->|Serialize| Payload
+    Payload -->|Populate existing objects| Restored
 ```
+
+<a id="pick-a-lane-by-ownership"></a>
+
+## Choose by state ownership
+
+| Field or state kind                 | Helper                               | Load when the entry is missing or null                    |
+| ----------------------------------- | ------------------------------------ | --------------------------------------------------------- |
+| `Health` or `Ammo`, a leaf value    | <xref:Chronicler.RecordValues>       | Assign the declared default.                              |
+| `Weapon`, an owned class            | <xref:Chronicler.RecordDeep>         | Keep the existing reference and state.                    |
+| Owned recordable struct             | <xref:Chronicler.RecordDeepStruct>   | Run the schema on a fresh value with an empty reader.     |
+| Optional recordable struct          | <xref:Chronicler.RecordNullableDeep> | Assign `null`.                                            |
+| `Target`, an object owned elsewhere | <xref:Chronicler.RecordLinks>        | Assign `default(T)` and invoke the callback, if supplied. |
 
 ### Values
 
@@ -54,63 +67,48 @@ explicitly:
 RecordValues.Look(chronicler, ref Health, "health", 100);
 ```
 
-When `health` is absent during loading, the field becomes `100`. The result does
-not depend on the target object's previous value.
+Both writers omit null leaf values and values equal to the declared default.
+When `health` is absent or null during loading, the field becomes `100`
+regardless of the target object's previous value.
 
 ### Owned nested state
 
-Use the deep helpers when the current object owns the nested state:
+A present `"weapon": {}` runs the weapon's schema, so missing `ammo` resets its
+count to 30. A missing or null `weapon` entry skips the weapon's schema
+entirely. If the payload contains a weapon record and the target's `Weapon` is
+null, `Populate` throws `InvalidOperationException`. The host owns construction,
+pooling, and runtime registration.
 
-- <xref:Chronicler.RecordDeep> for a recordable class;
-- <xref:Chronicler.RecordDeepStruct> for a non-nullable recordable struct;
-- <xref:Chronicler.RecordNullableDeep> for a nullable recordable struct.
-
-For class state, initialize the nested object before loading:
-
-```csharp
-public InventoryState Inventory = new();
-
-public void RecordData(IChronicler chronicler)
-{
-    RecordDeep.Look(chronicler, ref Inventory, "inventory");
-}
-```
-
-The host remains responsible for construction, dependency injection, pooling,
-and runtime registration. Chronicler only transfers the recorded state.
-
-Missing or null entries have different meanings for each helper:
-
-| Helper               | Load behavior for a missing or null entry                                                                       |
-| -------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `RecordValues`       | Assigns the declared default.                                                                                   |
-| `RecordDeep`         | Leaves the existing reference and its state unchanged. A present non-null entry requires an initialized target. |
-| `RecordDeepStruct`   | Creates a fresh value and runs its schema against an empty reader to apply declared defaults.                   |
-| `RecordNullableDeep` | Assigns `null`.                                                                                                 |
-| `RecordLinks`        | Assigns `default(T)` and invokes the assignment callback, if supplied.                                          |
-
-A present deep struct loads directly into a fresh value. Its schema can reject
-missing required fields; an empty reader does not bypass those guards.
+A present deep struct runs its schema directly on a fresh value. Validation in
+that schema can reject missing required fields, including when
+`RecordDeepStruct` uses the empty reader for a missing entry.
 
 ### Runtime-owned or external links
 
-Use <xref:Chronicler.RecordLinks> when a field points to an object that should
-not be serialized inline. A <xref:Chronicler.ChronicleContext> carries the
-session's <xref:Chronicler.ChronicleLinkRegistry>:
+Use <xref:Chronicler.RecordLinks> to store the ID of an object owned elsewhere.
+A **stable ID** is a key the host can assign to corresponding objects across
+runs. Here the source and restored worlds each have their own instance of
+`player-42`. Each <xref:Chronicler.ChronicleContext> carries the
+<xref:Chronicler.ChronicleLinkRegistry> for its session.
 
 ```csharp
+using System;
 using Chronicler;
 using Chronicler.Serialization;
 
-RuntimeEntity runtimeEntity = new();
-ActorState actorState = new() { Target = runtimeEntity };
-ActorState restoredActorState = new();
-ChronicleContext context = new();
-context.Links.RegisterInstance("player-42", runtimeEntity);
+RuntimeEntity sourceTarget = new();
+ActorState actorState = new() { Target = sourceTarget };
+ChronicleContext saveContext = new();
+saveContext.Links.RegisterInstance("player-42", sourceTarget);
+string json = JsonRecordSerializer.Serialize(actorState, saveContext);
+Console.WriteLine(json); // {"target":"player-42"}
 
-string json = JsonRecordSerializer.Serialize(actorState, context);
-JsonRecordSerializer.Populate(restoredActorState, json, context);
-// restoredActorState.Target is the same runtimeEntity instance.
+RuntimeEntity restoredTarget = new();
+ActorState restoredActorState = new();
+ChronicleContext loadContext = new();
+loadContext.Links.RegisterInstance("player-42", restoredTarget);
+JsonRecordSerializer.Populate(restoredActorState, json, loadContext);
+Console.WriteLine(ReferenceEquals(restoredActorState.Target, restoredTarget)); // True
 
 public sealed class ActorState : IRecordable
 {
@@ -125,14 +123,21 @@ public sealed class ActorState : IRecordable
 public sealed class RuntimeEntity { }
 ```
 
-The registry maps a stable ID to the runtime instance and can also use a custom
-<xref:Chronicler.IRecordLinkResolver`1>. Optional `slot` values let one runtime
-type use multiple independent identity domains.
+The registry can use a custom <xref:Chronicler.IRecordLinkResolver`1> before
+falling back to explicit registrations. It looks up the declared link type and
+optional `slot`, which lets the same type participate in separate identity
+domains. Use matching types and slots on both ends.
 
-Immediate links must resolve during the load pass. If the referenced object is
-registered later in the graph, use `RecordLinks.LookDeferred(...)` with an
-assignment callback. The serializer resolves queued links after the graph has
-loaded and throws if any remain unresolved.
+| Method on `RecordLinks` | When it assigns the target                                                                     |
+| ----------------------- | ---------------------------------------------------------------------------------------------- |
+| `Look`                  | When reading the field. An unresolved ID throws `InvalidOperationException`.                   |
+| `LookDeferred`          | When the target becomes available during the load. The method requires an assignment callback. |
+
+After the root `RecordData` call returns, the serializer retries queued links
+until they resolve or a pass makes no progress. It throws
+`InvalidOperationException` for any remaining IDs. Saving a non-null link
+without a stable ID also throws `InvalidOperationException`. Population can
+apply earlier fields or callbacks before reporting a failure.
 
 ## Transport behavior
 
@@ -146,8 +151,8 @@ the same <xref:Chronicler.IChronicler> contract. They both:
 - use a context for stable links;
 - resolve deferred links after loading.
 
-Transport payloads are not intended to be interchangeable. The shared contract
-is the state behavior expressed by `RecordData(...)`.
+Read each payload with the serializer that wrote it. Format, leaf codecs, and
+parsing errors are transport-specific.
 
 ## State-backed JSON types
 
@@ -176,27 +181,34 @@ state payload still follows System.Text.Json's configured serialization rules.
 
 <xref:Chronicler.Serialization.SerializationPayloadEditor> can remove or replace
 entries in a serialized payload. It is useful for compatibility tests and
-controlled schema migrations. Use the format-specific methods to keep the
-payload type explicit:
+controlled schema migrations. Use the method for your format. JSON is available
+in both Core packages. MemoryPack requires the standard package.
 
-| Format                     | Payload type | Set a value          | Remove an entry         |
-| -------------------------- | ------------ | -------------------- | ----------------------- |
-| JSON (standard and Lean)   | `string`     | `SetJsonValue`       | `RemoveJsonProperty`    |
-| MemoryPack (standard only) | `byte[]`     | `SetMemoryPackValue` | `RemoveMemoryPackEntry` |
+| Payload               | Set or remove an entry                        |
+| --------------------- | --------------------------------------------- |
+| JSON (`string`)       | `SetJsonValue`, `RemoveJsonProperty`          |
+| MemoryPack (`byte[]`) | `SetMemoryPackValue`, `RemoveMemoryPackEntry` |
 
-Serialize and populate through the corresponding record serializer:
+To test loading an older player payload without an `ammo` entry, start with the
+[walkthrough](getting-started.md). Add these lines before the declarations in
+`Program.cs`. The first edit sets the recorded ammo to 7. The second removes
+that entry, so population restores the declared default of 30.
 
 ```csharp
-string json = JsonRecordSerializer.Serialize(record, writeIndented: true);
-json = SerializationPayloadEditor.SetJsonValue(json, 42, "state", "Count");
-json = SerializationPayloadEditor.RemoveJsonProperty(json, "state", "Enabled");
-JsonRecordSerializer.Populate(target, json);
+string edited = SerializationPayloadEditor.SetJsonValue(json, 7, "weapon", "ammo");
+JsonRecordSerializer.Populate(restored, edited);
+Console.WriteLine(restored.Weapon.Ammo); // 7
+
+edited = SerializationPayloadEditor.RemoveJsonProperty(edited, "weapon", "ammo");
+JsonRecordSerializer.Populate(restored, edited);
+Console.WriteLine(restored.Weapon.Ammo); // 30
 ```
 
-Paths and replacement values must match the recorded schema. The editor
-serializes replacement values directly with the selected transport; it does not
-invoke `RecordData` to construct a replacement deep record. It parses the
-payload representation without populating a recordable object graph.
+Use recorded names in paths, from the outer object to the field. The parent
+record must exist. A missing intermediate record throws
+`InvalidOperationException`, and removing an absent final entry is a no-op for
+the recorded state. The editor serializes replacement values directly with the
+selected transport. Only the subsequent population runs `RecordData`.
 
 ## Host integration lifecycle
 
@@ -208,11 +220,10 @@ depend on an engine or automatically run the lifecycle during serialization.
 
 ## Package boundaries
 
-| Package                     | Public surface                                                                                                                 |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `Chronicler.Core`           | Core recording APIs, JSON, MemoryPack, record hashes, link services, and payload editing for both built-in formats.            |
-| `Chronicler.Core.Lean`      | Core recording APIs, JSON, record hashes, link services, and JSON payload editing. MemoryPack-specific source is compiled out. |
-| `Chronicler.MemoryPackShim` | Compatibility attributes in the `MemoryPack` namespace for annotated Lean assemblies. It does not serialize data.              |
+Both [Core packages](../index.md#package-family) include recording helpers, JSON
+and its payload editor, record hashes, and link services. The standard package
+adds MemoryPack and its payload editor. The independent <xref:MemoryPack> shim
+supplies compatibility attributes for annotated Lean assemblies.
 
 Continue with [Deterministic record hashes](record-hashes.md) when the goal is
 state comparison rather than transport.

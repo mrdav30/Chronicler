@@ -5,16 +5,18 @@ description: Define an explicit Chronicler schema and move state through JSON or
 
 # Getting started
 
-Chronicler transfers state between an explicit recording schema and an object
-graph your runtime already owns. A type implements
-<xref:Chronicler.IRecordable>, then records its fields in a deliberate order
-through `RecordData(...)`.
+Save a player's health to JSON, then restore it into a player your game has
+already created. The saved player has 72 health and the default 30 rounds. After
+loading, the target has those values and still owns the same weapon instance it
+had before loading.
 
 ## 1. Install a package
 
-The standard package is the best starting point:
+Create a console app with the .NET 10 SDK and add the standard package.
 
 ```bash
+dotnet new console -o ChroniclerQuickstart
+cd ChroniclerQuickstart
 dotnet add package Chronicler.Core
 ```
 
@@ -24,22 +26,44 @@ JSON support without the MemoryPack dependency or transport.
 
 ## 2. Define the schema
 
-Use <xref:Chronicler.RecordValues> for leaf values and
-<xref:Chronicler.RecordDeep> for an owned nested object:
+Implement <xref:Chronicler.IRecordable> on both types. Their `RecordData`
+methods define the **schema**, the names, order, defaults, and helpers
+Chronicler uses during both save and load. Keep these choices stable across
+compatible versions.
+
+Use <xref:Chronicler.RecordValues> for individual values such as `Health` and
+`Ammo`. Use <xref:Chronicler.RecordDeep> for `Weapon`, an object owned and
+initialized by `PlayerSnapshot`.
+
+## 3. Save and restore JSON
+
+Replace `Program.cs` with this example and run `dotnet run`.
 
 ```csharp
+using System;
 using Chronicler;
+using Chronicler.Serialization;
+
+PlayerSnapshot source = new() { Health = 72 };
+string json = JsonRecordSerializer.Serialize(source, writeIndented: true);
+Console.WriteLine(json);
+
+PlayerSnapshot restored = new();
+WeaponSnapshot existingWeapon = restored.Weapon;
+existingWeapon.Ammo = 2;
+JsonRecordSerializer.Populate(restored, json);
+
+Console.WriteLine($"Health: {restored.Health}; ammo: {restored.Weapon.Ammo}");
+Console.WriteLine($"Same weapon: {ReferenceEquals(existingWeapon, restored.Weapon)}");
 
 public sealed class PlayerSnapshot : IRecordable
 {
     public int Health = 100;
-    public int Mana = 50;
     public WeaponSnapshot Weapon = new();
 
     public void RecordData(IChronicler chronicler)
     {
         RecordValues.Look(chronicler, ref Health, "health", 100);
-        RecordValues.Look(chronicler, ref Mana, "mana", 50);
         RecordDeep.Look(chronicler, ref Weapon, "weapon");
     }
 }
@@ -55,62 +79,52 @@ public sealed class WeaponSnapshot : IRecordable
 }
 ```
 
-The names, call order, and declared defaults are part of the schema. Keep them
-stable unless you intend to change the serialized contract.
-
-## 3. Save and restore JSON
-
 <xref:Chronicler.Serialization.JsonRecordSerializer.Serialize(Chronicler.IRecordable,System.Boolean)>
-returns a JSON string. `Populate(...)` applies that state to an existing object:
+returns the JSON below. The weapon record is present, and the writer omits
+`ammo` because its value equals the declared default of 30.
 
-```csharp
-using Chronicler.Serialization;
-
-PlayerSnapshot source = new()
+```json
 {
-    Health = 72,
-    Mana = 18,
-    Weapon = new WeaponSnapshot { Ammo = 7 }
-};
-
-string json = JsonRecordSerializer.Serialize(source, writeIndented: true);
-
-PlayerSnapshot restored = new();
-JsonRecordSerializer.Populate(restored, json);
+  "health": 72,
+  "weapon": {}
+}
 ```
 
-`restored.Weapon` already exists because the host constructed the runtime shell.
-Chronicler populates that owned object; it does not act as a general-purpose
-object graph factory.
+`Populate` returns `void` and updates `restored` in place. Inside the present
+`weapon` record, the missing `ammo` entry resets the existing weapon from 2
+to 30. The last two lines show the restored values and confirm the weapon
+identity.
+
+```text
+Health: 72; ammo: 30
+Same weapon: True
+```
 
 ## 4. Choose another transport when needed
 
 The standard package exposes
 <xref:Chronicler.Serialization.MemoryPackRecordSerializer> over the same
-`RecordData(...)` schema:
+`RecordData` schema. Add these lines before the type declarations in
+`Program.cs` to try the same state transfer as a binary payload.
 
 ```csharp
 byte[] payload = MemoryPackRecordSerializer.Serialize(source);
 
-PlayerSnapshot restored = new();
-MemoryPackRecordSerializer.Populate(restored, payload);
+PlayerSnapshot restoredFromBinary = new();
+MemoryPackRecordSerializer.Populate(restoredFromBinary, payload);
+Console.WriteLine(restoredFromBinary.Health); // 72
 ```
 
-The Lean package intentionally does not contain this type.
+Use the standard package for this step. The Lean package includes the JSON
+serializer and compiles out the MemoryPack transport.
 
-## 5. Use the right recording lane
+<a id="5-use-the-right-recording-lane"></a>
 
-| State kind                                      | Helper                               |
-| ----------------------------------------------- | ------------------------------------ |
-| Leaf data, enums, and small serializable values | <xref:Chronicler.RecordValues>       |
-| Owned class state already present in the shell  | <xref:Chronicler.RecordDeep>         |
-| Owned recordable struct state                   | <xref:Chronicler.RecordDeepStruct>   |
-| Optional recordable struct state                | <xref:Chronicler.RecordNullableDeep> |
-| Runtime-owned or external identity              | <xref:Chronicler.RecordLinks>        |
+## 5. Choose a recording helper
 
-Always pass the canonical declared default to `RecordValues.Look(...)`. If an
-entry is absent during loading, Chronicler applies that value instead of keeping
-whatever happened to be in the target object.
+Use the
+[recording helper table](serialization-model.md#choose-by-state-ownership) to
+choose an API for each field and see how it handles a missing or null entry.
 
 ## Next steps
 

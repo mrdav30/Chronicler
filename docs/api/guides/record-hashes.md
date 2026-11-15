@@ -5,62 +5,73 @@ description: Compare Chronicler state for replay, snapshot, and conformance chec
 
 # Deterministic record hashes
 
-Chronicler record hashes answer a focused question: did two runtimes record the
-same schema and values in the same order?
-
-They walk <xref:Chronicler.IRecordable.RecordData(Chronicler.IChronicler)>
-through a hash backend. They do not serialize to JSON or MemoryPack first, so a
-transport's formatting and envelope details do not become part of the signal.
+Check that a restored player matches the recorded state before resuming a
+replay. Compute a hash for each player. The hashes match at 72 health and 30
+rounds. Use the comparison again after firing one round to see the recorded
+state diverge.
 
 <!-- prettier-ignore -->
 > [!IMPORTANT]
-> A record hash is a deterministic comparison signal. It is not a serialized
-> payload and it is not a cryptographic hash.
+> Use record hashes for deterministic state comparisons. Use the transport
+> payload to restore state and a cryptographic hash for security-sensitive checks.
 
 ## Start with a recordable graph
 
 Use
 <xref:Chronicler.Hashing.ChronicleHashSerializer.Compute(Chronicler.IRecordable)>
-for a standalone graph:
+for a standalone graph. Start with the [player walkthrough](getting-started.md).
+Add `using Chronicler.Hashing;` at the top of `Program.cs` and these lines after
+the restore, before the type declarations.
 
 ```csharp
-using Chronicler;
-using Chronicler.Hashing;
+ChronicleHash savedState = ChronicleHashSerializer.Compute(source);
+ChronicleHash restoredState = ChronicleHashSerializer.Compute(restored);
+Console.WriteLine(savedState == restoredState); // True
 
-ChronicleHash hash = ChronicleHashSerializer.Compute(snapshot);
+restored.Weapon.Ammo--;
+Console.WriteLine(savedState == ChronicleHashSerializer.Compute(restored)); // False
 ```
 
-When the graph contains stable links, supply a context with the same
-registration model used by the transports:
+`Compute` runs <xref:Chronicler.IRecordable.RecordData(Chronicler.IChronicler)>
+directly. In the example both calls include the recorded ammo value of 30. JSON
+omission, indentation, and MemoryPack envelopes are outside the hash input.
+
+When comparing the
+[actor with a stable target](serialization-model.md#runtime-owned-or-external-links),
+supply each graph's context. In that example, add `using Chronicler.Hashing;`
+and insert the comparison before the type declarations. Both contexts map their
+local target to `player-42`, so these actor hashes match.
 
 ```csharp
-ChronicleContext context = new();
-context.Links.RegisterInstance("player-42", playerEntity);
-
-ChronicleHash hash = ChronicleHashSerializer.Compute(actorState, context);
+ChronicleHash before = ChronicleHashSerializer.Compute(actorState, saveContext);
+ChronicleHash after = ChronicleHashSerializer.Compute(restoredActorState, loadContext);
+Console.WriteLine(before == after); // True
 ```
 
 ## Compose a domain-owned hash
 
 Use <xref:Chronicler.Hashing.ChronicleHashWriter> when a replay or simulation
-hash needs domain metadata around a recordable subtree:
+hash needs domain metadata around recorded state. For a replay checkpoint at
+frame 120, write the section tag, version, and frame before contributing
+`source` from the player walkthrough. Use the same sequence and version in every
+runtime.
 
 ```csharp
 var writer = new ChronicleHashWriter();
 writer.WriteSection("world.replay", 1);
-writer.WriteInt32(frameNumber);
-ChronicleHashSerializer.Contribute(snapshot, context, ref writer);
+writer.WriteInt32(120);
+ChronicleHashSerializer.Contribute(source, ref writer);
 
 ChronicleHash hash = writer.ToHash();
 ```
 
-Explicit sections give each domain-owned payload a tag and schema version, so a
-hash-contract change is intentional and reviewable.
+The resulting hash covers the checkpoint metadata and `source`. Increment the
+section version when you change the fields or their encoding.
 
 ## What becomes part of the contract?
 
-The hash backend uses `SerializationMode.Saving` and follows `RecordData(...)`
-calls exactly. It does not sort fields. These details affect the result:
+The hash backend uses `SerializationMode.Saving` and processes fields in
+`RecordData` call order. These details affect the result.
 
 - field order and field names;
 - declared leaf types and default values;
@@ -97,8 +108,8 @@ through writer extensions instead.
 names, presence where applicable, and explicit nested-record boundaries.
 
 `RecordLinks` adds the field name, declared type, normalized slot, resolution
-mode, and stable ID. A non-null link without a registered stable ID throws; the
-hash never falls back to process-local object identity.
+mode, and stable ID. If a non-null link's registry cannot supply an ID,
+`Compute` throws `InvalidOperationException`.
 
 ## Primitive byte contract
 
@@ -107,7 +118,8 @@ bytes:
 
 - integral values are little-endian;
 - `char` is written as one UTF-16 code unit;
-- `string` is a nullable marker, length, then UTF-16 code units;
+- `string` is a presence byte (0 for null, 1 for present), then, when present,
+  an `Int32` code-unit count and the UTF-16 code units;
 - enum values use their underlying integral bytes;
 - section tags must be non-empty ASCII text and include an integer schema
   version.
@@ -119,8 +131,8 @@ own deterministic signals around Chronicler-owned state.
 ## Result format
 
 <xref:Chronicler.Hashing.ChronicleHash> is a 128-bit value with `Low` and `High`
-components, value equality, and a lowercase 32-character hexadecimal string
-format.
+components and value equality. `ToString()` returns 32 lowercase hexadecimal
+characters, with the high 64 bits before the low 64 bits.
 
 For the broader ownership model, continue with
 [Values, owned state, and links](serialization-model.md).

@@ -4,83 +4,59 @@ description: Guides and API reference for explicit deterministic state transfer 
 ---
 
 <div class="chr-hero">
-  <p class="chr-kicker">EXPLICIT STATE TRANSFER FOR .NET</p>
-  <h1>Record state on your terms.</h1>
-  <p>Chronicler gives each type one visible schema for JSON, MemoryPack,
-  restoring existing runtime objects, stable links, and deterministic replay
-  signals. Exact time values and a host-advanced clock keep long-running
-  simulations on an explicit timeline.</p>
+  <p class="chr-kicker">SIMULATION TOOLKIT FOR .NET</p>
+  <h1>Save, resume, and verify your simulation</h1>
+  <p>Define what goes into a snapshot and restore it into objects your
+  application already owns. Advance an exact simulation clock, compare
+  record hashes across runs, and route diagnostics to a sink you control.</p>
   <div class="chr-actions">
-    <a href="guides/getting-started.md">Get started</a>
+    <a href="guides/getting-started.md">Restore a snapshot</a>
     <a href="xref:Chronicler">Browse the API</a>
   </div>
 </div>
 
-## One schema, several jobs
+<a id="one-schema-several-jobs"></a>
+<a id="keep-deterministic-state-connected"></a>
+
+## Guides
 
 <div class="chr-card-grid">
-  <div class="chr-card">
-    <h3><a href="xref:Chronicler.IRecordable">Own the schema</a></h3>
-    <p>Make field names, defaults, order, and ownership explicit in
-    <code>RecordData(...)</code>.</p>
-  </div>
-  <div class="chr-card">
-    <h3><a href="xref:Chronicler.Serialization">Choose a transport</a></h3>
-    <p>Use built-in <a href="xref:Chronicler.Serialization.JsonRecordSerializer">JSON</a>
-    everywhere, with built-in <a href="xref:Chronicler.Serialization.MemoryPackRecordSerializer">MemoryPack</a> available in the
-    standard package.</p>
-  </div>
-  <div class="chr-card">
-    <h3><a href="xref:Chronicler.RecordDeep">Populate your runtime</a></h3>
-    <p>Transfer state into initialized objects while the host keeps ownership of
-    construction and lifecycle.</p>
-  </div>
-</div>
-
-## Keep deterministic state connected
-
-<div class="chr-card-grid">
-  <div class="chr-card">
-    <h3><a href="xref:Chronicler.RecordLinks">Restore stable links</a></h3>
-    <p>Represent runtime-owned and external references with stable IDs instead
-    of serializing them inline.</p>
-  </div>
-  <div class="chr-card">
-    <h3><a href="xref:Chronicler.Hashing.ChronicleHashSerializer">Compare recorded state</a></h3>
-    <p>Build deterministic replay and conformance signals directly from the
-    recording schema.</p>
-  </div>
-  <div class="chr-card">
-    <h3><a href="xref:Chronicler.IStateBacked`1">Expose canonical helper state</a></h3>
-    <p>Integrate state-backed helper types with System.Text.Json when
-    reconstruction from one state value is intentional.</p>
-  </div>
+  <a class="chr-card" href="guides/getting-started.md">
+    <strong class="chr-card-title">Restore your first snapshot</strong>
+    <p>Save a player with 72 health and restore it into an existing object
+    while keeping its weapon instance.</p>
+  </a>
+  <a class="chr-card" href="guides/serialization-model.md">
+    <strong class="chr-card-title">Choose what to record</strong>
+    <p>Decide when to record a value, populate an owned object, or store
+    a stable ID.</p>
+  </a>
+  <a class="chr-card" href="guides/record-hashes.md">
+    <strong class="chr-card-title">Check a replay checkpoint</strong>
+    <p>Compare the recorded state of two runtimes with deterministic
+    record hashes.</p>
+  </a>
+  <a class="chr-card" href="guides/simulation-timing.md">
+    <strong class="chr-card-title">Advance simulation time</strong>
+    <p>Save and restore an exact clock across changes in step duration.</p>
+  </a>
+  <a class="chr-card" href="guides/diagnostics.md">
+    <strong class="chr-card-title">Route diagnostics and guard inputs</strong>
+    <p>Send warnings to a sink you control and reject out-of-range
+    arguments.</p>
+  </a>
 </div>
 
 ## Package family
 
 Both Core variants include the same dependency-free simulation timing APIs.
 
-| Package                     | Includes                                                                     |
-| --------------------------- | ---------------------------------------------------------------------------- |
-| `Chronicler.Diagnostics`    | Independent diagnostic channels, lazy logging, and exception guards          |
-| `Chronicler.Core`           | Core recording APIs plus JSON and MemoryPack transports                      |
-| `Chronicler.Core.Lean`      | Core recording APIs and JSON, without the MemoryPack dependency or transport |
-| `Chronicler.MemoryPackShim` | Compatibility attributes for annotated Lean assemblies; not a serializer     |
-
-## Guides
-
-- [Diagnostics and guards](guides/diagnostics.md) covers the independent
-  <xref:Chronicler.Diagnostics> package and host-owned output.
-
-- [Getting started](guides/getting-started.md) defines a schema and moves it
-  through the built-in transports.
-- [Values, owned state, and links](guides/serialization-model.md) explains
-  object ownership, defaults, link resolution, and package boundaries.
-- [Deterministic record hashes](guides/record-hashes.md) documents the replay
-  and conformance hash contract.
-- [Simulation timing](guides/simulation-timing.md) explains wide timestamps,
-  signed intervals, explicit clock advancement, and transactional clock restore.
+| Package                                                                                 | Includes                                                                     |
+| --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| [`Chronicler.Diagnostics`](https://www.nuget.org/packages/Chronicler.Diagnostics)       | Independent diagnostic channels, lazy logging, and exception guards          |
+| [`Chronicler.Core`](https://www.nuget.org/packages/Chronicler.Core)                     | Core recording APIs plus JSON and MemoryPack transports                      |
+| [`Chronicler.Core.Lean`](https://www.nuget.org/packages/Chronicler.Core.Lean)           | Core recording APIs and JSON, without the MemoryPack dependency or transport |
+| [`Chronicler.MemoryPackShim`](https://www.nuget.org/packages/Chronicler.MemoryPackShim) | Attributes for Lean assemblies with MemoryPack metadata                      |
 
 ## Part of the LSF ecosystem
 
