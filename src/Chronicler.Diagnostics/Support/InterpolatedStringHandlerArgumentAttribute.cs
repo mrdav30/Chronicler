@@ -16,27 +16,22 @@ using System;
 [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
 public sealed class InterpolatedStringHandlerArgumentAttribute : Attribute
 {
-    /// <summary>
-    /// Initializes the attribute with one constructor argument name.
-    /// </summary>
-    /// <param name="argument">The method parameter name to pass to the interpolated string handler constructor.</param>
+    /// <summary>Binds one argument to a handler constructor.</summary>
+    /// <param name="argument">The declared parameter name, or an empty string to bind the receiver.</param>
     public InterpolatedStringHandlerArgumentAttribute(string argument)
     {
         Arguments = new[] { argument };
     }
 
-    /// <summary>
-    /// Initializes the attribute with multiple constructor argument names.
-    /// </summary>
-    /// <param name="arguments">The method parameter names to pass to the interpolated string handler constructor.</param>
+    /// <summary>Binds arguments to a handler constructor in order.</summary>
+    /// <param name="arguments">The argument names in binding order. An empty name binds the receiver. The attribute retains the supplied array.</param>
     public InterpolatedStringHandlerArgumentAttribute(params string[] arguments)
     {
         Arguments = arguments;
     }
 
-    /// <summary>
-    /// Gets the method parameter names passed to the interpolated string handler constructor.
-    /// </summary>
+    /// <summary>Gets the names used to bind the handler constructor.</summary>
+    /// <value>The underlying mutable array in binding order.</value>
     public string[] Arguments { get; }
 }
 #endif

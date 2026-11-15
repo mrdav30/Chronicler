@@ -18,7 +18,9 @@ namespace Chronicler.Serialization;
 /// </summary>
 public sealed class StateJsonConverterFactory : JsonConverterFactory
 {
-    /// <inheritdoc />
+    /// <summary>Checks whether the type is a candidate for state-backed conversion.</summary>
+    /// <param name="typeToConvert">The type to inspect. Null is ineligible.</param>
+    /// <returns>True for a concrete class that implements a state-backed interface. Constructor and contract validation occur when creating the converter.</returns>
     public override bool CanConvert(Type typeToConvert)
     {
         return typeToConvert != null
@@ -27,7 +29,12 @@ public sealed class StateJsonConverterFactory : JsonConverterFactory
             && HasStateBackedContract(typeToConvert);
     }
 
-    /// <inheritdoc />
+    /// <summary>Builds a state converter that invokes the record's state constructor.</summary>
+    /// <param name="typeToConvert">A concrete class with exactly one state-backed interface and a public constructor accepting that interface's state type.</param>
+    /// <param name="options">The calling serializer's configuration. Constructor selection depends on the declared record type.</param>
+    /// <returns>A converter whose constructor delegate is bound to the record's public state constructor.</returns>
+    /// <remarks>Discovers the interface and constructor via reflection and compiles a constructor delegate.</remarks>
+    /// <exception cref="InvalidOperationException">The type has zero or multiple state-backed interfaces, or lacks the matching public constructor.</exception>
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
         Type stateType = GetSingleStateType(typeToConvert);

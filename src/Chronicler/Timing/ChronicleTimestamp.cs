@@ -13,8 +13,8 @@ namespace Chronicler.Timing;
 /// An exact nonnegative instant relative to a simulation origin, with 2^-32-second precision.
 /// </summary>
 /// <remarks>
-/// Values do not carry a world or lifetime identity. The owner must ensure that
-/// compared or subtracted timestamps share the same origin and simulation lifetime.
+/// The range is <c>(0, 0)</c> through <c>(long.MaxValue, uint.MaxValue)</c>.
+/// The owner matches origins and lifetimes before comparing or subtracting timestamps.
 /// </remarks>
 public readonly struct ChronicleTimestamp : IEquatable<ChronicleTimestamp>, IComparable<ChronicleTimestamp>
 {
@@ -31,28 +31,41 @@ public readonly struct ChronicleTimestamp : IEquatable<ChronicleTimestamp>, ICom
         _value = new ChronicleDuration(wholeSeconds, fractionalSecond);
     }
 
-    /// <summary>Gets the simulation origin, also represented by the default value.</summary>
+    /// <summary>Gets the simulation origin.</summary>
+    /// <value>Both components are zero, which is also the default value.</value>
     public static ChronicleTimestamp Zero => default;
 
-    /// <summary>Gets the mathematical floor of elapsed seconds since the origin.</summary>
+    /// <summary>Gets floor seconds for this instant.</summary>
+    /// <value>Nonnegative whole seconds since the simulation origin.</value>
     public long WholeSeconds => _value.WholeSeconds;
 
-    /// <summary>Gets the nonnegative remainder in units of 2^-32 seconds.</summary>
+    /// <summary>Gets the remainder after floor seconds.</summary>
+    /// <value>A nonnegative count of 2^-32-second units, from zero through 2^32 − 1.</value>
     public uint FractionalSecond => _value.FractionalSecond;
 
-    /// <inheritdoc />
+    /// <summary>Orders this instant relative to another.</summary>
+    /// <param name="other">An instant from the same origin and lifetime.</param>
+    /// <returns>A negative value for less, zero for equal, and a positive value for greater.</returns>
     public int CompareTo(ChronicleTimestamp other) => _value.CompareTo(other._value);
 
-    /// <inheritdoc />
+    /// <summary>Tests exact instant equality.</summary>
+    /// <param name="other">An instant from the same origin and lifetime.</param>
+    /// <returns>True when both components match.</returns>
     public bool Equals(ChronicleTimestamp other) => _value.Equals(other._value);
 
-    /// <inheritdoc />
+    /// <summary>Tests equality with a boxed instant.</summary>
+    /// <param name="obj">The object to compare. Null or another type compares unequal.</param>
+    /// <returns>True when the object has this value type and both components match.</returns>
     public override bool Equals(object? obj) => obj is ChronicleTimestamp other && Equals(other);
 
-    /// <summary>Returns a deterministic collection hash of the value's components.</summary>
+    /// <summary>Hashes the instant for use in collections.</summary>
+    /// <returns>A deterministic 32-bit mix of both components.</returns>
     public override int GetHashCode() => _value.GetHashCode();
 
     /// <summary>Offsets an instant by a signed interval.</summary>
+    /// <param name="time">The starting instant in the current timeline.</param>
+    /// <param name="delta">The signed displacement in simulation seconds.</param>
+    /// <returns>The resulting instant relative to the same origin.</returns>
     /// <exception cref="OverflowException">The result precedes the origin or exceeds the timestamp range.</exception>
     public static ChronicleTimestamp operator +(ChronicleTimestamp time, ChronicleDuration delta)
     {
@@ -62,21 +75,41 @@ public readonly struct ChronicleTimestamp : IEquatable<ChronicleTimestamp>, ICom
         return new ChronicleTimestamp(result.WholeSeconds, result.FractionalSecond);
     }
 
-    /// <summary>Gets the signed interval from the right instant to the left instant.</summary>
-    /// <remarks>Either operand order is valid, including across the complete timestamp range.</remarks>
+    /// <summary>Measures the signed interval between two instants.</summary>
+    /// <param name="left">The ending instant.</param>
+    /// <param name="right">The starting instant from the same origin and lifetime.</param>
+    /// <returns>The exact difference, negative when the ending instant precedes the start.</returns>
     public static ChronicleDuration operator -(ChronicleTimestamp left, ChronicleTimestamp right) =>
         left._value - right._value;
 
-    /// <summary>Tests exact equality.</summary>
+    /// <summary>Tests whether the left instant exactly equals the right instant.</summary>
+    /// <param name="left">The first operand.</param>
+    /// <param name="right">The second operand from the same origin and lifetime.</param>
+    /// <returns>True when the left operand exactly equals the right operand.</returns>
     public static bool operator ==(ChronicleTimestamp left, ChronicleTimestamp right) => left.Equals(right);
-    /// <summary>Tests exact inequality.</summary>
+    /// <summary>Tests whether the left instant differs from the right instant.</summary>
+    /// <param name="left">The first operand.</param>
+    /// <param name="right">The second operand from the same origin and lifetime.</param>
+    /// <returns>True when the left operand differs from the right operand.</returns>
     public static bool operator !=(ChronicleTimestamp left, ChronicleTimestamp right) => !left.Equals(right);
-    /// <summary>Tests whether the left instant is earlier.</summary>
+    /// <summary>Tests whether the left instant is less than the right instant.</summary>
+    /// <param name="left">The first operand.</param>
+    /// <param name="right">The second operand from the same origin and lifetime.</param>
+    /// <returns>True when the left operand is less than the right operand.</returns>
     public static bool operator <(ChronicleTimestamp left, ChronicleTimestamp right) => left.CompareTo(right) < 0;
-    /// <summary>Tests whether the left instant is earlier or equal.</summary>
+    /// <summary>Tests whether the left instant is less than or equal to the right instant.</summary>
+    /// <param name="left">The first operand.</param>
+    /// <param name="right">The second operand from the same origin and lifetime.</param>
+    /// <returns>True when the left operand is less than or equal to the right operand.</returns>
     public static bool operator <=(ChronicleTimestamp left, ChronicleTimestamp right) => left.CompareTo(right) <= 0;
-    /// <summary>Tests whether the left instant is later.</summary>
+    /// <summary>Tests whether the left instant is greater than the right instant.</summary>
+    /// <param name="left">The first operand.</param>
+    /// <param name="right">The second operand from the same origin and lifetime.</param>
+    /// <returns>True when the left operand is greater than the right operand.</returns>
     public static bool operator >(ChronicleTimestamp left, ChronicleTimestamp right) => left.CompareTo(right) > 0;
-    /// <summary>Tests whether the left instant is later or equal.</summary>
+    /// <summary>Tests whether the left instant is greater than or equal to the right instant.</summary>
+    /// <param name="left">The first operand.</param>
+    /// <param name="right">The second operand from the same origin and lifetime.</param>
+    /// <returns>True when the left operand is greater than or equal to the right operand.</returns>
     public static bool operator >=(ChronicleTimestamp left, ChronicleTimestamp right) => left.CompareTo(right) >= 0;
 }

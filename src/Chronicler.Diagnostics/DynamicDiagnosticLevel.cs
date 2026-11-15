@@ -11,6 +11,7 @@ namespace Chronicler.Diagnostics;
 /// </summary>
 public readonly struct DynamicDiagnosticLevel : IDiagnosticLevelProvider
 {
-    /// <inheritdoc />
+    /// <summary>Gets the placeholder used when no dynamic level is supplied.</summary>
+    /// <value><see cref="DiagnosticLevel.None"/>. Pass an explicit level to enable dynamic logging.</value>
     public DiagnosticLevel Level => DiagnosticLevel.None;
 }

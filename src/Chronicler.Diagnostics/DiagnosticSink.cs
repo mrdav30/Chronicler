@@ -6,8 +6,6 @@
 //=======================================================================
 
 namespace Chronicler.Diagnostics;
-/// <summary>
-/// Receives diagnostic events emitted by a <see cref="DiagnosticChannel"/>.
-/// </summary>
-/// <param name="diagnostic">The emitted diagnostic event.</param>
+/// <summary>Receives a diagnostic synchronously from a channel.</summary>
+/// <param name="diagnostic">A read-only reference to the event for the duration of the callback. Copy it to retain it.</param>
 public delegate void DiagnosticSink(in DiagnosticEvent diagnostic);

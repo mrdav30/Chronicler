@@ -19,19 +19,23 @@ namespace Chronicler.Timing;
 public sealed class ChronicleClock : IRecordable
 {
     /// <summary>Creates a clock at frame and time zero.</summary>
-    /// <exception cref="ArgumentOutOfRangeException">The step is not positive.</exception>
+    /// <param name="stepDuration">The positive duration added to elapsed time on each advance.</param>
+    /// <exception cref="ArgumentOutOfRangeException">The step is zero or negative.</exception>
     public ChronicleClock(ChronicleDuration stepDuration)
     {
         SetStepDuration(stepDuration);
     }
 
-    /// <summary>Gets the number of completed advances in this timeline.</summary>
+    /// <summary>Gets the completed advance count.</summary>
+    /// <value>A nonnegative count since the current timeline's origin.</value>
     public long FrameCount { get; private set; }
 
-    /// <summary>Gets accumulated time, preserving the history of step changes.</summary>
+    /// <summary>Gets accumulated simulation time.</summary>
+    /// <value>The sum of all completed step durations relative to the timeline origin.</value>
     public ChronicleTimestamp ElapsedTime { get; private set; }
 
-    /// <summary>Gets the duration added by the next advance.</summary>
+    /// <summary>Gets the next step's duration.</summary>
+    /// <value>A positive interval. Changing it leaves previously accumulated time intact.</value>
     public ChronicleDuration StepDuration { get; private set; }
 
     /// <summary>Advances one frame and one configured step, or leaves all state unchanged.</summary>
@@ -47,17 +51,20 @@ public sealed class ChronicleClock : IRecordable
         ElapsedTime = nextTime;
     }
 
-    /// <summary>Changes future steps without changing the frame or accumulated elapsed time.</summary>
-    /// <exception cref="ArgumentOutOfRangeException">The step is not positive.</exception>
+    /// <summary>Sets the duration of future advances.</summary>
+    /// <param name="stepDuration">The positive duration to use starting with the next advance.</param>
+    /// <exception cref="ArgumentOutOfRangeException">The step is zero or negative. The previous step remains in effect.</exception>
     public void SetStepDuration(ChronicleDuration stepDuration)
     {
         ValidateStepDuration(stepDuration);
         StepDuration = stepDuration;
     }
 
-    /// <summary>Gets a future frame without scheduling work; zero selects the current frame.</summary>
+    /// <summary>Calculates a frame deadline without scheduling work.</summary>
+    /// <param name="framesFromNow">A nonnegative count of advances from the current frame. Zero selects the current frame.</param>
+    /// <returns>The current frame plus the requested offset.</returns>
     /// <exception cref="ArgumentOutOfRangeException">The offset is negative.</exception>
-    /// <exception cref="OverflowException">The deadline exceeds the frame range.</exception>
+    /// <exception cref="OverflowException">The deadline exceeds <see cref="long.MaxValue"/>.</exception>
     public long GetDeadlineFrame(long framesFromNow)
     {
         if (framesFromNow < 0)
@@ -73,12 +80,10 @@ public sealed class ChronicleClock : IRecordable
         ElapsedTime = ChronicleTimestamp.Zero;
     }
 
-    /// <summary>Records this clock or transactionally populates it from schema version one.</summary>
-    /// <remarks>
-    /// Failed loading leaves the entire clock unchanged. The owner must quiesce its
-    /// simulation and invalidate old work before restoring; no host services are reset here.
-    /// </remarks>
-    /// <exception cref="InvalidOperationException">The schema or frame/elapsed relationship is invalid.</exception>
+    /// <summary>Transfers the clock through its version-one schema.</summary>
+    /// <param name="chronicler">The active pass for reading or writing clock state.</param>
+    /// <remarks>The load stages all fields and validates them before updating the clock. The host stops advancement and invalidates pending work before restoring.</remarks>
+    /// <exception cref="InvalidOperationException">A required schema is absent or unsupported, the frame count is negative, or exactly one of frame and elapsed time is zero.</exception>
     /// <exception cref="ArgumentOutOfRangeException">The elapsed timestamp is negative or the step is not positive.</exception>
     public void RecordData(IChronicler chronicler)
     {

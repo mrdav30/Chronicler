@@ -12,28 +12,18 @@ namespace MemoryPack;
 /// </summary>
 public enum GenerateType
 {
-    /// <summary>
-    /// Generates ordinary object serialization metadata.
-    /// </summary>
+    /// <summary>Selects ordinary object encoding.</summary>
     Object,
 
-    /// <summary>
-    /// Generates version-tolerant serialization metadata.
-    /// </summary>
+    /// <summary>Selects a version-tolerant object layout.</summary>
     VersionTolerant,
 
-    /// <summary>
-    /// Generates circular-reference serialization metadata.
-    /// </summary>
+    /// <summary>Selects the circular-reference mode.</summary>
     CircularReference,
 
-    /// <summary>
-    /// Generates collection serialization metadata.
-    /// </summary>
+    /// <summary>Selects collection encoding.</summary>
     Collection,
 
-    /// <summary>
-    /// Suppresses source generation.
-    /// </summary>
+    /// <summary>Marks a type for which generation is suppressed.</summary>
     NoGenerate
 }

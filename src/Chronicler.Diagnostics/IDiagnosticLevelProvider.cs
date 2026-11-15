@@ -11,8 +11,7 @@ namespace Chronicler.Diagnostics;
 /// </summary>
 public interface IDiagnosticLevelProvider
 {
-    /// <summary>
-    /// Gets the diagnostic level for this provider.
-    /// </summary>
+    /// <summary>Gets the level selected by this provider.</summary>
+    /// <value>The severity a fixed-level handler reads from its default provider value.</value>
     DiagnosticLevel Level { get; }
 }

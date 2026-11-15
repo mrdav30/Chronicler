@@ -18,16 +18,14 @@ namespace MemoryPack;
     Inherited = false)]
 public sealed class MemoryPackOrderAttribute : Attribute
 {
-    /// <summary>
-    /// Initializes the attribute with the requested member order.
-    /// </summary>
+    /// <summary>Records the member's declared position.</summary>
+    /// <param name="order">The order metadata to store as supplied.</param>
     public MemoryPackOrderAttribute(int order)
     {
         Order = order;
     }
 
-    /// <summary>
-    /// Gets the requested member order.
-    /// </summary>
+    /// <summary>Gets the member order metadata.</summary>
+    /// <value>The integer passed to the attribute constructor.</value>
     public int Order { get; }
 }

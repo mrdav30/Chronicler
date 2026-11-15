@@ -12,13 +12,11 @@ namespace Chronicler.Diagnostics;
 /// </summary>
 public readonly struct DiagnosticEvent
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DiagnosticEvent"/> struct.
-    /// </summary>
-    /// <param name="channel">The channel that emitted the event.</param>
-    /// <param name="level">The severity level of the event.</param>
-    /// <param name="message">The event message.</param>
-    /// <param name="source">An optional source identifier.</param>
+    /// <summary>Creates an immutable diagnostic event.</summary>
+    /// <param name="channel">The channel label. Null becomes empty.</param>
+    /// <param name="level">The severity attached to the event.</param>
+    /// <param name="message">The rendered event text. Null becomes empty.</param>
+    /// <param name="source">The optional origin label. Null or omission becomes empty.</param>
     public DiagnosticEvent(
         string channel,
         DiagnosticLevel level,
@@ -31,23 +29,19 @@ public readonly struct DiagnosticEvent
         Source = source ?? string.Empty;
     }
 
-    /// <summary>
-    /// Gets the channel that emitted the event.
-    /// </summary>
+    /// <summary>Gets the channel label.</summary>
+    /// <value>The emitting channel's name.</value>
     public string Channel { get; }
 
-    /// <summary>
-    /// Gets the severity level of the event.
-    /// </summary>
+    /// <summary>Gets event severity.</summary>
+    /// <value>The level carried through to sinks and formatters.</value>
     public DiagnosticLevel Level { get; }
 
-    /// <summary>
-    /// Gets the diagnostic message.
-    /// </summary>
+    /// <summary>Gets the event text.</summary>
+    /// <value>The caller's formatted message, with null normalized to empty.</value>
     public string Message { get; }
 
-    /// <summary>
-    /// Gets the optional source identifier.
-    /// </summary>
+    /// <summary>Gets the origin label.</summary>
+    /// <value>The supplied origin or an empty string.</value>
     public string Source { get; }
 }

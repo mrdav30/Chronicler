@@ -10,9 +10,8 @@ namespace Chronicler.Diagnostics;
 using System;
 using System.Runtime.CompilerServices;
 
-/// <summary>
-/// Builds exception messages only when the guarded throw condition is true.
-/// </summary>
+/// <summary>Builds an exception message only for a failing guard.</summary>
+/// <remarks>The compiler uses the constructor's gate to skip interpolation expressions when disabled. Append calls on a disabled handler have no effect.</remarks>
 [InterpolatedStringHandler]
 public ref struct ThrowInterpolatedStringHandler
 {
@@ -21,10 +20,10 @@ public ref struct ThrowInterpolatedStringHandler
     /// <summary>
     /// Initializes a new instance of the <see cref="ThrowInterpolatedStringHandler"/> struct.
     /// </summary>
-    /// <param name="literalLength">The combined length of literal portions in the interpolated string.</param>
-    /// <param name="formattedCount">The number of formatted expressions in the interpolated string.</param>
+    /// <param name="literalLength">The compiler-supplied count of literal UTF-16 code units.</param>
+    /// <param name="formattedCount">The compiler-supplied number of interpolation holes.</param>
     /// <param name="condition">The throw condition that controls whether formatting occurs.</param>
-    /// <param name="isEnabled">Set to <see langword="true"/> when formatted expressions should be evaluated.</param>
+    /// <param name="isEnabled">Set to true to evaluate interpolation expressions, or false to skip them.</param>
     public ThrowInterpolatedStringHandler(
         int literalLength,
         int formattedCount,
@@ -34,121 +33,73 @@ public ref struct ThrowInterpolatedStringHandler
         _message = new DiagnosticInterpolatedStringHandler(literalLength, formattedCount, condition, out isEnabled);
     }
 
-    /// <summary>
-    /// Gets whether this handler is actively building an exception message.
-    /// </summary>
+    /// <summary>Gets the captured formatting gate.</summary>
+    /// <value>True when the handler was constructed to build a message.</value>
     public bool IsEnabled => _message.IsEnabled;
 
     internal string GetFormattedText() => _message.GetFormattedText();
 
-    /// <summary>
-    /// Appends a literal string segment.
-    /// </summary>
-    /// <param name="value">The literal string segment.</param>
+    /// <inheritdoc cref="DiagnosticInterpolatedStringHandler.AppendLiteral(string)"/>
     public void AppendLiteral(string value)
     {
         _message.AppendLiteral(value);
     }
 
-    /// <summary>
-    /// Appends a formatted value.
-    /// </summary>
-    /// <typeparam name="T">The type of value to append.</typeparam>
-    /// <param name="value">The value to append.</param>
+    /// <inheritdoc cref="DiagnosticInterpolatedStringHandler.AppendFormatted{T}(T)"/>
     public void AppendFormatted<T>(T value)
     {
         _message.AppendFormatted(value);
     }
 
-    /// <summary>
-    /// Appends a formatted value using the specified format string.
-    /// </summary>
-    /// <typeparam name="T">The type of value to append.</typeparam>
-    /// <param name="value">The value to append.</param>
-    /// <param name="format">The format string to apply.</param>
+    /// <inheritdoc cref="DiagnosticInterpolatedStringHandler.AppendFormatted{T}(T, string)"/>
     public void AppendFormatted<T>(T value, string? format)
     {
         _message.AppendFormatted(value, format);
     }
 
-    /// <summary>
-    /// Appends a formatted value with the specified alignment.
-    /// </summary>
-    /// <typeparam name="T">The type of value to append.</typeparam>
-    /// <param name="value">The value to append.</param>
-    /// <param name="alignment">The minimum width for the formatted value.</param>
+    /// <inheritdoc cref="DiagnosticInterpolatedStringHandler.AppendFormatted{T}(T, int)"/>
     public void AppendFormatted<T>(T value, int alignment)
     {
         _message.AppendFormatted(value, alignment);
     }
 
-    /// <summary>
-    /// Appends a formatted value with the specified alignment and format string.
-    /// </summary>
-    /// <typeparam name="T">The type of value to append.</typeparam>
-    /// <param name="value">The value to append.</param>
-    /// <param name="alignment">The minimum width for the formatted value.</param>
-    /// <param name="format">The format string to apply.</param>
+    /// <inheritdoc cref="DiagnosticInterpolatedStringHandler.AppendFormatted{T}(T, int, string)"/>
     public void AppendFormatted<T>(T value, int alignment, string? format)
     {
         _message.AppendFormatted(value, alignment, format);
     }
 
-    /// <summary>
-    /// Appends a string value.
-    /// </summary>
-    /// <param name="value">The value to append.</param>
+    /// <inheritdoc cref="DiagnosticInterpolatedStringHandler.AppendFormatted(string)"/>
     public void AppendFormatted(string? value)
     {
         _message.AppendFormatted(value);
     }
 
-    /// <summary>
-    /// Appends a string value with the specified alignment.
-    /// </summary>
-    /// <param name="value">The value to append.</param>
-    /// <param name="alignment">The minimum width for the formatted value.</param>
+    /// <inheritdoc cref="DiagnosticInterpolatedStringHandler.AppendFormatted(string, int)"/>
     public void AppendFormatted(string? value, int alignment)
     {
         _message.AppendFormatted(value, alignment);
     }
 
-    /// <summary>
-    /// Appends a string value with the specified alignment and format string.
-    /// </summary>
-    /// <param name="value">The value to append.</param>
-    /// <param name="alignment">The minimum width for the formatted value.</param>
-    /// <param name="format">The format string to apply.</param>
+    /// <inheritdoc cref="DiagnosticInterpolatedStringHandler.AppendFormatted(string, int, string)"/>
     public void AppendFormatted(string? value, int alignment, string? format)
     {
         _message.AppendFormatted(value, alignment, format);
     }
 
-    /// <summary>
-    /// Appends a character span.
-    /// </summary>
-    /// <param name="value">The span to append.</param>
+    /// <inheritdoc cref="DiagnosticInterpolatedStringHandler.AppendFormatted(ReadOnlySpan{char})"/>
     public void AppendFormatted(ReadOnlySpan<char> value)
     {
         _message.AppendFormatted(value);
     }
 
-    /// <summary>
-    /// Appends a character span with the specified alignment.
-    /// </summary>
-    /// <param name="value">The span to append.</param>
-    /// <param name="alignment">The minimum width for the formatted value.</param>
+    /// <inheritdoc cref="DiagnosticInterpolatedStringHandler.AppendFormatted(ReadOnlySpan{char}, int)"/>
     public void AppendFormatted(ReadOnlySpan<char> value, int alignment)
     {
         _message.AppendFormatted(value, alignment);
     }
 
-    /// <summary>
-    /// Appends a character span with the specified alignment and format string.
-    /// </summary>
-    /// <param name="value">The span to append.</param>
-    /// <param name="alignment">The minimum width for the formatted value.</param>
-    /// <param name="format">The format string to apply.</param>
+    /// <inheritdoc cref="DiagnosticInterpolatedStringHandler.AppendFormatted(ReadOnlySpan{char}, int, string)"/>
     public void AppendFormatted(ReadOnlySpan<char> value, int alignment, string? format)
     {
         _message.AppendFormatted(value, alignment, format);

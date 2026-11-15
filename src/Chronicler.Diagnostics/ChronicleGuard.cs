@@ -32,7 +32,7 @@ public static class ChronicleGuard
     /// Throws an <see cref="ArgumentNullException"/> if the provided argument is null.
     /// </summary>
     /// <param name="argument">The argument to check for null.</param>
-    /// <param name="paramName">The name of the parameter that caused the exception.</param>
+    /// <param name="paramName">The argument name. Omission captures the call-site expression on supported compilers.</param>
     /// <exception cref="ArgumentNullException">Thrown when the argument is null.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfNull(
@@ -48,7 +48,7 @@ public static class ChronicleGuard
     /// </summary>
     /// <typeparam name="T">The type of the argument to check.</typeparam>
     /// <param name="argument">The argument to check for null.</param>
-    /// <param name="paramName">The name of the parameter that caused the exception.</param>
+    /// <param name="paramName">The argument name. Omission captures the call-site expression on supported compilers.</param>
     /// <exception cref="ArgumentNullException">Thrown when the argument is null.</exception>
 #pragma warning disable CS8777 // Cached generic nullability avoids boxing non-nullable value types.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -62,13 +62,13 @@ public static class ChronicleGuard
 #pragma warning restore CS8777
 
     /// <summary>
-    /// Throws an <see cref="ArgumentNullException"/> if the specified value is null and nulls are not legal for <typeparamref name="TValue"/>.
+    /// Rejects a null value when the supplied default is non-null.
     /// </summary>
-    /// <typeparam name="TValue">The value type used to determine whether null is legal.</typeparam>
+    /// <typeparam name="TValue">The declared type of the supplied default.</typeparam>
     /// <param name="value">The value to check.</param>
-    /// <param name="defaultValue">A default value of type <typeparamref name="TValue"/> used to determine if nulls are illegal.</param>
-    /// <param name="paramName">The name of the parameter that caused the exception.</param>
-    /// <exception cref="ArgumentNullException">Thrown when the value is null and nulls are illegal.</exception>
+    /// <param name="defaultValue">The null-policy sentinel. A null default permits a null input.</param>
+    /// <param name="paramName">The argument name. Omission captures the call-site expression on supported compilers.</param>
+    /// <exception cref="ArgumentNullException">The input is null and the supplied default is non-null.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfNullAndNullsAreIllegal<TValue>(
         object? value,
@@ -99,7 +99,7 @@ public static class ChronicleGuard
     /// Throws an <see cref="ArgumentOutOfRangeException"/> if the specified value is negative.
     /// </summary>
     /// <param name="value">The value to check.</param>
-    /// <param name="paramName">The name of the parameter that caused the exception.</param>
+    /// <param name="paramName">The argument name. Omission captures the call-site expression on supported compilers.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is negative.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfNegative(
@@ -114,7 +114,7 @@ public static class ChronicleGuard
     /// Throws an <see cref="ArgumentOutOfRangeException"/> if the specified value is negative or zero.
     /// </summary>
     /// <param name="value">The value to check.</param>
-    /// <param name="paramName">The name of the parameter that caused the exception.</param>
+    /// <param name="paramName">The argument name. Omission captures the call-site expression on supported compilers.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is negative or zero.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfNegativeOrZero(
@@ -128,10 +128,10 @@ public static class ChronicleGuard
     /// <summary>
     /// Throws an <see cref="ArgumentOutOfRangeException"/> if the specified condition is true.
     /// </summary>
-    /// <param name="condition">The condition to evaluate.</param>
-    /// <param name="actualValue">The value that caused the exception.</param>
-    /// <param name="paramName">The name of the parameter that caused the exception.</param>
-    /// <param name="message">An optional message to include in the exception.</param>
+    /// <param name="condition">The caller's invalid-state test. True throws the documented exception.</param>
+    /// <param name="actualValue">The offending value to report in the exception, if available.</param>
+    /// <param name="paramName">The argument name. Omission captures the call-site expression on supported compilers.</param>
+    /// <param name="message">A custom message. Null selects the guard's default.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the condition is true.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfArgumentOutOfRange(
@@ -147,9 +147,9 @@ public static class ChronicleGuard
     /// <summary>
     /// Throws an <see cref="ArgumentOutOfRangeException"/> with a lazily formatted message if the specified condition is true.
     /// </summary>
-    /// <param name="condition">The condition to evaluate.</param>
-    /// <param name="actualValue">The value that caused the exception.</param>
-    /// <param name="message">The interpolated exception message.</param>
+    /// <param name="condition">The caller's invalid-state test. True throws the documented exception.</param>
+    /// <param name="actualValue">The offending value to report in the exception, if available.</param>
+    /// <param name="message">The interpolated message, with expressions evaluated only when the guard fails.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the condition is true.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfArgumentOutOfRange(
@@ -164,10 +164,10 @@ public static class ChronicleGuard
     /// <summary>
     /// Throws an <see cref="ArgumentOutOfRangeException"/> with a lazily formatted message if the specified condition is true.
     /// </summary>
-    /// <param name="condition">The condition to evaluate.</param>
-    /// <param name="actualValue">The value that caused the exception.</param>
-    /// <param name="paramName">The name of the parameter that caused the exception.</param>
-    /// <param name="message">The interpolated exception message.</param>
+    /// <param name="condition">The caller's invalid-state test. True throws the documented exception.</param>
+    /// <param name="actualValue">The offending value to report in the exception, if available.</param>
+    /// <param name="paramName">The argument name. Null leaves the exception parameter unnamed.</param>
+    /// <param name="message">The interpolated message, with expressions evaluated only when the guard fails.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the condition is true.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfArgumentOutOfRange(
@@ -183,9 +183,9 @@ public static class ChronicleGuard
     /// <summary>
     /// Throws an <see cref="ArgumentOutOfRangeException"/> if a copy destination index is outside [0, length].
     /// </summary>
-    /// <param name="index">The destination index to check.</param>
-    /// <param name="length">The destination length.</param>
-    /// <param name="paramName">The name of the parameter that caused the exception.</param>
+    /// <param name="index">A zero-based offset. The end position is allowed for an empty copy.</param>
+    /// <param name="length">The nonnegative number of elements in the destination.</param>
+    /// <param name="paramName">The argument name. Omission captures the call-site expression on supported compilers.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the index is outside [0, length].</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfArrayIndexInvalid(
@@ -209,9 +209,9 @@ public static class ChronicleGuard
     /// <summary>
     /// Throws an <see cref="ArgumentException"/> if the specified condition is true.
     /// </summary>
-    /// <param name="condition">The condition to evaluate.</param>
-    /// <param name="paramName">The name of the parameter that caused the exception.</param>
-    /// <param name="message">An optional message to include in the exception.</param>
+    /// <param name="condition">The caller's invalid-state test. True throws the documented exception.</param>
+    /// <param name="paramName">The argument name. Null leaves the exception parameter unnamed.</param>
+    /// <param name="message">A custom message. Null selects the guard's default.</param>
     /// <exception cref="ArgumentException">Thrown when the condition is true.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfArgument(
@@ -225,8 +225,8 @@ public static class ChronicleGuard
     /// <summary>
     /// Throws an <see cref="ArgumentException"/> with a lazily formatted message if the specified condition is true.
     /// </summary>
-    /// <param name="condition">The condition to evaluate.</param>
-    /// <param name="message">The interpolated exception message.</param>
+    /// <param name="condition">The caller's invalid-state test. True throws the documented exception.</param>
+    /// <param name="message">The interpolated message, with expressions evaluated only when the guard fails.</param>
     /// <exception cref="ArgumentException">Thrown when the condition is true.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfArgument(
@@ -240,9 +240,9 @@ public static class ChronicleGuard
     /// <summary>
     /// Throws an <see cref="ArgumentException"/> with a lazily formatted message if the specified condition is true.
     /// </summary>
-    /// <param name="condition">The condition to evaluate.</param>
-    /// <param name="paramName">The name of the parameter that caused the exception.</param>
-    /// <param name="message">The interpolated exception message.</param>
+    /// <param name="condition">The caller's invalid-state test. True throws the documented exception.</param>
+    /// <param name="paramName">The argument name. Null leaves the exception parameter unnamed.</param>
+    /// <param name="message">The interpolated message, with expressions evaluated only when the guard fails.</param>
     /// <exception cref="ArgumentException">Thrown when the condition is true.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfArgument(
@@ -261,9 +261,9 @@ public static class ChronicleGuard
     /// <summary>
     /// Throws an <see cref="InvalidOperationException"/> if the specified condition is true.
     /// </summary>
-    /// <param name="condition">The condition to evaluate.</param>
+    /// <param name="condition">The caller's invalid-state test. True throws the documented exception.</param>
     /// <param name="objectName">The name of the object in an invalid state.</param>
-    /// <param name="message">An optional message to include in the exception.</param>
+    /// <param name="message">A custom message. Null selects the guard's default.</param>
     /// <exception cref="InvalidOperationException">Thrown when the condition is true.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfTrue(
@@ -278,8 +278,8 @@ public static class ChronicleGuard
     /// <summary>
     /// Throws an <see cref="InvalidOperationException"/> with a lazily formatted message if the specified condition is true.
     /// </summary>
-    /// <param name="condition">The condition to evaluate.</param>
-    /// <param name="message">The interpolated exception message.</param>
+    /// <param name="condition">The caller's invalid-state test. True throws the documented exception.</param>
+    /// <param name="message">The interpolated message, with expressions evaluated only when the guard fails.</param>
     /// <exception cref="InvalidOperationException">Thrown when the condition is true.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfTrue(
@@ -293,9 +293,9 @@ public static class ChronicleGuard
     /// <summary>
     /// Throws an <see cref="InvalidOperationException"/> with a lazily formatted message if the specified condition is true.
     /// </summary>
-    /// <param name="condition">The condition to evaluate.</param>
-    /// <param name="objectName">The name of the object in an invalid state.</param>
-    /// <param name="message">The interpolated exception message.</param>
+    /// <param name="condition">The caller's invalid-state test. True throws the documented exception.</param>
+    /// <param name="objectName">This overload ignores the name. Include it in the interpolated message to report it.</param>
+    /// <param name="message">The interpolated message, with expressions evaluated only when the guard fails.</param>
     /// <exception cref="InvalidOperationException">Thrown when the condition is true.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfTrue(
@@ -315,9 +315,9 @@ public static class ChronicleGuard
     /// <summary>
     /// Throws an <see cref="ObjectDisposedException"/> if the specified condition is true.
     /// </summary>
-    /// <param name="condition">The condition to evaluate.</param>
+    /// <param name="condition">The caller's invalid-state test. True throws the documented exception.</param>
     /// <param name="objectName">The name of the object that has been disposed.</param>
-    /// <param name="message">An optional message to include in the exception.</param>
+    /// <param name="message">A custom message. Null selects the guard's default.</param>
     /// <exception cref="ObjectDisposedException">Thrown when the condition is true.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfDisposed(
@@ -332,8 +332,8 @@ public static class ChronicleGuard
     /// <summary>
     /// Throws an <see cref="ObjectDisposedException"/> with a lazily formatted message if the specified condition is true.
     /// </summary>
-    /// <param name="condition">The condition to evaluate.</param>
-    /// <param name="message">The interpolated exception message.</param>
+    /// <param name="condition">The caller's invalid-state test. True throws the documented exception.</param>
+    /// <param name="message">The interpolated message, with expressions evaluated only when the guard fails.</param>
     /// <exception cref="ObjectDisposedException">Thrown when the condition is true.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfDisposed(
@@ -347,9 +347,9 @@ public static class ChronicleGuard
     /// <summary>
     /// Throws an <see cref="ObjectDisposedException"/> with a lazily formatted message if the specified condition is true.
     /// </summary>
-    /// <param name="condition">The condition to evaluate.</param>
+    /// <param name="condition">The caller's invalid-state test. True throws the documented exception.</param>
     /// <param name="objectName">The name of the object that has been disposed.</param>
-    /// <param name="message">The interpolated exception message.</param>
+    /// <param name="message">The interpolated message, with expressions evaluated only when the guard fails.</param>
     /// <exception cref="ObjectDisposedException">Thrown when the condition is true.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfDisposed(
@@ -369,7 +369,7 @@ public static class ChronicleGuard
     /// <summary>
     /// Throws a <see cref="KeyNotFoundException"/> if the specified index is negative.
     /// </summary>
-    /// <param name="index">The index to check.</param>
+    /// <param name="index">The lookup result. A negative value means the key was absent.</param>
     /// <param name="key">The key associated with the index.</param>
     /// <exception cref="KeyNotFoundException">Thrown when the index is negative.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -382,9 +382,9 @@ public static class ChronicleGuard
     /// <summary>
     /// Throws a <see cref="KeyNotFoundException"/> if the specified condition is true.
     /// </summary>
-    /// <param name="condition">The condition to evaluate.</param>
+    /// <param name="condition">The caller's invalid-state test. True throws the documented exception.</param>
     /// <param name="key">The key associated with the lookup.</param>
-    /// <param name="message">An optional message to include in the exception.</param>
+    /// <param name="message">A custom message. Null selects the guard's default.</param>
     /// <exception cref="KeyNotFoundException">Thrown when the condition is true.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfKeyNotFound(
@@ -399,8 +399,8 @@ public static class ChronicleGuard
     /// <summary>
     /// Throws a <see cref="KeyNotFoundException"/> with a lazily formatted message if the specified condition is true.
     /// </summary>
-    /// <param name="condition">The condition to evaluate.</param>
-    /// <param name="message">The interpolated exception message.</param>
+    /// <param name="condition">The caller's invalid-state test. True throws the documented exception.</param>
+    /// <param name="message">The interpolated message, with expressions evaluated only when the guard fails.</param>
     /// <exception cref="KeyNotFoundException">Thrown when the condition is true.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfKeyNotFound(
@@ -414,9 +414,9 @@ public static class ChronicleGuard
     /// <summary>
     /// Throws a <see cref="KeyNotFoundException"/> with a lazily formatted message if the specified condition is true.
     /// </summary>
-    /// <param name="condition">The condition to evaluate.</param>
-    /// <param name="key">The key associated with the lookup.</param>
-    /// <param name="message">The interpolated exception message.</param>
+    /// <param name="condition">The caller's invalid-state test. True throws the documented exception.</param>
+    /// <param name="key">This overload ignores the key. Include it in the interpolated message to report it.</param>
+    /// <param name="message">The interpolated message, with expressions evaluated only when the guard fails.</param>
     /// <exception cref="KeyNotFoundException">Thrown when the condition is true.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfKeyNotFound(
@@ -436,8 +436,8 @@ public static class ChronicleGuard
     /// <summary>
     /// Throws an <see cref="IndexOutOfRangeException"/> if the specified index is outside the valid range defined by count.
     /// </summary>
-    /// <param name="index">The index to check.</param>
-    /// <param name="count">The total number of elements in the collection.</param>
+    /// <param name="index">A zero-based index strictly below the element count.</param>
+    /// <param name="count">The nonnegative number of elements.</param>
     /// <exception cref="IndexOutOfRangeException">Thrown when the index is outside the valid range.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ThrowIfListIndexInvalid(

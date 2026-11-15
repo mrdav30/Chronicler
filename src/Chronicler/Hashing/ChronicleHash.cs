@@ -15,38 +15,41 @@ namespace Chronicler.Hashing;
 /// </summary>
 public readonly struct ChronicleHash : IEquatable<ChronicleHash>
 {
-    /// <summary>
-    /// Creates a new hash value from its two 64-bit lanes.
-    /// </summary>
+    /// <summary>Creates a hash from two 64-bit components.</summary>
+    /// <param name="low">The component emitted last in the hexadecimal representation.</param>
+    /// <param name="high">The component emitted first in the hexadecimal representation.</param>
     public ChronicleHash(ulong low, ulong high)
     {
         Low = low;
         High = high;
     }
 
-    /// <summary>
-    /// Gets the low 64-bit lane.
-    /// </summary>
+    /// <summary>Gets the low component.</summary>
+    /// <value>The final 16 hexadecimal digits in <see cref="ToString"/>.</value>
     public ulong Low { get; }
 
-    /// <summary>
-    /// Gets the high 64-bit lane.
-    /// </summary>
+    /// <summary>Gets the high component.</summary>
+    /// <value>The first 16 hexadecimal digits in <see cref="ToString"/>.</value>
     public ulong High { get; }
 
-    /// <inheritdoc />
+    /// <summary>Tests exact hash equality.</summary>
+    /// <param name="other">The hash to compare by component.</param>
+    /// <returns>True when both components match.</returns>
     public bool Equals(ChronicleHash other)
     {
         return Low == other.Low && High == other.High;
     }
 
-    /// <inheritdoc />
+    /// <summary>Tests equality with a boxed hash.</summary>
+    /// <param name="obj">The object to compare. Null or another type compares unequal.</param>
+    /// <returns>True when the object has this value type and both components match.</returns>
     public override bool Equals(object? obj)
     {
         return obj is ChronicleHash other && Equals(other);
     }
 
-    /// <inheritdoc />
+    /// <summary>Hashes the hash for use in collections.</summary>
+    /// <returns>A deterministic 32-bit mix of both components.</returns>
     public override int GetHashCode()
     {
         unchecked
@@ -59,26 +62,27 @@ public readonly struct ChronicleHash : IEquatable<ChronicleHash>
         }
     }
 
-    /// <summary>
-    /// Returns a lowercase 32-character hexadecimal hash string as high lane followed by low lane.
-    /// </summary>
+    /// <summary>Formats the hash for display or comparison.</summary>
+    /// <returns>Exactly 32 lowercase hexadecimal digits, high component first, with leading zeroes and no separators.</returns>
     public override string ToString()
     {
         return High.ToString("x16", CultureInfo.InvariantCulture)
             + Low.ToString("x16", CultureInfo.InvariantCulture);
     }
 
-    /// <summary>
-    /// Compares two hash values for equality.
-    /// </summary>
+    /// <summary>Tests whether the left hash exactly equals the right hash.</summary>
+    /// <param name="left">The first operand.</param>
+    /// <param name="right">The second operand of the comparison.</param>
+    /// <returns>True when the left operand exactly equals the right operand.</returns>
     public static bool operator ==(ChronicleHash left, ChronicleHash right)
     {
         return left.Equals(right);
     }
 
-    /// <summary>
-    /// Compares two hash values for inequality.
-    /// </summary>
+    /// <summary>Tests whether the left hash differs from the right hash.</summary>
+    /// <param name="left">The first operand.</param>
+    /// <param name="right">The second operand of the comparison.</param>
+    /// <returns>True when the left operand differs from the right operand.</returns>
     public static bool operator !=(ChronicleHash left, ChronicleHash right)
     {
         return !left.Equals(right);

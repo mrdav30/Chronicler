@@ -23,15 +23,20 @@ public sealed class StateJsonConverter<TRecord, TState> : JsonConverter<TRecord>
 
     private readonly Func<TState, TRecord> _factory;
 
-    /// <summary>
-    /// Creates a converter that restores records from serialized state using the supplied factory.
-    /// </summary>
+    /// <summary>Creates a converter that reconstructs records from their state.</summary>
+    /// <param name="factory">The retained callback that reconstructs a record from a deserialized state value.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="factory"/> is null.</exception>
     public StateJsonConverter(Func<TState, TRecord> factory)
     {
         _factory = factory ?? throw new ArgumentNullException(nameof(factory));
     }
 
-    /// <inheritdoc />
+    /// <summary>Reads a state object and reconstructs the record.</summary>
+    /// <param name="reader">A reader at the start of the object. On success, it is positioned on the closing object token.</param>
+    /// <param name="typeToConvert">The requested record type, used in shape errors.</param>
+    /// <param name="options">The serializer options used to decode the nested state.</param>
+    /// <returns>The result of invoking the factory with the decoded state.</returns>
+    /// <exception cref="JsonException">The object does not contain exactly one case-sensitive <c>State</c> property, or the state cannot be decoded to a non-null value.</exception>
     public override TRecord Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         EnsureStartObject(reader.TokenType, typeToConvert);
@@ -79,7 +84,10 @@ public sealed class StateJsonConverter<TRecord, TState> : JsonConverter<TRecord>
             throw new JsonException($"Expected end of JSON object for state-backed type '{typeToConvert}'.");
     }
 
-    /// <inheritdoc />
+    /// <summary>Writes the record as an object with one <c>State</c> property.</summary>
+    /// <param name="writer">The caller's JSON writer. Appends one value at its current position.</param>
+    /// <param name="value">The object whose state is written. A null record writes a JSON null.</param>
+    /// <param name="options">The serializer options used to encode the nested state.</param>
     public override void Write(Utf8JsonWriter writer, TRecord value, JsonSerializerOptions options)
     {
         if (value == null)

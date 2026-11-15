@@ -20,29 +20,38 @@ public interface IChronicler
     /// <value>The context that supplies stable link registrations and tracks deferred assignments for this pass.</value>
     ChronicleContext Context { get; }
 
-    /// <summary>
-    /// Gets the active serialization mode.
-    /// </summary>
+    /// <summary>Gets the direction of the current pass.</summary>
+    /// <value>Saving reads the schema's current state. Loading applies the recorded state.</value>
     SerializationMode Mode { get; }
 
-    /// <summary>
-    /// Reads or writes a value by name.
-    /// </summary>
+    /// <summary>Records a leaf value.</summary>
+    /// <typeparam name="T">The type handled by the active transport.</typeparam>
+    /// <param name="value">The value to write on save. On load, receives the decoded value or the declared default for a missing or null entry.</param>
+    /// <param name="name">The stable field name shared by saving and loading.</param>
+    /// <param name="defaultValue">The schema default. The built-in transports omit null values and values equal to this default when saving.</param>
+    /// <remarks>Leaf encoding is transport-specific. Record hashes include the current and default values for supported leaf types.</remarks>
     void LookValue<T>(ref T value, string name, T? defaultValue = default);
 
-    /// <summary>
-    /// Reads or writes a nested recordable instance by name.
-    /// </summary>
+    /// <summary>Records an owned class instance.</summary>
+    /// <typeparam name="T">The declared type of the owned object.</typeparam>
+    /// <param name="value">The existing instance to write or populate. A missing or null entry leaves the target untouched.</param>
+    /// <param name="name">The stable field name shared by saving and loading.</param>
+    /// <remarks>A present entry runs the schema on the existing target instance. A failure can leave that instance partly updated.</remarks>
+    /// <exception cref="InvalidOperationException">A present entry needs an instance, but the load target is null.</exception>
     void LookDeep<T>(ref T value, string name) where T : class, IRecordable;
 
-    /// <summary>
-    /// Reads or writes a nested recordable struct by name.
-    /// </summary>
+    /// <summary>Records an owned struct inline.</summary>
+    /// <typeparam name="T">The type of the owned value.</typeparam>
+    /// <param name="value">The value to write on save. A present record loads into a fresh value. For missing or null input, the pass runs the schema against an empty record before replacing this value.</param>
+    /// <param name="name">The stable field name shared by saving and loading.</param>
+    /// <remarks>If a present record throws while applying its schema, the new value can be partly updated. If applying an empty record throws, the prior value is retained.</remarks>
     void LookDeepStruct<T>(ref T value, string name) where T : struct, IRecordable;
 
-    /// <summary>
-    /// Reads or writes an optional nested recordable struct by name.
-    /// </summary>
+    /// <summary>Records an optional owned struct inline.</summary>
+    /// <typeparam name="T">The underlying non-nullable struct type.</typeparam>
+    /// <param name="value">The value to write on save. A missing or null entry clears it on load. A present record is staged before assignment.</param>
+    /// <param name="name">The stable field name shared by saving and loading.</param>
+    /// <remarks>An absent value is omitted on save. A failure while loading a present record leaves the existing nullable value in place.</remarks>
     void LookNullableDeep<T>(ref T? value, string name) where T : struct, IRecordable;
 
     /// <summary>

@@ -9,9 +9,8 @@ using System;
 
 namespace MemoryPack;
 
-/// <summary>
-/// Marks the constructor used by MemoryPack-compatible metadata when the MemoryPack package is disabled.
-/// </summary>
+/// <summary>Carries the marker identifying the intended constructor.</summary>
+/// <remarks>This compatibility attribute preserves metadata in Lean builds.</remarks>
 [AttributeUsage(
     AttributeTargets.Constructor,
     AllowMultiple = false,

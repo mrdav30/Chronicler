@@ -13,8 +13,12 @@ namespace Chronicler;
 /// <summary>Records exact time values through a versioned, transport-neutral component schema.</summary>
 public static class RecordChronicleTime
 {
-    /// <summary>Reads or writes a signed duration, assigning only after validation succeeds.</summary>
-    /// <exception cref="InvalidOperationException">The required value schema is missing or unsupported.</exception>
+    /// <summary>Records a signed interval at 2^-32-second precision.</summary>
+    /// <param name="chronicler">The active pass supplied to <see cref="IRecordable.RecordData"/>.</param>
+    /// <param name="value">The duration to record or update. A failed load leaves it unchanged.</param>
+    /// <param name="name">The stable name of the nested time record.</param>
+    /// <remarks>Version 1 records the schema version, floor seconds, and fractional units in that order. Missing components default to zero.</remarks>
+    /// <exception cref="InvalidOperationException">The nested record or its version is missing, or the schema version is unsupported.</exception>
     public static void Look(IChronicler chronicler, ref ChronicleDuration value, string name)
     {
         var record = new TimeRecord(value.WholeSeconds, value.FractionalSecond);
@@ -23,8 +27,12 @@ public static class RecordChronicleTime
         value = new ChronicleDuration(record.WholeSeconds, record.FractionalSecond);
     }
 
-    /// <summary>Reads or writes a timestamp, assigning only after validation succeeds.</summary>
-    /// <exception cref="InvalidOperationException">The required value schema is missing or unsupported.</exception>
+    /// <summary>Records a nonnegative instant at 2^-32-second precision.</summary>
+    /// <param name="chronicler">The active pass supplied to <see cref="IRecordable.RecordData"/>.</param>
+    /// <param name="value">The timestamp to record or update. A failed load leaves it unchanged.</param>
+    /// <param name="name">The stable name of the nested time record.</param>
+    /// <remarks>Version 1 records the schema version, floor seconds, and fractional units in that order. Missing components default to zero.</remarks>
+    /// <exception cref="InvalidOperationException">The nested record or its version is missing, or the schema version is unsupported.</exception>
     /// <exception cref="ArgumentOutOfRangeException">The recorded timestamp precedes its origin.</exception>
     public static void Look(IChronicler chronicler, ref ChronicleTimestamp value, string name)
     {

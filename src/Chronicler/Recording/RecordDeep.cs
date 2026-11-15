@@ -12,9 +12,10 @@ namespace Chronicler;
 /// </summary>
 public static class RecordDeep
 {
-    /// <summary>
-    /// Reads or writes a named nested object.
-    /// </summary>
+    /// <inheritdoc cref="IChronicler.LookDeep{T}(ref T, string)" path="/*[not(self::param)]"/>
+    /// <param name="chronicler">The active pass supplied to <see cref="IRecordable.RecordData"/>.</param>
+    /// <param name="value">The existing instance to write or populate. A missing or null entry leaves the target untouched.</param>
+    /// <param name="name">The stable field name shared by saving and loading.</param>
     public static void Look<T>(IChronicler chronicler, ref T value, string name) where T : class, IRecordable
     {
         chronicler.LookDeep(ref value, name);

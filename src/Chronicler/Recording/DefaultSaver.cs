@@ -17,55 +17,47 @@ namespace Chronicler;
 /// </remarks>
 public abstract class DefaultSaver
 {
-    /// <summary>
-    /// Runs the save phase.
-    /// </summary>
+    /// <summary>Capture the state to transfer.</summary>
+    /// <remarks>Calls <see cref="OnSave"/> synchronously. The host decides when to run the phase.</remarks>
     public void Save()
     {
         OnSave();
     }
 
-    /// <summary>
-    /// Called by <see cref="Save"/>.
-    /// </summary>
+    /// <summary>Capture the state to transfer.</summary>
+    /// <remarks>Override to implement <see cref="Save"/> for the host. The default hook has no effect.</remarks>
     protected virtual void OnSave() { }
 
-    /// <summary>
-    /// Runs the early apply phase.
-    /// </summary>
+    /// <summary>Prepare the destination for applying state.</summary>
+    /// <remarks>Calls <see cref="OnEarlyApply"/> synchronously. The host decides when to run the phase.</remarks>
     public void EarlyApply()
     {
         OnEarlyApply();
     }
 
-    /// <summary>
-    /// Called by <see cref="EarlyApply"/>.
-    /// </summary>
+    /// <summary>Prepare the destination for applying state.</summary>
+    /// <remarks>Override to implement <see cref="EarlyApply"/> for the host. The default hook has no effect.</remarks>
     protected virtual void OnEarlyApply() { }
 
-    /// <summary>
-    /// Runs the apply phase.
-    /// </summary>
+    /// <summary>Apply the transferred state.</summary>
+    /// <remarks>Calls <see cref="OnApply"/> synchronously. The host decides when to run the phase.</remarks>
     public void Apply()
     {
         OnApply();
     }
 
-    /// <summary>
-    /// Called by <see cref="Apply"/>.
-    /// </summary>
+    /// <summary>Apply the transferred state.</summary>
+    /// <remarks>Override to implement <see cref="Apply"/> for the host. The default hook has no effect.</remarks>
     protected virtual void OnApply() { }
 
-    /// <summary>
-    /// Runs the late apply phase.
-    /// </summary>
+    /// <summary>Finish applying state and reconnect dependent host state.</summary>
+    /// <remarks>Calls <see cref="OnLateApply"/> synchronously. The host decides when to run the phase.</remarks>
     public void LateApply()
     {
         OnLateApply();
     }
 
-    /// <summary>
-    /// Called by <see cref="LateApply"/>.
-    /// </summary>
+    /// <summary>Finish applying state and reconnect dependent host state.</summary>
+    /// <remarks>Override to implement <see cref="LateApply"/> for the host. The default hook has no effect.</remarks>
     protected virtual void OnLateApply() { }
 }

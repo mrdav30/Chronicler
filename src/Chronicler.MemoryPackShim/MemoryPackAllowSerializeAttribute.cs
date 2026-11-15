@@ -9,9 +9,8 @@ using System;
 
 namespace MemoryPack;
 
-/// <summary>
-/// Allows MemoryPack-compatible metadata on a type or member when the MemoryPack package is disabled.
-/// </summary>
+/// <summary>Carries the field or property opt-in marker.</summary>
+/// <remarks>This compatibility attribute preserves metadata in Lean builds.</remarks>
 [AttributeUsage(
     AttributeTargets.Field | AttributeTargets.Property,
     AllowMultiple = false,

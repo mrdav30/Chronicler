@@ -25,9 +25,8 @@ public sealed class CallerArgumentExpressionAttribute : Attribute
         ParameterName = parameterName;
     }
 
-    /// <summary>
-    /// Gets the method parameter whose call-site expression should be captured.
-    /// </summary>
+    /// <summary>Gets the source parameter selected for capture.</summary>
+    /// <value>The declared parameter name supplied to the compiler marker.</value>
     public string ParameterName { get; }
 }
 #endif

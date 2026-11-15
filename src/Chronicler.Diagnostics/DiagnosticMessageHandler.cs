@@ -9,10 +9,9 @@ namespace Chronicler.Diagnostics;
 
 using System.Runtime.CompilerServices;
 
-/// <summary>
-/// Builds interpolated diagnostic messages only when the requested diagnostic level is enabled.
-/// </summary>
-/// <typeparam name="TLevel">The fixed diagnostic level provider used by fixed-level helpers.</typeparam>
+/// <summary>Builds a diagnostic message using an enablement decision captured at construction.</summary>
+/// <typeparam name="TLevel">The default provider for fixed-level calls. The dynamic constructor takes a level explicitly.</typeparam>
+/// <remarks>The compiler uses the constructor's gate to skip interpolation expressions when disabled. Append calls on a disabled handler have no effect.</remarks>
 [InterpolatedStringHandler]
 public ref struct DiagnosticMessageHandler<TLevel>
     where TLevel : struct, IDiagnosticLevelProvider
@@ -22,10 +21,11 @@ public ref struct DiagnosticMessageHandler<TLevel>
     /// <summary>
     /// Initializes a new handler for a fixed-level diagnostic message.
     /// </summary>
-    /// <param name="literalLength">The combined length of literal portions in the interpolated string.</param>
-    /// <param name="formattedCount">The number of formatted expressions in the interpolated string.</param>
+    /// <param name="literalLength">The compiler-supplied count of literal UTF-16 code units.</param>
+    /// <param name="formattedCount">The compiler-supplied number of interpolation holes.</param>
     /// <param name="channel">The diagnostic channel that receives the message.</param>
-    /// <param name="isEnabled">Set to <see langword="true"/> when formatted expressions should be evaluated.</param>
+    /// <param name="isEnabled">Set to true to evaluate interpolation expressions, or false to skip them.</param>
+    /// <exception cref="System.ArgumentNullException">The channel is null.</exception>
     public DiagnosticMessageHandler(
         int literalLength,
         int formattedCount,
@@ -38,11 +38,12 @@ public ref struct DiagnosticMessageHandler<TLevel>
     /// <summary>
     /// Initializes a new handler for a dynamic-level diagnostic message.
     /// </summary>
-    /// <param name="literalLength">The combined length of literal portions in the interpolated string.</param>
-    /// <param name="formattedCount">The number of formatted expressions in the interpolated string.</param>
+    /// <param name="literalLength">The compiler-supplied count of literal UTF-16 code units.</param>
+    /// <param name="formattedCount">The compiler-supplied number of interpolation holes.</param>
     /// <param name="channel">The diagnostic channel that receives the message.</param>
     /// <param name="level">The diagnostic level being evaluated.</param>
-    /// <param name="isEnabled">Set to <see langword="true"/> when formatted expressions should be evaluated.</param>
+    /// <param name="isEnabled">Set to true to evaluate interpolation expressions, or false to skip them.</param>
+    /// <exception cref="System.ArgumentNullException">The channel is null.</exception>
     public DiagnosticMessageHandler(
         int literalLength,
         int formattedCount,
@@ -54,61 +55,37 @@ public ref struct DiagnosticMessageHandler<TLevel>
         _message = new DiagnosticInterpolatedStringHandler(literalLength, formattedCount, channel, level, out isEnabled);
     }
 
-    /// <summary>
-    /// Gets whether the handler is actively building a diagnostic message.
-    /// </summary>
+    /// <summary>Gets the captured formatting gate.</summary>
+    /// <value>True when the handler was constructed to build a message.</value>
     public bool IsEnabled => _message.IsEnabled;
 
     internal DiagnosticInterpolatedStringHandler Message => _message;
 
-    /// <summary>
-    /// Appends a literal string segment.
-    /// </summary>
-    /// <param name="value">The literal string segment.</param>
+    /// <inheritdoc cref="DiagnosticInterpolatedStringHandler.AppendLiteral(string)"/>
     public void AppendLiteral(string value)
     {
         _message.AppendLiteral(value);
     }
 
-    /// <summary>
-    /// Appends a formatted value.
-    /// </summary>
-    /// <typeparam name="T">The type of value to append.</typeparam>
-    /// <param name="value">The value to append.</param>
+    /// <inheritdoc cref="DiagnosticInterpolatedStringHandler.AppendFormatted{T}(T)"/>
     public void AppendFormatted<T>(T value)
     {
         _message.AppendFormatted(value);
     }
 
-    /// <summary>
-    /// Appends a formatted value using the specified format string.
-    /// </summary>
-    /// <typeparam name="T">The type of value to append.</typeparam>
-    /// <param name="value">The value to append.</param>
-    /// <param name="format">The format string to apply.</param>
+    /// <inheritdoc cref="DiagnosticInterpolatedStringHandler.AppendFormatted{T}(T, string)"/>
     public void AppendFormatted<T>(T value, string format)
     {
         _message.AppendFormatted(value, format);
     }
 
-    /// <summary>
-    /// Appends a formatted value with the specified alignment.
-    /// </summary>
-    /// <typeparam name="T">The type of value to append.</typeparam>
-    /// <param name="value">The value to append.</param>
-    /// <param name="alignment">The minimum width for the formatted value.</param>
+    /// <inheritdoc cref="DiagnosticInterpolatedStringHandler.AppendFormatted{T}(T, int)"/>
     public void AppendFormatted<T>(T value, int alignment)
     {
         _message.AppendFormatted(value, alignment);
     }
 
-    /// <summary>
-    /// Appends a formatted value with the specified alignment and format string.
-    /// </summary>
-    /// <typeparam name="T">The type of value to append.</typeparam>
-    /// <param name="value">The value to append.</param>
-    /// <param name="alignment">The minimum width for the formatted value.</param>
-    /// <param name="format">The format string to apply.</param>
+    /// <inheritdoc cref="DiagnosticInterpolatedStringHandler.AppendFormatted{T}(T, int, string)"/>
     public void AppendFormatted<T>(T value, int alignment, string format)
     {
         _message.AppendFormatted(value, alignment, format);

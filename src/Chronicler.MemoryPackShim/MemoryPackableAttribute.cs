@@ -9,18 +9,17 @@ using System;
 
 namespace MemoryPack;
 
-/// <summary>
-/// Marks a type as MemoryPack-compatible when the MemoryPack package is disabled.
-/// </summary>
+/// <summary>Carries MemoryPack-compatible generation and layout metadata.</summary>
+/// <remarks>The shim stores attribute metadata for Lean builds. Serialization requires the full MemoryPack implementation.</remarks>
 [AttributeUsage(
     AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Interface,
     AllowMultiple = false,
     Inherited = false)]
 public sealed class MemoryPackableAttribute : Attribute
 {
-    /// <summary>
-    /// Initializes the attribute with the requested generation mode.
-    /// </summary>
+    /// <summary>Records a generation mode and selects its default layout.</summary>
+    /// <param name="generateType">Defaults to ordinary object mode. Version-tolerant and circular-reference modes select explicit layout.</param>
+    /// <remarks>Other modes select sequential layout.</remarks>
     public MemoryPackableAttribute(GenerateType generateType = GenerateType.Object)
     {
         GenerateType = generateType;
@@ -29,31 +28,28 @@ public sealed class MemoryPackableAttribute : Attribute
             : SerializeLayout.Sequential;
     }
 
-    /// <summary>
-    /// Initializes the attribute with the requested serialization layout.
-    /// </summary>
+    /// <summary>Records a layout with ordinary object generation metadata.</summary>
+    /// <param name="serializeLayout">The layout value to preserve on the attribute.</param>
     public MemoryPackableAttribute(SerializeLayout serializeLayout)
     {
         GenerateType = GenerateType.Object;
         SerializeLayout = serializeLayout;
     }
 
-    /// <summary>
-    /// Initializes the attribute with the requested generation mode and serialization layout.
-    /// </summary>
+    /// <summary>Records an explicit generation mode and layout pair.</summary>
+    /// <param name="generateType">The mode metadata to preserve.</param>
+    /// <param name="serializeLayout">The layout metadata to preserve independently of the generation mode.</param>
     public MemoryPackableAttribute(GenerateType generateType, SerializeLayout serializeLayout)
     {
         GenerateType = generateType;
         SerializeLayout = serializeLayout;
     }
 
-    /// <summary>
-    /// Gets the requested generation mode.
-    /// </summary>
+    /// <summary>Gets the recorded generation mode.</summary>
+    /// <value>The supplied value, or ordinary object mode when omitted.</value>
     public GenerateType GenerateType { get; }
 
-    /// <summary>
-    /// Gets the requested serialization layout.
-    /// </summary>
+    /// <summary>Gets the recorded member layout.</summary>
+    /// <value>The supplied layout or the default associated with the selected generation mode.</value>
     public SerializeLayout SerializeLayout { get; }
 }

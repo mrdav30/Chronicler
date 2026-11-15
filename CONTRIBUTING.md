@@ -42,6 +42,9 @@ The library projects emit compiler XML alongside the assemblies. DocFX uses the
 `docs/api/obj/_site/api`. The source-level `CS1591` warning flags members with
 missing comments.
 
+For target-specific APIs such as the diagnostics compiler markers, inspect the
+XML emitted for the target that declares them.
+
 For public and protected members, document parameters, type parameters, returns,
 meaningful property values, and caller-relevant exceptions where applicable. Use
 remarks for ownership, lifetime, and ordering. Check an affected overload in the

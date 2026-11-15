@@ -10,12 +10,10 @@ using System.Runtime.CompilerServices;
 
 namespace Chronicler.Hashing;
 
-/// <summary>
-/// Writes deterministic primitive payloads into a fixed-width record hash.
-/// </summary>
+/// <summary>Accumulates a deterministic 128-bit record hash.</summary>
 /// <remarks>
-/// This is a non-cryptographic conformance/replay hash writer. It is intended for deterministic
-/// state comparison, not for security or tamper resistance.
+/// Each write appends to the current stream in call order. A default writer is equivalent to a newly
+/// constructed writer. This non-cryptographic hash is intended for state comparison and replay validation.
 /// </remarks>
 public struct ChronicleHashWriter
 {
@@ -37,9 +35,12 @@ public struct ChronicleHashWriter
         _initialized = true;
     }
 
-    /// <summary>
-    /// Writes a stable ASCII section tag and schema version.
-    /// </summary>
+    /// <summary>Appends a section header.</summary>
+    /// <param name="tag">A nonempty ASCII identifier shared by writers of this schema.</param>
+    /// <param name="version">The signed 32-bit schema revision to include in the hash.</param>
+    /// <remarks>Writes the byte count, ASCII bytes, then version. Invalid tags leave the writer unchanged.</remarks>
+    /// <exception cref="ArgumentNullException">The tag is null.</exception>
+    /// <exception cref="ArgumentException">The tag is empty or contains a non-ASCII character.</exception>
     public void WriteSection(string tag, int version)
     {
         if (tag == null)
@@ -62,18 +63,16 @@ public struct ChronicleHashWriter
         WriteInt32(version);
     }
 
-    /// <summary>
-    /// Writes a Boolean value as one canonical byte.
-    /// </summary>
+    /// <summary>Appends one byte.</summary>
+    /// <param name="value">False writes zero and true writes one.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void WriteBool(bool value)
     {
         WriteByte(value ? (byte)1 : (byte)0);
     }
 
-    /// <summary>
-    /// Writes an unsigned 8-bit value.
-    /// </summary>
+    /// <summary>Appends one byte.</summary>
+    /// <param name="value">All eight input bits are written unchanged.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void WriteByte(byte value)
     {
@@ -89,43 +88,38 @@ public struct ChronicleHashWriter
         }
     }
 
-    /// <summary>
-    /// Writes a signed 8-bit value by its two's-complement byte.
-    /// </summary>
+    /// <summary>Appends one byte.</summary>
+    /// <param name="value">The signed value is encoded in two's complement.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void WriteSByte(sbyte value)
     {
         WriteByte(unchecked((byte)value));
     }
 
-    /// <summary>
-    /// Writes a signed 16-bit value in little-endian byte order.
-    /// </summary>
+    /// <summary>Appends two little-endian bytes.</summary>
+    /// <param name="value">The signed value is encoded in two's complement.</param>
     public void WriteInt16(short value)
     {
         WriteUInt16(unchecked((ushort)value));
     }
 
-    /// <summary>
-    /// Writes an unsigned 16-bit value in little-endian byte order.
-    /// </summary>
+    /// <summary>Appends two little-endian bytes.</summary>
+    /// <param name="value">The full unsigned 16-bit range is accepted.</param>
     public void WriteUInt16(ushort value)
     {
         WriteByte((byte)value);
         WriteByte((byte)(value >> 8));
     }
 
-    /// <summary>
-    /// Writes a signed 32-bit value in little-endian byte order.
-    /// </summary>
+    /// <summary>Appends four little-endian bytes.</summary>
+    /// <param name="value">The signed value is encoded in two's complement.</param>
     public void WriteInt32(int value)
     {
         WriteUInt32(unchecked((uint)value));
     }
 
-    /// <summary>
-    /// Writes an unsigned 32-bit value in little-endian byte order.
-    /// </summary>
+    /// <summary>Appends four little-endian bytes.</summary>
+    /// <param name="value">The full unsigned 32-bit range is accepted.</param>
     public void WriteUInt32(uint value)
     {
         WriteByte((byte)value);
@@ -134,17 +128,15 @@ public struct ChronicleHashWriter
         WriteByte((byte)(value >> 24));
     }
 
-    /// <summary>
-    /// Writes a signed 64-bit value in little-endian byte order.
-    /// </summary>
+    /// <summary>Appends eight little-endian bytes.</summary>
+    /// <param name="value">The signed value is encoded in two's complement.</param>
     public void WriteInt64(long value)
     {
         WriteUInt64(unchecked((ulong)value));
     }
 
-    /// <summary>
-    /// Writes an unsigned 64-bit value in little-endian byte order.
-    /// </summary>
+    /// <summary>Appends eight little-endian bytes.</summary>
+    /// <param name="value">The full unsigned 64-bit range is accepted.</param>
     public void WriteUInt64(ulong value)
     {
         WriteByte((byte)value);
@@ -157,17 +149,15 @@ public struct ChronicleHashWriter
         WriteByte((byte)(value >> 56));
     }
 
-    /// <summary>
-    /// Writes a UTF-16 code unit in little-endian byte order.
-    /// </summary>
+    /// <summary>Appends one little-endian UTF-16 code unit.</summary>
+    /// <param name="value">The single code unit to record, including an isolated surrogate.</param>
     public void WriteChar(char value)
     {
         WriteUInt16(value);
     }
 
-    /// <summary>
-    /// Writes a nullable string as a presence marker, length, and UTF-16 code units.
-    /// </summary>
+    /// <summary>Appends a nullable sequence of UTF-16 code units.</summary>
+    /// <param name="value">Null writes a zero presence byte. A string writes a one byte, its 32-bit code-unit count, then its little-endian code units.</param>
     public void WriteString(string? value)
     {
         if (value == null)
@@ -184,9 +174,9 @@ public struct ChronicleHashWriter
         }
     }
 
-    /// <summary>
-    /// Writes an enum value by its underlying integral bytes in little-endian byte order.
-    /// </summary>
+    /// <summary>Appends the enum's underlying bytes in little-endian order.</summary>
+    /// <typeparam name="TEnum">An enum with a one-, two-, four-, or eight-byte integral representation.</typeparam>
+    /// <param name="value">The numeric bits to record, including combinations or unnamed values.</param>
     public void WriteEnum<TEnum>(TEnum value)
         where TEnum : struct, Enum
     {
@@ -211,9 +201,9 @@ public struct ChronicleHashWriter
         WriteUInt64(Unsafe.As<TEnum, ulong>(ref value));
     }
 
-    /// <summary>
-    /// Finalizes and returns the current hash value.
-    /// </summary>
+    /// <summary>Takes a snapshot of the running hash.</summary>
+    /// <returns>The finalized hash of all bytes written so far.</returns>
+    /// <remarks>The writer remains available for additional writes. Repeated snapshots of the same state match.</remarks>
     public ChronicleHash ToHash()
     {
         EnsureInitialized();

@@ -13,10 +13,8 @@ using System.Runtime.CompilerServices;
 using System.Text;
 #endif
 
-/// <summary>
-/// Builds diagnostic messages for enabled diagnostic levels while allowing disabled levels
-/// to skip formatted interpolation expression evaluation.
-/// </summary>
+/// <summary>Builds a diagnostic message using an enablement decision captured at construction.</summary>
+/// <remarks>The compiler uses the constructor's gate to skip interpolation expressions when disabled. Append calls on a disabled handler have no effect.</remarks>
 [InterpolatedStringHandler]
 public ref struct DiagnosticInterpolatedStringHandler
 {
@@ -30,9 +28,9 @@ public ref struct DiagnosticInterpolatedStringHandler
     /// <summary>
     /// Initializes a new instance of the <see cref="DiagnosticInterpolatedStringHandler"/> struct.
     /// </summary>
-    /// <param name="literalLength">The combined length of literal portions in the interpolated string.</param>
-    /// <param name="formattedCount">The number of formatted expressions in the interpolated string.</param>
-    /// <param name="channel">The diagnostic channel that will receive the message.</param>
+    /// <param name="literalLength">The compiler-supplied count of literal UTF-16 code units.</param>
+    /// <param name="formattedCount">The compiler-supplied number of interpolation holes.</param>
+    /// <param name="channel">The channel whose threshold controls formatting. Null disables the handler.</param>
     /// <param name="level">The severity level being evaluated.</param>
     /// <param name="isEnabled">
     /// Set to <c>true</c> when formatted expressions should be evaluated; otherwise, <c>false</c>.
@@ -62,9 +60,8 @@ public ref struct DiagnosticInterpolatedStringHandler
 #endif
     }
 
-    /// <summary>
-    /// Gets a value indicating whether this handler is actively building a diagnostic message.
-    /// </summary>
+    /// <summary>Gets the captured formatting gate.</summary>
+    /// <value>True when the handler was constructed to build a message.</value>
     public bool IsEnabled => _isEnabled;
 
     /// <summary>
@@ -86,8 +83,8 @@ public ref struct DiagnosticInterpolatedStringHandler
     /// <summary>
     /// Appends a formatted value.
     /// </summary>
-    /// <typeparam name="T">The type of value to append.</typeparam>
-    /// <param name="value">The value to append.</param>
+    /// <typeparam name="T">The static type of the interpolation expression.</typeparam>
+    /// <param name="value">The expression result. Null contributes no text before alignment.</param>
     public void AppendFormatted<T>(T value)
     {
         if (!_isEnabled)
@@ -103,9 +100,9 @@ public ref struct DiagnosticInterpolatedStringHandler
     /// <summary>
     /// Appends a formatted value using the specified format string.
     /// </summary>
-    /// <typeparam name="T">The type of value to append.</typeparam>
-    /// <param name="value">The value to append.</param>
-    /// <param name="format">The format string to apply.</param>
+    /// <typeparam name="T">The static type of the interpolation expression.</typeparam>
+    /// <param name="value">The expression result. Null contributes no text before alignment.</param>
+    /// <param name="format">The format passed to the value's formatter. Null selects its default.</param>
     public void AppendFormatted<T>(T value, string? format)
     {
         if (!_isEnabled)
@@ -121,9 +118,9 @@ public ref struct DiagnosticInterpolatedStringHandler
     /// <summary>
     /// Appends a formatted value with the specified alignment.
     /// </summary>
-    /// <typeparam name="T">The type of value to append.</typeparam>
-    /// <param name="value">The value to append.</param>
-    /// <param name="alignment">The minimum width for the formatted value.</param>
+    /// <typeparam name="T">The static type of the interpolation expression.</typeparam>
+    /// <param name="value">The expression result. Null contributes no text before alignment.</param>
+    /// <param name="alignment">Minimum width in characters. Positive right-aligns, negative left-aligns, and zero disables padding.</param>
     public void AppendFormatted<T>(T value, int alignment)
     {
         if (!_isEnabled)
@@ -139,10 +136,10 @@ public ref struct DiagnosticInterpolatedStringHandler
     /// <summary>
     /// Appends a formatted value with the specified alignment and format string.
     /// </summary>
-    /// <typeparam name="T">The type of value to append.</typeparam>
-    /// <param name="value">The value to append.</param>
-    /// <param name="alignment">The minimum width for the formatted value.</param>
-    /// <param name="format">The format string to apply.</param>
+    /// <typeparam name="T">The static type of the interpolation expression.</typeparam>
+    /// <param name="value">The expression result. Null contributes no text before alignment.</param>
+    /// <param name="alignment">Minimum width in characters. Positive right-aligns, negative left-aligns, and zero disables padding.</param>
+    /// <param name="format">The format passed to the value's formatter. Null selects its default.</param>
     public void AppendFormatted<T>(T value, int alignment, string? format)
     {
         if (!_isEnabled)
@@ -158,7 +155,7 @@ public ref struct DiagnosticInterpolatedStringHandler
     /// <summary>
     /// Appends a string value.
     /// </summary>
-    /// <param name="value">The value to append.</param>
+    /// <param name="value">The text to append. Null contributes no characters.</param>
     public void AppendFormatted(string? value)
     {
         if (!_isEnabled)
@@ -174,8 +171,8 @@ public ref struct DiagnosticInterpolatedStringHandler
     /// <summary>
     /// Appends a string value with the specified alignment.
     /// </summary>
-    /// <param name="value">The value to append.</param>
-    /// <param name="alignment">The minimum width for the formatted value.</param>
+    /// <param name="value">The expression result. Null contributes no text before alignment.</param>
+    /// <param name="alignment">Minimum width in characters. Positive right-aligns, negative left-aligns, and zero disables padding.</param>
     public void AppendFormatted(string? value, int alignment)
     {
         if (!_isEnabled)
@@ -191,9 +188,9 @@ public ref struct DiagnosticInterpolatedStringHandler
     /// <summary>
     /// Appends a string value with the specified alignment and format string.
     /// </summary>
-    /// <param name="value">The value to append.</param>
-    /// <param name="alignment">The minimum width for the formatted value.</param>
-    /// <param name="format">The format string to apply.</param>
+    /// <param name="value">The expression result. Null contributes no text before alignment.</param>
+    /// <param name="alignment">Minimum width in characters. Positive right-aligns, negative left-aligns, and zero disables padding.</param>
+    /// <param name="format">Accepted for interpolation syntax. The input is appended as text.</param>
     public void AppendFormatted(string? value, int alignment, string? format)
     {
         if (!_isEnabled)
@@ -209,7 +206,7 @@ public ref struct DiagnosticInterpolatedStringHandler
     /// <summary>
     /// Appends a character span.
     /// </summary>
-    /// <param name="value">The span to append.</param>
+    /// <param name="value">The span whose characters are copied into the message.</param>
     public void AppendFormatted(ReadOnlySpan<char> value)
     {
         if (!_isEnabled)
@@ -225,8 +222,8 @@ public ref struct DiagnosticInterpolatedStringHandler
     /// <summary>
     /// Appends a character span with the specified alignment.
     /// </summary>
-    /// <param name="value">The span to append.</param>
-    /// <param name="alignment">The minimum width for the formatted value.</param>
+    /// <param name="value">The span whose characters are copied into the message.</param>
+    /// <param name="alignment">Minimum width in characters. Positive right-aligns, negative left-aligns, and zero disables padding.</param>
     public void AppendFormatted(ReadOnlySpan<char> value, int alignment)
     {
         if (!_isEnabled)
@@ -242,9 +239,9 @@ public ref struct DiagnosticInterpolatedStringHandler
     /// <summary>
     /// Appends a character span with the specified alignment and format string.
     /// </summary>
-    /// <param name="value">The span to append.</param>
-    /// <param name="alignment">The minimum width for the formatted value.</param>
-    /// <param name="format">The format string to apply.</param>
+    /// <param name="value">The span whose characters are copied into the message.</param>
+    /// <param name="alignment">Minimum width in characters. Positive right-aligns, negative left-aligns, and zero disables padding.</param>
+    /// <param name="format">Accepted for interpolation syntax. The input is appended as text.</param>
     public void AppendFormatted(ReadOnlySpan<char> value, int alignment, string? format)
     {
         if (!_isEnabled)
