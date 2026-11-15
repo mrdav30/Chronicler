@@ -12,7 +12,7 @@ using System.Text;
 namespace Chronicler;
 
 /// <summary>
-/// Carries session-scoped serialization services such as stable link resolution.
+/// Holds link registrations and pending link assignments for a recording session.
 /// </summary>
 public sealed class ChronicleContext
 {
@@ -27,8 +27,9 @@ public sealed class ChronicleContext
     }
 
     /// <summary>
-    /// Gets the registry used to save and load stable links to external or runtime-owned objects.
+    /// Gets the link registry for this session.
     /// </summary>
+    /// <value>The same mutable registry throughout the context's lifetime.</value>
     public ChronicleLinkRegistry Links { get; }
 
     internal void QueueDeferredLink<T>(string name, string id, string? slot, Action<T> assignLoadedValue)
@@ -37,8 +38,15 @@ public sealed class ChronicleContext
     }
 
     /// <summary>
-    /// Attempts to resolve all deferred links queued during loading.
+    /// Resolves pending links and invokes their assignment callbacks.
     /// </summary>
+    /// <remarks>
+    /// The built-in serializers call this after the root <see cref="IRecordable.RecordData"/> returns.
+    /// Each pass checks pending links from newest to oldest. Passes continue while links resolve.
+    /// Callbacks run synchronously and may register targets for other pending links.
+    /// Completed assignments remain applied on failure, and pending callbacks stay queued in this context.
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">A pass makes no progress and links remain unresolved.</exception>
     public void ResolveDeferredLinks()
     {
         if (_deferredLinks.Count == 0)

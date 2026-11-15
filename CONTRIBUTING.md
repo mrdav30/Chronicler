@@ -37,6 +37,17 @@ dotnet tool restore
 dotnet tool run docfx docs/api/docfx.json --warningsAsErrors
 ```
 
+The library projects emit compiler XML alongside the assemblies. DocFX uses the
+`Release/net10.0` assemblies and their XML to build the reference under
+`docs/api/obj/_site/api`. The source-level `CS1591` warning flags members with
+missing comments.
+
+For public and protected members, document parameters, type parameters, returns,
+meaningful property values, and caller-relevant exceptions where applicable. Use
+remarks for ownership, lifetime, and ordering. Check an affected overload in the
+rendered reference when using `<inheritdoc/>` so only its actual parameters
+appear and the shared contract and links resolve.
+
 ## Pull Request Process
 
 For coordinated sibling builds, pass `-p:UseLocalLsfStack=true`.

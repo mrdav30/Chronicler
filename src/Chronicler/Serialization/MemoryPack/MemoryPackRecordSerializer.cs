@@ -15,21 +15,25 @@ using MemoryPack;
 namespace Chronicler.Serialization;
 
 /// <summary>
-/// Serializes <see cref="IRecordable"/> state graphs to and from MemoryPack through the chronicler API.
+/// Saves recorded state as MemoryPack bytes and restores it into host-created objects.
 /// </summary>
+/// <remarks>Each call made without a session context creates one with an empty link registry.</remarks>
 public static class MemoryPackRecordSerializer
 {
     private static readonly byte[] EmptyRecordBytes = MemoryPackSerializer.Serialize(new MemoryPackRecordEnvelope());
 
-    /// <summary>
-    /// Serializes the current state of a recordable instance into MemoryPack bytes.
-    /// </summary>
+    /// <inheritdoc cref="Serialize(IRecordable, ChronicleContext)"/>
     public static byte[] Serialize(IRecordable target)
         => Serialize(target, context: null);
 
     /// <summary>
-    /// Serializes the current state of a recordable instance into MemoryPack bytes.
+    /// Saves the state declared by a recordable instance.
     /// </summary>
+    /// <param name="target">The source whose schema runs in <see cref="SerializationMode.Saving"/> mode.</param>
+    /// <param name="context">The session that supplies stable link IDs. Null creates a fresh context.</param>
+    /// <returns>The recorded payload in a new byte array owned by the caller.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="target"/> is null.</exception>
+    /// <exception cref="InvalidOperationException">A non-null recorded link has no stable ID.</exception>
     public static byte[] Serialize(IRecordable target, ChronicleContext? context)
     {
         if (target == null)
@@ -42,15 +46,13 @@ public static class MemoryPackRecordSerializer
         return chronicler.ToArray();
     }
 
-    /// <summary>
-    /// Loads MemoryPack state into an existing recordable instance.
-    /// </summary>
+    /// <inheritdoc cref="Populate(IRecordable, byte[], ChronicleContext)"/>
     public static void Populate(IRecordable target, byte[] data)
         => Populate(target, data, context: null);
 
-    /// <summary>
-    /// Loads MemoryPack state into an existing recordable instance.
-    /// </summary>
+    /// <inheritdoc cref="Populate(IRecordable, ReadOnlySpan{byte}, ChronicleContext)"
+    ///     path="/*[not(self::exception[@cref='T:System.ArgumentNullException'])]"/>
+    /// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="data"/> is null.</exception>
     public static void Populate(IRecordable target, byte[] data, ChronicleContext? context)
     {
         if (data == null)
@@ -59,15 +61,24 @@ public static class MemoryPackRecordSerializer
         Populate(target, data.AsSpan(), context);
     }
 
-    /// <summary>
-    /// Loads MemoryPack state into an existing recordable instance.
-    /// </summary>
+    /// <inheritdoc cref="Populate(IRecordable, ReadOnlySpan{byte}, ChronicleContext)"/>
     public static void Populate(IRecordable target, ReadOnlySpan<byte> data)
         => Populate(target, data, context: null);
 
     /// <summary>
-    /// Loads MemoryPack state into an existing recordable instance.
+    /// Applies a MemoryPack record to an existing instance.
     /// </summary>
+    /// <param name="target">The object to mutate. Initialize owned class instances needed by present deep records.</param>
+    /// <param name="data">The nonempty payload to read. The serializer leaves the caller's buffer intact and retains no reference to it.</param>
+    /// <param name="context">The destination session for link resolution. Null creates a fresh context.</param>
+    /// <remarks>
+    /// Runs the target schema, then calls <see cref="ChronicleContext.ResolveDeferredLinks"/>.
+    /// A failure can leave earlier assignments applied. A supplied context retains pending callbacks.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException"><paramref name="target"/> is null.</exception>
+    /// <exception cref="ArgumentException"><paramref name="data"/> is empty.</exception>
+    /// <exception cref="MemoryPackSerializationException">The MemoryPack decoder rejects the payload or a recorded value.</exception>
+    /// <exception cref="InvalidOperationException">A present deep class lacks an initialized target, or link resolution fails.</exception>
     public static void Populate(IRecordable target, ReadOnlySpan<byte> data, ChronicleContext? context)
     {
         if (target == null)

@@ -15,21 +15,26 @@ using System.Text.Json;
 namespace Chronicler.Serialization;
 
 /// <summary>
-/// Serializes <see cref="IRecordable"/> state graphs to and from JSON through the chronicler API.
+/// Saves recorded state to JSON and restores it into host-created objects.
 /// </summary>
+/// <remarks>Each call made without a session context creates one with an empty link registry.</remarks>
 public static class JsonRecordSerializer
 {
     private static readonly JsonSerializerOptions _defaultOptions = CreateDefaultOptions();
 
-    /// <summary>
-    /// Serializes the current state of a recordable instance into JSON.
-    /// </summary>
+    /// <inheritdoc cref="Serialize(IRecordable, ChronicleContext, bool)"/>
     public static string Serialize(IRecordable target, bool writeIndented = false)
         => Serialize(target, context: null, writeIndented);
 
     /// <summary>
-    /// Serializes the current state of a recordable instance into JSON.
+    /// Saves the state declared by a recordable instance.
     /// </summary>
+    /// <param name="target">The source whose schema runs in <see cref="SerializationMode.Saving"/> mode.</param>
+    /// <param name="context">The session that supplies stable link IDs. Null creates a fresh context.</param>
+    /// <param name="writeIndented">Whether to indent the output. The default produces compact JSON.</param>
+    /// <returns>A JSON object keyed by the recorded field names.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="target"/> is null.</exception>
+    /// <exception cref="InvalidOperationException">A non-null recorded link has no stable ID.</exception>
     public static string Serialize(IRecordable target, ChronicleContext? context, bool writeIndented = false)
     {
         if (target == null)
@@ -46,15 +51,27 @@ public static class JsonRecordSerializer
         return chronicler.ToJson();
     }
 
-    /// <summary>
-    /// Loads JSON state into an existing recordable instance.
-    /// </summary>
+    /// <inheritdoc cref="Populate(IRecordable, string, ChronicleContext)"/>
     public static void Populate(IRecordable target, string json)
         => Populate(target, json, context: null);
 
     /// <summary>
-    /// Loads JSON state into an existing recordable instance.
+    /// Applies a JSON record to an existing instance.
     /// </summary>
+    /// <param name="target">The object to mutate. Initialize owned class instances needed by present deep records.</param>
+    /// <param name="json">The nonblank JSON object containing the recorded fields.</param>
+    /// <param name="context">The destination session for link resolution. Null creates a fresh context.</param>
+    /// <remarks>
+    /// Runs the target schema, then calls <see cref="ChronicleContext.ResolveDeferredLinks"/>.
+    /// A failure can leave earlier assignments applied. A supplied context retains pending callbacks.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException"><paramref name="target"/> is null.</exception>
+    /// <exception cref="ArgumentException"><paramref name="json"/> is null, empty, or whitespace.</exception>
+    /// <exception cref="JsonException">The payload is malformed or a recorded value cannot be read as its declared type.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// A record that is read as an object has another JSON shape, a present deep class lacks an initialized
+    /// target, or link resolution fails.
+    /// </exception>
     public static void Populate(IRecordable target, string json, ChronicleContext? context)
     {
         if (target == null)

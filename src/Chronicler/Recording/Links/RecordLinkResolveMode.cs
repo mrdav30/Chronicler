@@ -8,17 +8,17 @@
 namespace Chronicler;
 
 /// <summary>
-/// Controls whether a recorded link must resolve during the current load pass or may resolve after the full graph has loaded.
+/// Controls when a recorded link must resolve during population.
 /// </summary>
 public enum RecordLinkResolveMode
 {
     /// <summary>
-    /// The link must resolve immediately while the current <c>RecordData(...)</c> call is running.
+    /// Resolve the link while reading its field. An unresolved ID fails the load at that field.
     /// </summary>
     Immediate,
 
     /// <summary>
-    /// The link may resolve after the current <c>RecordData(...)</c> graph finishes loading.
+    /// Resolve the link when its field is read if possible. Otherwise queue it for resolution after the graph loads.
     /// </summary>
     Deferred
 }
