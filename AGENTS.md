@@ -242,7 +242,10 @@ When possible:
 
 Current quality bar:
 
-- aim to preserve near-100% coverage on authored code
+- require exact 100% of reported lines, branch outcomes, and executable methods
+  in Release and ReleaseLean; inspect raw Cobertura points, not rounded totals
+- complexity exceptions do not waive coverage; do not suppress reported gaps
+  through new exclusions or disabled checks
 - avoid introducing high-CRAP methods
 - treat CRAP scores above `30` as a smell that needs attention
 
@@ -255,7 +258,6 @@ dotnet build Chronicler.slnx -c Release
 dotnet test Chronicler.slnx -c Release --no-build
 dotnet build Chronicler.slnx -c ReleaseLean
 dotnet test Chronicler.slnx -c ReleaseLean --no-build
-dotnet test Chronicler.slnx -c Release --collect:"XPlat Code Coverage" --settings tests/Chronicler.Tests/coverlet.runsettings
 dotnet tool restore
 dotnet tool run docfx docs/api/docfx.json --warningsAsErrors
 ```
@@ -267,10 +269,16 @@ If packaging or publishing changes are involved, also verify:
 - Release builds emit portable PDBs
 
 CI runs Release and ReleaseLean builds and tests on Linux and Windows through
-`.github/workflows/build-and-test.yml`. After a successful push to `main`, the
-coverage workflow builds the DocFX site and coverage report from the exact
-tested commit, validates generated assets and local links, and deploys them as
-one GitHub Pages artifact with coverage under `/coverage/`.
+`.github/workflows/build-and-test.yml`. Each lane collects the three test
+projects separately, restricting collection to its owning runtime assembly, and
+runs `.assets/scripts/assert-full-coverage.ps1` against fresh raw reports. The
+measured assembly set remains `Chronicler`, `Chronicler.Diagnostics`, and
+`Chronicler.MemoryPackShim`. See
+[CONTRIBUTING.md](CONTRIBUTING.md#coverage-gate) for the suite mapping and
+commands. After a successful push to `main`, the coverage workflow builds the
+DocFX site and coverage report from the exact tested commit, enforces the same
+gate, validates generated assets and local links, and deploys them as one GitHub
+Pages artifact with coverage under `/coverage/`.
 
 ## README And Packaging Alignment
 

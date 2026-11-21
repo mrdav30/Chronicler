@@ -8,12 +8,16 @@ complexity review threshold.
 - Review threshold: cyclomatic complexity greater than 10.
 - Risk threshold: CRAP score greater than 30 requires immediate test hardening
   or refactoring.
+- Require exact 100% of reported lines, branch outcomes, and executable methods
+  in Release and ReleaseLean. A complexity exception does not waive coverage.
+  Fix reported gaps without adding exclusions or disabling checks; rounded
+  percentages do not establish this gate.
 - Generate coverage and CRAP results for the checkout under review. Local
   reports and published coverage describe the commit tested, not a standing
   guarantee for every package profile or future release.
 
 Complexity exceptions are acceptable when the method is deterministic, narrowly
-scoped, well covered, and simpler to audit in one explicit flow than through
+scoped, fully covered, and simpler to audit in one explicit flow than through
 indirection. These exceptions should be revisited when coverage drops, behavior
 changes, or the implementation becomes harder to reason about.
 
@@ -27,8 +31,9 @@ changes, or the implementation becomes harder to reason about.
 
 - Prefer reducing high-complexity serializer/control-flow methods by extracting
   named private helpers before adding exceptions.
-- Prefer adding focused tests for reachable branches before documenting an
-  exception.
+- Cover all reported paths before documenting a complexity exception. A proven
+  unreachable branch may be simplified only after verifying its callers and
+  invariants; it cannot receive a coverage waiver here.
 - For deterministic hash and serialization code, do not reduce complexity by
   introducing reflection, serializer-specific behavior, hidden allocations, or
   unordered lookup flows that affect payload semantics.

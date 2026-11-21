@@ -30,6 +30,49 @@ dotnet build Chronicler.slnx --configuration ReleaseLean
 dotnet test Chronicler.slnx --configuration ReleaseLean --no-build
 ```
 
+## Coverage gate
+
+Require exact 100% of reported lines, branch outcomes, and executable methods in
+both Release and ReleaseLean. Complexity exceptions in
+[the register](docs/complexity-exceptions.md) do not waive coverage. Fix gaps
+without adding exclusions or disabling checks; rounded percentages are not
+acceptance evidence.
+
+Collect each test project's owning assembly into a fresh directory for one
+configuration. All three runtime assemblies remain in scope:
+
+| Test project                      | Measured assembly           | Results directory                |
+| --------------------------------- | --------------------------- | -------------------------------- |
+| `Chronicler.Tests`                | `Chronicler`                | `artifacts/coverage/core`        |
+| `Chronicler.Diagnostics.Tests`    | `Chronicler.Diagnostics`    | `artifacts/coverage/diagnostics` |
+| `Chronicler.MemoryPackShim.Tests` | `Chronicler.MemoryPackShim` | `artifacts/coverage/shim`        |
+
+The collector `Include` overrides select the complete owner assembly. This
+avoids counting the Lean core suite's incidental shim instrumentation as a
+separate uncovered copy of the shim; its dedicated suite covers that assembly.
+Existing source and generated-code exclusions stay unchanged.
+
+After the Release build, run from the repository root in PowerShell:
+
+```powershell
+dotnet test tests/Chronicler.Tests/Chronicler.Tests.csproj -c Release --no-build --no-restore --collect:"XPlat Code Coverage" --settings tests/Chronicler.Tests/coverlet.runsettings --results-directory artifacts/coverage/core -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[Chronicler]*"
+if ($LASTEXITCODE -ne 0) { throw 'Core tests failed.' }
+dotnet test tests/Chronicler.Diagnostics.Tests/Chronicler.Diagnostics.Tests.csproj -c Release --no-build --no-restore --collect:"XPlat Code Coverage" --settings tests/Chronicler.Tests/coverlet.runsettings --results-directory artifacts/coverage/diagnostics -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[Chronicler.Diagnostics]*"
+if ($LASTEXITCODE -ne 0) { throw 'Diagnostics tests failed.' }
+dotnet test tests/Chronicler.MemoryPackShim.Tests/Chronicler.MemoryPackShim.Tests.csproj -c Release --no-build --no-restore --collect:"XPlat Code Coverage" --settings tests/Chronicler.Tests/coverlet.runsettings --results-directory artifacts/coverage/shim -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[Chronicler.MemoryPackShim]*"
+if ($LASTEXITCODE -ne 0) { throw 'Shim tests failed.' }
+./.assets/scripts/assert-full-coverage.ps1 -CoverageDirectory artifacts/coverage
+```
+
+Repeat after a ReleaseLean build with `-c ReleaseLean` and a separate fresh
+results directory. Do not combine configurations or retain reports from earlier
+runs: the gate rejects missing, duplicate, and unexpected assembly reports,
+invalid counts, and any uncovered raw line, branch, or executable method point.
+Every Windows/Linux build lane and the Pages workflow enforce this check before
+accepting or publishing coverage.
+
+## Documentation build
+
 To build the documentation locally after a Release build:
 
 ```bash
@@ -100,7 +143,8 @@ compatibility with every host runtime or AOT pipeline.
 
 ## Local release archives
 
-With the .NET SDK and the global `GitVersion.Tool` tool available on `PATH`, run:
+With the .NET SDK and the global `GitVersion.Tool` tool available on `PATH`,
+run:
 
 ```powershell
 .\.assets\scripts\set-version-and-build.ps1
